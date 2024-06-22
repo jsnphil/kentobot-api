@@ -5,7 +5,6 @@ import { Logger } from '@aws-lambda-powertools/logger';
 import { MetricUnit, Metrics } from '@aws-lambda-powertools/metrics';
 
 const YOUTUBE_API_URL = 'https://www.googleapis.com/youtube/v3/videos';
-const apiKey = 'AIzaSyCEZ0uiztXU58aC4ltMkNw7oG_D8QmXulY'; // TODO Get from secrets manager or parameter store
 
 const logger = new Logger();
 

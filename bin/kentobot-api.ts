@@ -1,21 +1,30 @@
 #!/usr/bin/env node
-import 'source-map-support/register';
 import * as cdk from 'aws-cdk-lib';
-import { KentobotApiStack } from '../lib/kentobot-api-stack';
+import { ApiStack } from '../lib/api-stack';
+// import { DataMigrationStack } from '../lib/data-migration-stack';
+import { DataStack } from '../lib/data-stack';
+import { Tags } from 'aws-cdk-lib';
 
 const app = new cdk.App();
-new KentobotApiStack(app, 'KentobotApiStack', {
-  /* If you don't specify 'env', this stack will be environment-agnostic.
-   * Account/Region-dependent features and context lookups will not work,
-   * but a single synthesized template can be deployed anywhere. */
 
-  /* Uncomment the next line to specialize this stack for the AWS Account
-   * and Region that are implied by the current CLI configuration. */
-  // env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
+const environment = app.node.tryGetContext('environment') as string;
 
-  /* Uncomment the next line if you know exactly what Account and Region you
-   * want to deploy the stack to. */
-  // env: { account: '123456789012', region: 'us-east-1' },
+if (!environment) {
+  throw Error('No environment set');
+}
 
-  /* For more information, see https://docs.aws.amazon.com/cdk/latest/guide/environments.html */
+const dataStack = new DataStack(app, `KB-DataStack-${environment}`, {
+  environment
 });
+
+const apiStack = new ApiStack(app, `KB-ApiStack-${environment}`, {
+  environment
+});
+
+dataStack.addDependency(apiStack);
+// dataStack.addDependency(dataMigrationStack);
+
+Tags.of(app).add('environment', environment);
+Tags.of(dataStack).add('system', 'data-repository');
+Tags.of(dataStack).add('system', 'api');
+// Tags.of(dataMigrationStack).add('system', 'data-migration');

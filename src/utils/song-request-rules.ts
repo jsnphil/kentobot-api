@@ -13,7 +13,7 @@ import { padTimeDigits } from './utilities';
 const moment = require('moment');
 
 console.log('Initializing SSM Client');
-const client = new SSMClient({});
+const client = new SSMClient({ region: 'us-east-1' });
 
 export async function processSongRequestRules(video: VideoListItem) {
   const failedRules = [];

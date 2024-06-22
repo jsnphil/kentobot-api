@@ -15,6 +15,7 @@ import path = require('path');
 import { env } from 'process';
 import { ARCHITECTURE, NODE_RUNTIME } from './CDKConstants';
 import { createSongRequestParameters } from './song-request-parameters';
+import { StringParameter } from 'aws-cdk-lib/aws-ssm';
 // import * as sqs from 'aws-cdk-lib/aws-sqs';
 
 export interface ApiStackProps extends StackProps {
@@ -177,5 +178,15 @@ export class ApiStack extends Stack {
     requestDurationLimit.grantRead(songRequestQueriesLambda);
     djRequestDurationLimit.grantRead(songRequestQueriesLambda);
     licensedContentToggle.grantRead(songRequestQueriesLambda);
+
+    const apiKeyParameter = StringParameter.fromSecureStringParameterAttributes(
+      this,
+      'ApiKeyParameter',
+      {
+        parameterName: 'youtube-api-key'
+      }
+    );
+
+    apiKeyParameter.grantRead(songRequestQueriesLambda);
   };
 }

@@ -10,7 +10,9 @@ export class GetRequestQuery {
 
     const videos = await searchForVideo(songId);
 
-    if (!videos) {
+    console.log(`Found ${videos.length} videos`);
+
+    if (!videos || videos.length === 0) {
       console.log(`No results returned`);
       return undefined;
     }

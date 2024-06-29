@@ -1,4 +1,4 @@
-import { Duration, Stack, StackProps } from 'aws-cdk-lib';
+import { Duration, Fn, Stack, StackProps } from 'aws-cdk-lib';
 import {
   RestApi,
   LogGroupLogDestination,
@@ -16,6 +16,7 @@ import { env } from 'process';
 import { ARCHITECTURE, NODE_RUNTIME } from './CDKConstants';
 import { createSongRequestParameters } from './song-request-parameters';
 import { StringParameter } from 'aws-cdk-lib/aws-ssm';
+import { ITable, Table } from 'aws-cdk-lib/aws-dynamodb';
 // import * as sqs from 'aws-cdk-lib/aws-sqs';
 
 export interface ApiStackProps extends StackProps {
@@ -23,12 +24,30 @@ export interface ApiStackProps extends StackProps {
 }
 
 export class ApiStack extends Stack {
+  readonly database: ITable;
   readonly environmentName: string;
 
   constructor(scope: Construct, id: string, props: ApiStackProps) {
     super(scope, id, props);
 
     this.environmentName = props.environment;
+
+    // Import shared resources
+    const tableArn = Fn.importValue(
+      `kb-data-table-arn-${this.environmentName}`
+    );
+    // const tableStreamArn = Fn.importValue(
+    //   `kb-data-table-arn-${this.environmentName}`
+    // );
+
+    this.database = Table.fromTableAttributes(
+      this,
+      `KB-StreamDatabase-${this.environmentName}`,
+      {
+        tableArn: tableArn
+        // tableStreamArn: tableStreamArn
+      }
+    );
 
     /** Create the API */
     const { api } = this.createApi();
@@ -105,7 +124,7 @@ export class ApiStack extends Stack {
       licensedContentToggle
     } = createSongRequestParameters(this, this.environmentName);
 
-    const songRequestComamndsLambda = new NodejsFunction(
+    const songRequestCommandsLambda = new NodejsFunction(
       this,
       `KB-API-SongRequestCommands-${this.environmentName}`,
       {
@@ -123,8 +142,8 @@ export class ApiStack extends Stack {
         },
         logRetention: RetentionDays.ONE_WEEK,
         environment: {
-          ENVIRONMENT: this.environmentName
-          // STREAM_DATA_TABLE: this.database.tableName
+          ENVIRONMENT: this.environmentName,
+          STREAM_DATA_TABLE: this.database.tableName
         },
         timeout: Duration.minutes(1),
         memorySize: 512,
@@ -134,8 +153,10 @@ export class ApiStack extends Stack {
 
     saveRequestResource.addMethod(
       'POST',
-      new LambdaIntegration(songRequestComamndsLambda, {})
+      new LambdaIntegration(songRequestCommandsLambda, {})
     );
+
+    this.database.grantReadWriteData(songRequestCommandsLambda);
 
     const songRequestQueriesLambda = new NodejsFunction(
       this,

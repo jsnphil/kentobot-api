@@ -2,7 +2,7 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { createNewErrorResponse } from '../../../utils/utilities';
 import { GetRequestQuery } from '../queries/get-request';
 
-export class SongRequestHandler {
+export class SongRequestQueryHandler {
   async requestSong(
     event: APIGatewayProxyEvent
   ): Promise<APIGatewayProxyResult> {

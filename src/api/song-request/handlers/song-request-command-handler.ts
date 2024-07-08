@@ -2,7 +2,8 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { createNewErrorResponse } from '../../../utils/utilities';
 import { GetRequestQuery } from '../queries/get-request';
 import { SaveSongCommand } from '../commands/save-song';
-import { Song } from '../../../types/song-request';
+import { SaveSongPlayCommand } from '../commands/save-song-play';
+import { Song, SongPlay } from '../../../types/song-request';
 
 export class SongRequestCommandHandler {
   async saveSong(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
@@ -37,7 +38,21 @@ export class SongRequestCommandHandler {
     const saveSongCommand = new SaveSongCommand();
 
     const song = JSON.parse(body) as Song;
-    const result = await saveSongCommand.execute(song);
+    const saveSongResult = await saveSongCommand.execute(song);
+
+    const songPlay: SongPlay = {
+      date: new Date(),
+      requester: JSON.parse(body).requester,
+      sotnContender: false,
+      sotnWinner: false,
+      sotsWinner: false
+    };
+
+    const saveSongPlayCommand = new SaveSongPlayCommand();
+    const saveSongPlayResult = await saveSongPlayCommand.execute(
+      song.youtubeId,
+      songPlay
+    );
 
     return {
       body: JSON.stringify({ result: 'success' }),

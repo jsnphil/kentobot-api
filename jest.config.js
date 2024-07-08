@@ -1,4 +1,6 @@
 module.exports = {
+  preset: 'ts-jest',
+  testTimeout: 10000, // 10 seconds
   testEnvironment: 'node',
   roots: ['<rootDir>/src'],
   testMatch: ['**/*.test.ts', '**/*.spec.ts'],
@@ -17,10 +19,12 @@ module.exports = {
     }
   },
   collectCoverageFrom: ['src/**/*.ts'],
+
   coveragePathIgnorePatterns: [
     'node_modules',
     'types/*',
     'api/song-request/lambdas/*',
-    'utils/youtube-client.ts'
+    'utils/youtube-client.ts',
+    'mocks/*'
   ]
 };

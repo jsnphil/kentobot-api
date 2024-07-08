@@ -5,18 +5,15 @@ const songRepo = new SongRepository();
 
 export class SaveSongCommand {
   async execute(song: Song): Promise<void> {
-    console.log(`Saving song - ${JSON.stringify(song)}`);
-    console.log(`Saving song request [${JSON.stringify(song, null, 2)}]`);
+    console.log(`Saving song [${JSON.stringify(song, null, 2)}]`);
 
-    // TODO Surround with a try/catch
-
-    // Save the song
-    await songRepo.save(song);
-
-    // Save the play
-    // const songDetails = JSON.parse(body) as PlayedSong;
-    // await saveRequestCommand.execute(songDetails);
-
-    // const saveSongPlayCommand = new SaveSongPlayCommand();
+    try {
+      await songRepo.save(song);
+      console.log('Song saved successfully');
+    } catch (err) {
+      // console.error(err);
+      console.log(`Failed to save song: ${err}`);
+      throw new Error('Failed to save song');
+    }
   }
 }

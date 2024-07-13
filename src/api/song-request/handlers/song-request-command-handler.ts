@@ -7,24 +7,6 @@ import { Song, SongPlay } from '../../../types/song-request';
 
 export class SongRequestCommandHandler {
   async saveSong(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
-    //   async requestSong(
-    //     event: APIGatewayProxyEvent
-    //   ): Promise<APIGatewayProxyResult> {
-    //     console.log('Requesting song');
-
-    //     const songId = event.pathParameters?.songId;
-    //     if (!songId) {
-    //       return createNewErrorResponse(400, 'Invalid input', [
-    //         'No song ID provided'
-    //       ]);
-    //     }
-
-    //     const songRequestQuery = new GetRequestQuery();
-    //     const result = await songRequestQuery.execute(songId);
-    //     if (!result) {
-    //       return createNewErrorResponse(404, 'Song not found', []);
-    //     }
-
     const { body } = event;
 
     if (!body) {
@@ -33,30 +15,58 @@ export class SongRequestCommandHandler {
       ]);
     }
 
+    // TODO Validate input, use zod?
+
     console.log(`Saving song request ${body}`);
-
-    const saveSongCommand = new SaveSongCommand();
-
     const song = JSON.parse(body) as Song;
-    const saveSongResult = await saveSongCommand.execute(song);
 
-    const songPlay: SongPlay = {
-      date: new Date(),
-      requester: JSON.parse(body).requester,
-      sotnContender: false,
-      sotnWinner: false,
-      sotsWinner: false
-    };
-
-    const saveSongPlayCommand = new SaveSongPlayCommand();
-    const saveSongPlayResult = await saveSongPlayCommand.execute(
-      song.youtubeId,
-      songPlay
-    );
-
-    return {
-      body: JSON.stringify({ result: 'success' }),
-      statusCode: 204
-    };
+    try {
+      const saveSongInfoResult = await saveSongInformation(song);
+      if (saveSongInfoResult) {
+        await saveSongPlayInformation(song, JSON.parse(body).requester); // TODO Need a type for the API input object);
+        return {
+          body: JSON.stringify({ status: 'success' }),
+          statusCode: 204
+        };
+      } else {
+        return {
+          body: JSON.stringify({
+            status: 'Request saved to be reprocessed'
+          }),
+          statusCode: 202
+        };
+      }
+    } catch (err) {
+      return {
+        body: JSON.stringify({
+          status: 'Request saved to be reprocessed'
+        }),
+        statusCode: 202
+      };
+    }
   }
 }
+
+const saveSongInformation = async (song: Song) => {
+  try {
+    const saveSongCommand = new SaveSongCommand();
+    await saveSongCommand.execute(song);
+    return true;
+  } catch (err) {
+    // TODO Put song on a queue to reprocess
+    return false;
+  }
+};
+
+const saveSongPlayInformation = async (song: Song, requester: string) => {
+  const songPlay: SongPlay = {
+    date: new Date(),
+    requester: requester,
+    sotnContender: false,
+    sotnWinner: false,
+    sotsWinner: false
+  };
+
+  const saveSongPlayCommand = new SaveSongPlayCommand();
+  await saveSongPlayCommand.execute(song.youtubeId, songPlay);
+};

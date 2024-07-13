@@ -79,7 +79,13 @@ export class SongPlayRepository {
       `Inserting song play: ${JSON.stringify(putSongPlayInput, null, 2)}`
     );
 
-    await dynamoDBClient.send(new PutItemCommand(putSongPlayInput));
+    try {
+      await dynamoDBClient.send(new PutItemCommand(putSongPlayInput));
+      console.log('Song play saved successfully');
+    } catch (err) {
+      console.error(err);
+      throw new Error('Failed to save song play information');
+    }
   }
 
   //   async getAll(songId: string): Promise<SongPlay[]> {

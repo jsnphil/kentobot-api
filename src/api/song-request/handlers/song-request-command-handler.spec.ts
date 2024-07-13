@@ -83,7 +83,7 @@ describe('song-request-command-handler', () => {
     expect(response.statusCode).toBe(400);
     expect(response.body).toEqual(
       JSON.stringify({
-        status: 'error',
+        code: 400,
         message: 'Invalid input',
         errors: ['No song data received']
       })

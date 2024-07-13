@@ -9,11 +9,6 @@ beforeEach(() => {
 });
 
 describe('song-request-command-handler', () => {
-  beforeEach(() => {
-    jest.resetAllMocks;
-    jest.clearAllMocks;
-  });
-
   it('should return a 204 response when the song is saved', async () => {
     const mockRequest = {
       body: JSON.stringify({ videoId: 'XXX' })

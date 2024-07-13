@@ -22,6 +22,7 @@ export class SongRequestCommandHandler {
 
     try {
       const saveSongInfoResult = await saveSongInformation(song);
+
       if (saveSongInfoResult) {
         await saveSongPlayInformation(song, JSON.parse(body).requester); // TODO Need a type for the API input object);
         return {

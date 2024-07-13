@@ -26,5 +26,6 @@ module.exports = {
     'api/song-request/lambdas/*',
     'utils/youtube-client.ts',
     'mocks/*'
-  ]
+  ],
+  resetMocks: true
 };

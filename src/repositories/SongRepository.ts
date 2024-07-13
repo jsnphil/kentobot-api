@@ -81,13 +81,14 @@ export class SongRepository {
         new PutItemCommand(putSongInfoInput)
       );
       console.log(`Result: ${JSON.stringify(result, null, 2)}`);
+      console.log('Song info saved successfully');
     } catch (err) {
       console.log(`Error: ${JSON.stringify(err, null, 2)}`);
       if (err instanceof ConditionalCheckFailedException) {
         console.log('Song info has already been added, skipping...');
       } else {
         console.error(err);
-        throw err;
+        throw new Error('Failed to save song info');
       }
     }
   }

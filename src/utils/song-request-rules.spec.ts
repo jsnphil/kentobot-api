@@ -3,6 +3,11 @@ import { Snippet, Status } from '../types/youtube';
 import { mockClient } from 'aws-sdk-client-mock';
 import * as songRules from './song-request-rules';
 
+beforeEach(() => {
+  jest.resetAllMocks;
+  jest.clearAllMocks;
+});
+
 describe('isEmbeddable', () => {
   it('should return true if the status is embeddable', () => {
     const status: Status = {

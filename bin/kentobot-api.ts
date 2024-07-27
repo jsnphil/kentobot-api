@@ -21,8 +21,9 @@ const apiStack = new ApiStack(app, `KB-ApiStack-${environment}`, {
   environment
 });
 
-dataStack.addDependency(apiStack);
+// dataStack.addDependency(apiStack);
 // dataStack.addDependency(dataMigrationStack);
+apiStack.addDependency(dataStack);
 
 Tags.of(app).add('environment', environment);
 Tags.of(dataStack).add('system', 'data-repository');

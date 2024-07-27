@@ -20,5 +20,9 @@ export const handler = async (
     response = await songRequestHandler.requestSong(event);
   }
 
+  if (path.startsWith('/song-requests/get-all-songs')) {
+    response = await songRequestHandler.getAllSongs(event);
+  }
+
   return response;
 };

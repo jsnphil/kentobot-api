@@ -33,9 +33,7 @@ export class ApiStack extends Stack {
     this.environmentName = props.environment;
 
     // Import shared resources
-    const tableArn = Fn.importValue(
-      `kb-data-table-arn-${this.environmentName}`
-    );
+    const tableArn = Fn.importValue(`kb-db-table-arn-${this.environmentName}`);
     // const tableStreamArn = Fn.importValue(
     //   `kb-data-table-arn-${this.environmentName}`
     // );

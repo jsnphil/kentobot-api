@@ -1,13 +1,13 @@
-import { CfnOutput, RemovalPolicy, Stack, StackProps } from "aws-cdk-lib";
+import { CfnOutput, RemovalPolicy, Stack, StackProps } from 'aws-cdk-lib';
 import {
   Table,
   BillingMode,
   AttributeType,
   StreamViewType,
-  ProjectionType,
-} from "aws-cdk-lib/aws-dynamodb";
-import { Bucket, BlockPublicAccess } from "aws-cdk-lib/aws-s3";
-import { Construct } from "constructs";
+  ProjectionType
+} from 'aws-cdk-lib/aws-dynamodb';
+import { Bucket, BlockPublicAccess } from 'aws-cdk-lib/aws-s3';
+import { Construct } from 'constructs';
 
 export interface StreamDataProps extends StackProps {
   readonly environment: string;
@@ -21,47 +21,47 @@ export class DataStack extends Stack {
       tableName: `Stream-Data-${props.environment}`,
       billingMode: BillingMode.PAY_PER_REQUEST,
       partitionKey: {
-        name: "pk",
-        type: AttributeType.STRING,
+        name: 'pk',
+        type: AttributeType.STRING
       },
       pointInTimeRecovery: true,
       sortKey: {
-        name: "sk",
-        type: AttributeType.STRING,
+        name: 'sk',
+        type: AttributeType.STRING
       },
-      stream: StreamViewType.NEW_IMAGE,
+      stream: StreamViewType.NEW_IMAGE
     });
 
     streamDataTable.addGlobalSecondaryIndex({
-      indexName: "gsi1",
+      indexName: 'gsi1',
       partitionKey: {
-        name: "gsi_pk1",
-        type: AttributeType.STRING,
+        name: 'gsi_pk1',
+        type: AttributeType.STRING
       },
       sortKey: {
-        name: "gsi_sk1",
-        type: AttributeType.STRING,
+        name: 'gsi_sk1',
+        type: AttributeType.STRING
       },
-      projectionType: ProjectionType.ALL,
+      projectionType: ProjectionType.ALL
     });
 
     streamDataTable.addGlobalSecondaryIndex({
-      indexName: "gsi2",
+      indexName: 'gsi2',
       partitionKey: {
-        name: "gsi_pk2",
-        type: AttributeType.STRING,
+        name: 'gsi_pk2',
+        type: AttributeType.STRING
       },
       sortKey: {
-        name: "gsi_sk2",
-        type: AttributeType.STRING,
+        name: 'gsi_sk2',
+        type: AttributeType.STRING
       },
-      projectionType: ProjectionType.ALL,
+      projectionType: ProjectionType.ALL
     });
 
     new CfnOutput(this, `TableArnExport-${props.environment}`, {
       value: streamDataTable.tableArn,
-      description: "The name of the table",
-      exportName: `table-arn-${props.environment}`,
+      description: 'The name of the table',
+      exportName: `kb-db-table-arn-${props.environment}`
     });
 
     const dataBucket = new Bucket(
@@ -79,7 +79,7 @@ export class DataStack extends Stack {
     new CfnOutput(this, `StreamDataBucketNameExport-${props.environment}`, {
       value: dataBucket.bucketName,
       description: 'The name of the stream data bucket',
-      exportName: `stream-data-bucket-name-${props.environment}`
+      exportName: `kb-stream-data-bucket-name-${props.environment}`
     });
   }
 }

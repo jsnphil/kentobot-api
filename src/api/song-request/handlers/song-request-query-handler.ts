@@ -1,6 +1,7 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { createNewErrorResponse } from '../../../utils/utilities';
 import { GetRequestQuery } from '../queries/get-request';
+import { GetAllSongRequestsQuery } from '../queries/get-all-requests';
 
 export class SongRequestQueryHandler {
   async requestSong(
@@ -20,6 +21,20 @@ export class SongRequestQueryHandler {
     if (!result) {
       return createNewErrorResponse(404, 'Song not found', []);
     }
+
+    return {
+      body: JSON.stringify(result),
+      statusCode: 200
+    };
+  }
+
+  async getAllSongs(
+    event: APIGatewayProxyEvent
+  ): Promise<APIGatewayProxyResult> {
+    console.log('Getting all songs');
+
+    const getAllSongsQuery = new GetAllSongRequestsQuery();
+    const result = await getAllSongsQuery.execute();
 
     return {
       body: JSON.stringify(result),

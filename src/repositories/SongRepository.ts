@@ -93,51 +93,51 @@ export class SongRepository {
     }
   }
 
-  //   async getAll(): Promise<Song[]> {
-  //     let result: QueryCommandOutput;
-  //     let accumulated: Record<string, AttributeValue>[] = [];
-  //     let ExclusiveStartKey;
+  async getAll(): Promise<Song[]> {
+    let result: QueryCommandOutput;
+    let accumulated: Record<string, AttributeValue>[] = [];
+    let ExclusiveStartKey;
 
-  //     do {
-  //       result = await dynamoDBClient.send(
-  //         new QueryCommand({
-  //           TableName: table,
-  //           IndexName: 'gsi1',
-  //           ProjectionExpression:
-  //             'youtube_id,song_title,song_length,requester,play_date,sotnContender,sk',
-  //           KeyConditionExpression: 'gsi_pk1 = :pk and begins_with(gsi_sk1, :sk)',
+    do {
+      result = await dynamoDBClient.send(
+        new QueryCommand({
+          TableName: table,
+          IndexName: 'gsi1',
+          ProjectionExpression:
+            'youtube_id,song_title,song_length,requester,play_date,sotnContender,sk',
+          KeyConditionExpression: 'gsi_pk1 = :pk and begins_with(gsi_sk1, :sk)',
 
-  //           ExpressionAttributeValues: {
-  //             ':pk': {
-  //               S: 'songRequest'
-  //             },
-  //             ':sk': {
-  //               S: 'songRequest' // TODO Change this songRequest#songInfo
-  //             }
-  //           },
-  //           ExclusiveStartKey: ExclusiveStartKey
-  //         })
-  //       );
+          ExpressionAttributeValues: {
+            ':pk': {
+              S: 'songRequest'
+            },
+            ':sk': {
+              S: 'songRequest' // TODO Change this songRequest#songInfo
+            }
+          },
+          ExclusiveStartKey: ExclusiveStartKey
+        })
+      );
 
-  //       ExclusiveStartKey = result.LastEvaluatedKey;
-  //       accumulated = [...accumulated, ...result.Items!];
-  //     } while (result.LastEvaluatedKey);
+      ExclusiveStartKey = result.LastEvaluatedKey;
+      accumulated = [...accumulated, ...result.Items!];
+    } while (result.LastEvaluatedKey);
 
-  //     const songList: Song[] = [];
+    const songList: Song[] = [];
 
-  //     console.log('Processing results');
+    console.log('Processing results');
 
-  //     console.log(`Count: ${accumulated.length}`);
-  //     for (const item of accumulated) {
-  //       const unmarshalledItem = unmarshall(item);
+    console.log(`Count: ${accumulated.length}`);
+    for (const item of accumulated) {
+      const unmarshalledItem = unmarshall(item);
 
-  //       songList.push({
-  //         youtubeId: unmarshalledItem.youtube_id,
-  //         title: unmarshalledItem.song_title,
-  //         length: unmarshalledItem.song_length
-  //       });
-  //     }
+      songList.push({
+        youtubeId: unmarshalledItem.youtube_id,
+        title: unmarshalledItem.song_title,
+        length: unmarshalledItem.song_length
+      });
+    }
 
-  //     return songList;
-  //   }
+    return songList;
+  }
 }

@@ -1,31 +1,46 @@
 #!/usr/bin/env node
 import * as cdk from 'aws-cdk-lib';
-import { ApiStack } from '../lib/api-stack';
-// import { DataMigrationStack } from '../lib/data-migration-stack';
-import { DataStack } from '../lib/data-stack';
-import { Tags } from 'aws-cdk-lib';
+import { KentobotStage } from '../lib/kentobot-stage';
 
 const app = new cdk.App();
 
 const environment = app.node.tryGetContext('environment') as string;
 
-if (!environment) {
-  throw Error('No environment set');
-}
+const account = '101639835597';
+const region = 'us-east-1';
 
-const dataStack = new DataStack(app, `KB-DataStack-${environment}`, {
-  environment
+new KentobotStage(app, 'Dev', {
+  environmentName: 'dev',
+  env: {
+    account: account,
+    region: region
+  }
 });
 
-const apiStack = new ApiStack(app, `KB-ApiStack-${environment}`, {
-  environment
+new KentobotStage(app, 'Prod', {
+  environmentName: 'prod',
+  env: {
+    account: account,
+    region: region
+  }
 });
+
+// if (!environment) {
+//   throw Error('No environment set');
+// }
+
+// const dataStack = new DataStack(app, `KB-DataStack-${environment}`, {
+//   environment
+// });
+
+// const apiStack = new ApiStack(app, `KB-ApiStack-${environment}`, {
+//   environment
+// });
 
 // dataStack.addDependency(apiStack);
-// dataStack.addDependency(dataMigrationStack);
-apiStack.addDependency(dataStack);
+// // dataStack.addDependency(dataMigrationStack);
 
-Tags.of(app).add('environment', environment);
-Tags.of(dataStack).add('system', 'data-repository');
-Tags.of(dataStack).add('system', 'api');
-// Tags.of(dataMigrationStack).add('system', 'data-migration');
+// Tags.of(app).add('environment', environment);
+// Tags.of(dataStack).add('system', 'data-repository');
+// Tags.of(dataStack).add('system', 'api');
+// // Tags.of(dataMigrationStack).add('system', 'data-migration');

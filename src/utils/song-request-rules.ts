@@ -116,6 +116,10 @@ export async function validDuration(duration: string, type?: RequestType) {
 }
 
 export function validRegion(regionRestriction: RegionRestriction) {
+  if (!regionRestriction) {
+    return true;
+  }
+
   if (regionRestriction.allowed.includes('US')) {
     return true;
   }

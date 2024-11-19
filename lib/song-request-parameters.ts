@@ -5,9 +5,8 @@ export const createSongRequestParameters = (
   scope: Construct,
   environment: string
 ) => {
-  /** Setup SSM parameters for song request rules
-   * TODO Move these into Dynamo or other store?
-   */
+  // Setup SSM parameters for song request rules
+
   const publicVideoToggle = new StringParameter(scope, 'PublicVideoToggle', {
     stringValue: 'false',
     allowedPattern: 'true|false',

@@ -23,7 +23,6 @@ module.exports = {
   coveragePathIgnorePatterns: [
     'node_modules',
     'types/*',
-    'api/song-request/lambdas/*',
     'utils/youtube-client.ts',
     'mocks/*'
   ],

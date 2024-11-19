@@ -9,8 +9,7 @@ import {
   VideoListItem
 } from '../types/youtube';
 import { padTimeDigits } from './utilities';
-
-const moment = require('moment');
+import { parse, toSeconds } from 'iso8601-duration';
 
 console.log('Initializing SSM Client');
 const client = new SSMClient({ region: 'us-east-1' });
@@ -103,10 +102,9 @@ export async function validDuration(duration: string, type?: RequestType) {
   // Ex. Duration - PT30M13S (30 minutes, 13 seconds)
 
   const limit = await getValidDuration(type);
+  const durationAsSeconds = toSeconds(parse(duration));
 
-  const durationAsSeconds = moment
-    .duration(duration, moment.ISO_8601)
-    .asSeconds();
+  console.log(durationAsSeconds);
 
   console.log(
     `Song limit: ${limit}, Song duration ${duration}, Song duration (as seconds) ${durationAsSeconds}`

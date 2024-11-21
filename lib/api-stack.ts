@@ -1,8 +1,15 @@
 import * as cdk from 'aws-cdk-lib';
 import * as apiGateway from 'aws-cdk-lib/aws-apigateway';
+import * as apiGatewayV2 from 'aws-cdk-lib/aws-apigatewayv2';
+
 import * as lambda from 'aws-cdk-lib/aws-lambda-nodejs';
 import * as logs from 'aws-cdk-lib/aws-logs';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
+import * as events from 'aws-cdk-lib/aws-events';
+import * as sqs from 'aws-cdk-lib/aws-sqs';
+import * as eventsTargets from 'aws-cdk-lib/aws-events-targets';
+import * as lambdaEventSources from 'aws-cdk-lib/aws-lambda-event-sources';
+import * as iam from 'aws-cdk-lib/aws-iam';
 
 import { Construct } from 'constructs';
 import { createSongRequestParameters } from './song-request-parameters';
@@ -96,6 +103,134 @@ export class ApiStack extends cdk.Stack {
     requestSongResource.addMethod(
       'GET',
       new apiGateway.LambdaIntegration(songRequestLambda)
+    );
+
+    // Create the event bus
+    const bus = new events.EventBus(
+      this,
+      `kentobot-event-bus-${props.environmentName}`,
+      {
+        eventBusName: `Kentobot-EventBus-${props.environmentName}`
+      }
+    );
+
+    bus.archive(`kentobot-event-archive-${props.environmentName}`, {
+      archiveName: `KentobotEventArchive-${props.environmentName}`,
+      eventPattern: {
+        account: [cdk.Stack.of(this).account]
+      },
+      retention: cdk.Duration.days(365)
+    });
+
+    const eventLoggerRule = new events.Rule(
+      this,
+      `kentobot-event-logger-rule`,
+      {
+        description: 'Log all events',
+        eventPattern: {
+          region: ['us-east-1']
+        },
+        eventBus: bus
+      }
+    );
+
+    const saveSongQueue = new sqs.Queue(
+      this,
+      `save-song-data-${props.environmentName}`,
+      {
+        queueName: `save-song-data-${props.environmentName}`,
+        visibilityTimeout: cdk.Duration.seconds(300),
+        retentionPeriod: cdk.Duration.days(14),
+        deadLetterQueue: {
+          maxReceiveCount: 3,
+          queue: new sqs.Queue(
+            this,
+            `save-song-data-dlq-${props.environmentName}`,
+            {
+              queueName: `save-song-data-dlq-${props.environmentName}`
+            }
+          )
+        }
+      }
+    );
+
+    const savePlayedSongLambda = new lambda.NodejsFunction(
+      this,
+      `SavePlayedSong-${props.environmentName}`,
+      {
+        runtime: NODE_RUNTIME,
+        handler: 'handler',
+        entry: path.join(
+          __dirname,
+          '../src/api/',
+          'song-request/lambdas/save-song-data.ts'
+        ),
+        bundling: {
+          minify: false,
+          externalModules: ['aws-sdk']
+        },
+        logRetention: logs.RetentionDays.ONE_WEEK,
+        environment: {
+          ENVIRONMENT: props.environmentName
+          // STREAM_DATA_TABLE: this.database.tableName
+        },
+        timeout: cdk.Duration.minutes(1),
+        memorySize: 512,
+        architecture: ARCHITECTURE
+      }
+    );
+
+    savePlayedSongLambda.addEventSource(
+      new lambdaEventSources.SqsEventSource(saveSongQueue, {
+        batchSize: 1
+      })
+    );
+
+    saveSongQueue.grantConsumeMessages(savePlayedSongLambda);
+
+    const saveSongDataRule = new events.Rule(
+      this,
+      `save-song-data-rule-${props.environmentName}`,
+      {
+        eventBus: bus,
+        eventPattern: {
+          source: ['kentobot-api'],
+          detailType: ['save-song-data']
+        }
+      }
+    );
+
+    saveSongDataRule.addTarget(new eventsTargets.SqsQueue(saveSongQueue));
+
+    const eventProducerLambda = new lambda.NodejsFunction(
+      this,
+      `EventProducer-${props.environmentName}`,
+      {
+        runtime: NODE_RUNTIME,
+        handler: 'handler',
+        entry: path.join(__dirname, '../src/api/', 'event-producer.ts'),
+        bundling: {
+          minify: false,
+          externalModules: ['aws-sdk']
+        },
+        logRetention: logs.RetentionDays.ONE_WEEK,
+        environment: {
+          ENVIRONMENT: props.environmentName,
+          EVENT_BUS_NAME: bus.eventBusName
+          // STREAM_DATA_TABLE: this.database.tableName
+        },
+        timeout: cdk.Duration.minutes(1),
+        memorySize: 512,
+        architecture: ARCHITECTURE
+      }
+    );
+
+    bus.grantPutEventsTo(eventProducerLambda);
+
+    const saveSongResource = songRequestEndpointResource.addResource('save');
+    saveSongResource.addMethod(
+      'POST',
+      new apiGateway.LambdaIntegration(eventProducerLambda)
     );
   }
 }

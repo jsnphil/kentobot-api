@@ -15,7 +15,7 @@ export const handler = async (event: SQSEvent) => {
       'song-played',
       SongPlayedEvent
     >;
-    saveSongData(event.detail);
+    await saveSongData(event.detail);
   }
 
   throw new Error('Not implemented');
@@ -25,6 +25,16 @@ const saveSongData = async (playedSong: SongPlayedEvent) => {
   logger.info(`Saving song data: ${JSON.stringify(playedSong, null, 2)}`);
 
   logger.info(`Saving song: ${playedSong.title}`);
+
+  const songDataExists = await songRepository.songExists(playedSong.youtubeId);
+  logger.info(`Song exists: ${songDataExists}`);
+
+  if (songDataExists) {
+    logger.info(`Song exists, saving play data`);
+  } else {
+    logger.info('Song does not exist, saving song and play');
+    await songRepository.saveSong(playedSong);
+  }
 
   // TODO Check if the song info exists in the table
   // TODO If yes, insert song play data

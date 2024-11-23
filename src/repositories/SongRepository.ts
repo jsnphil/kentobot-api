@@ -4,37 +4,85 @@ import {
   AttributeValue,
   ConditionalCheckFailedException,
   DynamoDBClient,
+  GetItemCommand,
   ProjectionType,
   PutItemCommand,
   PutItemCommandInput,
   QueryCommand,
-  QueryCommandOutput
+  QueryCommandOutput,
+  TransactWriteItemsCommand
 } from '@aws-sdk/client-dynamodb';
 import { Song } from '../types/song-request';
+import { Logger } from '@aws-lambda-powertools/logger';
 
 const dynamoDBClient = new DynamoDBClient({ region: 'us-east-1' });
+const logger = new Logger({ serviceName: 'song-repository' });
 
 const table = process.env.STREAM_DATA_TABLE!;
 
 export class SongRepository {
-  async itemExists(youtubeId: string): Promise<boolean> {
-    const { Count } = await dynamoDBClient.send(
-      new QueryCommand({
+  async songExists(youtubeId: string): Promise<boolean> {
+    logger.info(`Checking if song exists: ${youtubeId}`);
+
+    const { Item } = await dynamoDBClient.send(
+      new GetItemCommand({
         TableName: table,
-        ProjectionExpression: ProjectionType.KEYS_ONLY,
-        ExpressionAttributeValues: {
-          ':pk': {
+        Key: {
+          pk: {
             S: `yt#${youtubeId}`
           },
-          ':sk': {
+          sk: {
             S: 'songInfo'
           }
         }
       })
     );
 
-    return (Count && Count > 0) || false;
+    return Item !== undefined;
   }
+
+  async saveSong(song: Song) {
+
+  
+    await dynamoDBClient.send(new TransactWriteItemsCommand({
+      TransactItems: [
+      
+        {
+          Put: {
+            TableName: process.env.STREAM_DATA_TABLE!,
+            Item: {
+              pk: { S: `yt#${song.youtubeId}` },
+              sk: { S: `songInfo` },
+              song_title: { S: song.title },
+              song_length: { S: song.length },
+              play_count: { N: '0' },
+                     gsi_pk1: 'songRequest',
+        gsi_sk1: 'songRequest'
+
+              // Add other song attributes here
+            }
+          }
+        },
+        {
+          Put: {
+            TableName: process.env.STREAM_DATA_TABLE!,
+            Item: {
+              pk: { S: `yt#${song.youtubeId}` },
+              sk: `songPlay#date#${song.date.toISOString()}`,
+        requested_by: song.requester,
+        request_date: song.date.toISOString(),
+        sotn_contender: false,
+        sotn_winner: songPlay.sotnWinner,
+        sots_winner: songPlay.sotsWinner
+              
+              // Add other song attributes here
+            }
+          }
+        }
+      ]
+    })
+  }
+
 
   //   async get(youtubeId: string): Promise<Song | undefined> {
   //     const { Items } = await dynamoDBClient.send(
@@ -74,90 +122,90 @@ export class SongRepository {
   //     }
   //   }
 
-  async save(song: Song) {
-    console.log(`Saving song request: ${JSON.stringify(song, null, 2)}`);
+  // async save(song: Song) {
+  //   console.log(`Saving song request: ${JSON.stringify(song, null, 2)}`);
 
-    const putSongInfoInput: PutItemCommandInput = {
-      TableName: table,
-      Item: marshall({
-        pk: `yt#${song.youtubeId}`,
-        sk: 'songInfo',
-        youtube_id: song.youtubeId,
-        song_length: song.length,
-        song_title: song.title,
-        gsi_pk1: 'songRequest',
-        gsi_sk1: 'songRequest'
-      }),
-      ConditionExpression:
-        'attribute_not_exists(pk) AND attribute_not_exists(sk)'
-    };
+  //   const putSongInfoInput: PutItemCommandInput = {
+  //     TableName: table,
+  //     Item: marshall({
+  //       pk: `yt#${song.youtubeId}`,
+  //       sk: 'songInfo',
+  //       youtube_id: song.youtubeId,
+  //       song_length: song.length,
+  //       song_title: song.title,
+  //       gsi_pk1: 'songRequest',
+  //       gsi_sk1: 'songRequest'
+  //     }),
+  //     ConditionExpression:
+  //       'attribute_not_exists(pk) AND attribute_not_exists(sk)'
+  //   };
 
-    console.log(
-      `Inserting song info: ${JSON.stringify(putSongInfoInput, null, 2)}`
-    );
+  //   console.log(
+  //     `Inserting song info: ${JSON.stringify(putSongInfoInput, null, 2)}`
+  //   );
 
-    try {
-      const result = await dynamoDBClient.send(
-        new PutItemCommand(putSongInfoInput)
-      );
-      console.log(`Result: ${JSON.stringify(result, null, 2)}`);
-      console.log('Song info saved successfully');
-    } catch (err) {
-      console.log(`Error: ${JSON.stringify(err, null, 2)}`);
-      if (err instanceof ConditionalCheckFailedException) {
-        console.log('Song info has already been added, skipping...');
-      } else {
-        console.error(err);
-        throw new Error('Failed to save song info');
-      }
-    }
-  }
+  //   try {
+  //     const result = await dynamoDBClient.send(
+  //       new PutItemCommand(putSongInfoInput)
+  //     );
+  //     console.log(`Result: ${JSON.stringify(result, null, 2)}`);
+  //     console.log('Song info saved successfully');
+  //   } catch (err) {
+  //     console.log(`Error: ${JSON.stringify(err, null, 2)}`);
+  //     if (err instanceof ConditionalCheckFailedException) {
+  //       console.log('Song info has already been added, skipping...');
+  //     } else {
+  //       console.error(err);
+  //       throw new Error('Failed to save song info');
+  //     }
+  //   }
+  // }
 
-  async getAll(): Promise<Song[]> {
-    let result: QueryCommandOutput;
-    let accumulated: Record<string, AttributeValue>[] = [];
-    let ExclusiveStartKey;
+  // async getAll(): Promise<Song[]> {
+  //   let result: QueryCommandOutput;
+  //   let accumulated: Record<string, AttributeValue>[] = [];
+  //   let ExclusiveStartKey;
 
-    do {
-      result = await dynamoDBClient.send(
-        new QueryCommand({
-          TableName: table,
-          IndexName: 'gsi1',
-          ProjectionExpression:
-            'youtube_id,song_title,song_length,requester,play_date,sotnContender,sk',
-          KeyConditionExpression: 'gsi_pk1 = :pk and begins_with(gsi_sk1, :sk)',
+  //   do {
+  //     result = await dynamoDBClient.send(
+  //       new QueryCommand({
+  //         TableName: table,
+  //         IndexName: 'gsi1',
+  //         ProjectionExpression:
+  //           'youtube_id,song_title,song_length,requester,play_date,sotnContender,sk',
+  //         KeyConditionExpression: 'gsi_pk1 = :pk and begins_with(gsi_sk1, :sk)',
 
-          ExpressionAttributeValues: {
-            ':pk': {
-              S: 'songRequest'
-            },
-            ':sk': {
-              S: 'songRequest' // TODO Change this songRequest#songInfo
-            }
-          },
-          ExclusiveStartKey: ExclusiveStartKey
-        })
-      );
+  //         ExpressionAttributeValues: {
+  //           ':pk': {
+  //             S: 'songRequest'
+  //           },
+  //           ':sk': {
+  //             S: 'songRequest' // TODO Change this songRequest#songInfo
+  //           }
+  //         },
+  //         ExclusiveStartKey: ExclusiveStartKey
+  //       })
+  //     );
 
-      ExclusiveStartKey = result.LastEvaluatedKey;
-      accumulated = [...accumulated, ...result.Items!];
-    } while (result.LastEvaluatedKey);
+  //     ExclusiveStartKey = result.LastEvaluatedKey;
+  //     accumulated = [...accumulated, ...result.Items!];
+  //   } while (result.LastEvaluatedKey);
 
-    const songList: Song[] = [];
+  //   const songList: Song[] = [];
 
-    console.log('Processing results');
+  //   console.log('Processing results');
 
-    console.log(`Count: ${accumulated.length}`);
-    for (const item of accumulated) {
-      const unmarshalledItem = unmarshall(item);
+  //   console.log(`Count: ${accumulated.length}`);
+  //   for (const item of accumulated) {
+  //     const unmarshalledItem = unmarshall(item);
 
-      songList.push({
-        youtubeId: unmarshalledItem.youtube_id,
-        title: unmarshalledItem.song_title,
-        length: unmarshalledItem.song_length
-      });
-    }
+  //     songList.push({
+  //       youtubeId: unmarshalledItem.youtube_id,
+  //       title: unmarshalledItem.song_title,
+  //       length: unmarshalledItem.song_length
+  //     });
+  //   }
 
-    return songList;
-  }
+  //   return songList;
+  // }
 }

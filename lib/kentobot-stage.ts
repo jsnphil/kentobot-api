@@ -12,8 +12,8 @@ export class KentobotStage extends cdk.Stage {
     super(scope, id, props);
 
     // Add both stacks to the stage
-    const apiStack = new ApiStack(this, 'ApiStack', props);
     const dataStack = new DataStack(this, 'DatabaseStack', props);
+    const apiStack = new ApiStack(this, 'ApiStack', props);
 
     apiStack.addDependency(dataStack);
   }

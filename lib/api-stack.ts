@@ -1,7 +1,6 @@
 import * as cdk from 'aws-cdk-lib';
 import * as apiGateway from 'aws-cdk-lib/aws-apigateway';
 import * as apiGatewayV2 from 'aws-cdk-lib/aws-apigatewayv2';
-
 import * as lambda from 'aws-cdk-lib/aws-lambda-nodejs';
 import * as logs from 'aws-cdk-lib/aws-logs';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
@@ -9,6 +8,7 @@ import * as events from 'aws-cdk-lib/aws-events';
 import * as sqs from 'aws-cdk-lib/aws-sqs';
 import * as eventsTargets from 'aws-cdk-lib/aws-events-targets';
 import * as lambdaEventSources from 'aws-cdk-lib/aws-lambda-event-sources';
+import * as ddb from 'aws-cdk-lib/aws-dynamodb';
 import * as iam from 'aws-cdk-lib/aws-iam';
 
 import { Construct } from 'constructs';
@@ -23,6 +23,22 @@ export interface ApiStackProps extends cdk.StackProps {
 export class ApiStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: ApiStackProps) {
     super(scope, id, props);
+
+    // Import shared resources
+    const tableArn = cdk.Fn.importValue(`table-arn-${props.environmentName}`);
+
+    // const tableStreamArn = Fn.importValue(
+    //   `kb-data-table-arn-${this.environmentName}`
+    // );
+
+    const database = ddb.Table.fromTableAttributes(
+      this,
+      `stream-data-${props.environmentName}`,
+      {
+        tableArn: tableArn
+        // tableStreamArn: tableStreamArn
+      }
+    );
 
     const api = new apiGateway.RestApi(
       this,
@@ -154,9 +170,9 @@ export class ApiStack extends cdk.Stack {
       }
     );
 
-    const savePlayedSongLambda = new lambda.NodejsFunction(
+    const playedSongEventLambda = new lambda.NodejsFunction(
       this,
-      `SavePlayedSong-${props.environmentName}`,
+      `playedSongEventHandler-${props.environmentName}`,
       {
         runtime: NODE_RUNTIME,
         handler: 'handler',
@@ -171,8 +187,8 @@ export class ApiStack extends cdk.Stack {
         },
         logRetention: logs.RetentionDays.ONE_WEEK,
         environment: {
-          ENVIRONMENT: props.environmentName
-          // STREAM_DATA_TABLE: this.database.tableName
+          ENVIRONMENT: props.environmentName,
+          STREAM_DATA_TABLE: database.tableName
         },
         timeout: cdk.Duration.minutes(1),
         memorySize: 512,
@@ -180,13 +196,14 @@ export class ApiStack extends cdk.Stack {
       }
     );
 
-    savePlayedSongLambda.addEventSource(
+    playedSongEventLambda.addEventSource(
       new lambdaEventSources.SqsEventSource(saveSongQueue, {
         batchSize: 1
       })
     );
 
-    saveSongQueue.grantConsumeMessages(savePlayedSongLambda);
+    saveSongQueue.grantConsumeMessages(playedSongEventLambda);
+    database.grantReadWriteData(playedSongEventLambda);
 
     const saveSongDataRule = new events.Rule(
       this,

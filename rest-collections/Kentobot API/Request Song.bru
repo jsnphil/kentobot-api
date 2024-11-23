@@ -1,0 +1,15 @@
+meta {
+  name: Request Song
+  type: http
+  seq: 2
+}
+
+get {
+  url: https://{{aws.api.id}}.execute-api.us-east-1.amazonaws.com/{{stage}}/song-requests/request/:youtubeId
+  body: none
+  auth: none
+}
+
+params:path {
+  youtubeId: 2xsGuz9J6wo
+}

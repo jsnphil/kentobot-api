@@ -1,10 +1,33 @@
 import { Logger } from '@aws-lambda-powertools/logger';
-import { SQSEvent } from 'aws-lambda';
+import { EventBridgeEvent, SQSEvent } from 'aws-lambda';
+import { SongRepository } from '../../../repositories/SongRepository';
+import { SongPlayedEvent } from '../../../types/song-request';
 
 const logger = new Logger({ serviceName: 'saveSongDataLambda' });
+const songRepository = new SongRepository();
 
 export const handler = async (event: SQSEvent) => {
   logger.info(`Received event: ${JSON.stringify(event)}`);
 
+  for (const record of event.Records) {
+    logger.info(`Processing record: ${JSON.stringify(record)}`);
+    const event = JSON.parse(record.body) as EventBridgeEvent<
+      'song-played',
+      SongPlayedEvent
+    >;
+    saveSongData(event.detail);
+  }
+
   throw new Error('Not implemented');
+};
+
+const saveSongData = async (playedSong: SongPlayedEvent) => {
+  logger.info(`Saving song data: ${JSON.stringify(playedSong, null, 2)}`);
+
+  logger.info(`Saving song: ${playedSong.title}`);
+
+  // TODO Check if the song info exists in the table
+  // TODO If yes, insert song play data
+  // TODO If no, insert song info and play data in a transaction
+  // TODO If write fails, fail the lambda and send record to DLQ
 };

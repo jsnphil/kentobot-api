@@ -4,6 +4,7 @@ import {
   AttributeValue,
   ConditionalCheckFailedException,
   DynamoDBClient,
+  ProjectionType,
   PutItemCommand,
   PutItemCommandInput,
   QueryCommand,
@@ -16,6 +17,25 @@ const dynamoDBClient = new DynamoDBClient({ region: 'us-east-1' });
 const table = process.env.STREAM_DATA_TABLE!;
 
 export class SongRepository {
+  async itemExists(youtubeId: string): Promise<boolean> {
+    const { Count } = await dynamoDBClient.send(
+      new QueryCommand({
+        TableName: table,
+        ProjectionExpression: ProjectionType.KEYS_ONLY,
+        ExpressionAttributeValues: {
+          ':pk': {
+            S: `yt#${youtubeId}`
+          },
+          ':sk': {
+            S: 'songInfo'
+          }
+        }
+      })
+    );
+
+    return (Count && Count > 0) || false;
+  }
+
   //   async get(youtubeId: string): Promise<Song | undefined> {
   //     const { Items } = await dynamoDBClient.send(
   //       new QueryCommand({

@@ -195,7 +195,7 @@ export class ApiStack extends cdk.Stack {
         eventBus: bus,
         eventPattern: {
           source: ['kentobot-api'],
-          detailType: ['save-song-data']
+          detailType: ['song-played']
         }
       }
     );

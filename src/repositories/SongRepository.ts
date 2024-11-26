@@ -1,19 +1,13 @@
-import { unmarshall, marshall } from '@aws-sdk/util-dynamodb';
-
 import {
-  AttributeValue,
-  ConditionalCheckFailedException,
   DynamoDBClient,
   GetItemCommand,
   ProjectionType,
-  PutItemCommand,
-  PutItemCommandInput,
-  QueryCommand,
-  QueryCommandOutput,
+  TransactionCanceledException,
   TransactWriteItemsCommand
 } from '@aws-sdk/client-dynamodb';
-import { Song } from '../types/song-request';
+import { SongInfo, SongPlay } from '../types/song-request';
 import { Logger } from '@aws-lambda-powertools/logger';
+import { marshall } from '@aws-sdk/util-dynamodb';
 
 const dynamoDBClient = new DynamoDBClient({ region: 'us-east-1' });
 const logger = new Logger({ serviceName: 'song-repository' });
@@ -27,6 +21,7 @@ export class SongRepository {
     const { Item } = await dynamoDBClient.send(
       new GetItemCommand({
         TableName: table,
+        ProjectionExpression: ProjectionType.KEYS_ONLY,
         Key: {
           pk: {
             S: `yt#${youtubeId}`
@@ -41,48 +36,111 @@ export class SongRepository {
     return Item !== undefined;
   }
 
-  async saveSong(song: Song) {
-
-  
-    await dynamoDBClient.send(new TransactWriteItemsCommand({
-      TransactItems: [
-      
-        {
-          Put: {
-            TableName: process.env.STREAM_DATA_TABLE!,
-            Item: {
-              pk: { S: `yt#${song.youtubeId}` },
-              sk: { S: `songInfo` },
-              song_title: { S: song.title },
-              song_length: { S: song.length },
-              play_count: { N: '0' },
-                     gsi_pk1: 'songRequest',
-        gsi_sk1: 'songRequest'
-
-              // Add other song attributes here
+  async saveNewSong(song: SongInfo, songPlay: SongPlay) {
+    await dynamoDBClient.send(
+      new TransactWriteItemsCommand({
+        TransactItems: [
+          {
+            Put: {
+              TableName: process.env.STREAM_DATA_TABLE!,
+              Item: marshall(
+                {
+                  pk: `yt#${song.youtubeId}`,
+                  sk: 'songInfo',
+                  song_title: song.title,
+                  song_length: song.length,
+                  play_count: 0,
+                  gsi_pk1: 'songRequest',
+                  gsi_sk1: 'songRequest'
+                },
+                { removeUndefinedValues: true }
+              )
+            }
+          },
+          {
+            Put: {
+              TableName: process.env.STREAM_DATA_TABLE!,
+              Item: marshall(
+                {
+                  pk: `yt#${song.youtubeId}`,
+                  sk: `songPlay#date#${songPlay.date.toISOString()}`,
+                  requested_by: songPlay.requestedBy,
+                  request_date: songPlay.date.toISOString(),
+                  sotn_contender: false,
+                  sotn_winner: false,
+                  sots_winner: false
+                },
+                { removeUndefinedValues: true }
+              )
             }
           }
-        },
-        {
-          Put: {
-            TableName: process.env.STREAM_DATA_TABLE!,
-            Item: {
-              pk: { S: `yt#${song.youtubeId}` },
-              sk: `songPlay#date#${song.date.toISOString()}`,
-        requested_by: song.requester,
-        request_date: song.date.toISOString(),
-        sotn_contender: false,
-        sotn_winner: songPlay.sotnWinner,
-        sots_winner: songPlay.sotsWinner
-              
-              // Add other song attributes here
-            }
-          }
-        }
-      ]
-    })
+        ]
+      })
+    );
+
+    // TODO Surround with try/catch and check for transaction cancellations
   }
 
+  async saveNewSongPlay(songId: string, songPlay: SongPlay) {
+    try {
+      await dynamoDBClient.send(
+        new TransactWriteItemsCommand({
+          TransactItems: [
+            {
+              Update: {
+                TableName: process.env.STREAM_DATA_TABLE!,
+                Key: {
+                  pk: {
+                    S: `yt#${songId}`
+                  },
+                  sk: {
+                    S: 'songInfo'
+                  }
+                },
+                UpdateExpression: 'SET play_count = play_count + :inc',
+                ExpressionAttributeValues: {
+                  ':inc': {
+                    N: '1'
+                  }
+                }
+              }
+            },
+            {
+              Put: {
+                TableName: process.env.STREAM_DATA_TABLE!,
+                Item: marshall(
+                  {
+                    pk: `yt#${songId}`,
+                    sk: `songPlay#date#${songPlay.date.toISOString()}`,
+                    requested_by: songPlay.requestedBy,
+                    request_date: songPlay.date.toISOString(),
+                    sotn_contender: false,
+                    sotn_winner: false,
+                    sots_winner: false
+                  },
+                  { removeUndefinedValues: true }
+                ),
+                ConditionExpression:
+                  'attribute_not_exists(pk) AND attribute_not_exists(sk)'
+              }
+            }
+          ]
+        })
+      );
+    } catch (err) {
+      const exception = err as TransactionCanceledException;
+      const reasons = exception.CancellationReasons;
+
+      if (reasons) {
+        // TODO Check first reason for the increment update
+
+        const reason = reasons[1];
+        if (reason.Code === 'ConditionalCheckFailed') {
+          logger.warn('Song play already exists, skipping...');
+        }
+      }
+    }
+  }
 
   //   async get(youtubeId: string): Promise<Song | undefined> {
   //     const { Items } = await dynamoDBClient.send(

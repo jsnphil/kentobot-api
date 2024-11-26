@@ -3,16 +3,15 @@ export enum RequestType {
   DJ_Hour
 }
 
-export interface Song {
+export interface SongInfo {
   readonly youtubeId: string;
   readonly title: string;
   readonly length: number;
-  readonly plays?: SongPlay[];
 }
 
 export interface SongPlay {
   readonly date: Date;
-  readonly requester: string;
+  readonly requestedBy: string;
   readonly sotnContender: boolean;
   readonly sotnWinner: boolean;
   readonly sotsWinner: boolean;

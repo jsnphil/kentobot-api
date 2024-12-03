@@ -135,8 +135,12 @@ export class SongRepository {
         // TODO Check first reason for the increment update
 
         const reason = reasons[1];
+
+        console.log(reason);
         if (reason.Code === 'ConditionalCheckFailed') {
+          console.log('Song play already exists, skipping...');
           logger.warn('Song play already exists, skipping...');
+          console.log('After the logger');
         }
       }
     }

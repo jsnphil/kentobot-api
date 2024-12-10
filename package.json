@@ -33,7 +33,7 @@
     "@aws-sdk/client-eventbridge": "^3.696.0",
     "@aws-sdk/client-ssm": "^3.600.0",
     "@aws-sdk/util-dynamodb": "^3.665.0",
-    "@types/youtube": "^0.0.50",
+    "@types/youtube": "^0.1.0",
     "aws-cdk-lib": "2.167.1",
     "constructs": "^10.0.0",
     "iso8601-duration": "^2.1.2",

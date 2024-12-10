@@ -1,0 +1,21 @@
+meta {
+  name: Save Song Play
+  type: http
+  seq: 3
+}
+
+post {
+  url: https://{{aws.api.id}}.execute-api.us-east-1.amazonaws.com/{{stage}}/song-requests/save
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "title": "Song Title 2",
+    "requestedBy": "jsnphil",
+    "songLength": 180,
+    "played": "2024-11-23T01:09:05.456Z",
+    "youtubeId": "youtube-id"
+  }
+}

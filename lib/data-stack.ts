@@ -14,9 +14,9 @@ export class DataStack extends cdk.Stack {
 
     const streamDataTable = new ddb.Table(
       this,
-      `StreamData-${props.environmentName}`,
+      `stream-data-${props.environmentName}`,
       {
-        tableName: `Stream-Data-${props.environmentName}`,
+        tableName: `stream-data-${props.environmentName}`,
         billingMode: ddb.BillingMode.PAY_PER_REQUEST,
         partitionKey: {
           name: 'pk',
@@ -55,6 +55,12 @@ export class DataStack extends cdk.Stack {
         type: ddb.AttributeType.STRING
       },
       projectionType: ddb.ProjectionType.ALL
+    });
+
+    new cdk.CfnOutput(this, `TableArnExport-${props.environmentName}`, {
+      value: streamDataTable.tableArn,
+      description: 'The name of the table',
+      exportName: `table-arn-${props.environmentName}`
     });
 
     const dataBucket = new s3.Bucket(

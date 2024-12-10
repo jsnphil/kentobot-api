@@ -132,142 +132,26 @@ export class SongRepository {
       const reasons = exception.CancellationReasons;
 
       if (reasons) {
-        // TODO Check first reason for the increment update
+        if (reasons[0].Code) {
+          logger.error(
+            `Error updating play count: ${reasons[0].Code}:  ${reasons[0].Message}`
+          );
+
+          throw new Error('Error updating play count');
+        }
 
         const reason = reasons[1];
 
-        console.log(reason);
         if (reason.Code === 'ConditionalCheckFailed') {
-          console.log('Song play already exists, skipping...');
           logger.warn('Song play already exists, skipping...');
-          console.log('After the logger');
+        } else {
+          logger.error(
+            `Error adding song play: ${reason.Code}: ${reason.Message}`
+          );
+
+          throw new Error('Error adding song play');
         }
       }
     }
   }
-
-  //   async get(youtubeId: string): Promise<Song | undefined> {
-  //     const { Items } = await dynamoDBClient.send(
-  //       new QueryCommand({
-  //         TableName: process.env.STREAM_DATA_TABLE!,
-  //         KeyConditionExpression: 'pk = :pk and begins_with(sk, :sk)',
-  //         ExpressionAttributeValues: {
-  //           ':pk': {
-  //             S: `yt#${youtubeId}`
-  //           },
-  //           ':sk': {
-  //             S: 'songRequest'
-  //           }
-  //         }
-  //       })
-  //     );
-
-  //     console.log(`Items: ${JSON.stringify(Items, null, 2)}`);
-
-  //     if (Items?.length != 0) {
-  //       const songInfoRecord = unmarshall(
-  //         Items!.filter((item) => {
-  //           const unmarshalledItem = unmarshall(item);
-  //           return unmarshalledItem.sk.startsWith('songRequest#yt');
-  //         })[0]
-  //       );
-
-  //       const song = new Song(
-  //         songInfoRecord.youtube_id,
-  //         songInfoRecord.song_title,
-  //         songInfoRecord.song_length
-  //       );
-
-  //       return song;
-  //     } else {
-  //       return undefined;
-  //     }
-  //   }
-
-  // async save(song: Song) {
-  //   console.log(`Saving song request: ${JSON.stringify(song, null, 2)}`);
-
-  //   const putSongInfoInput: PutItemCommandInput = {
-  //     TableName: table,
-  //     Item: marshall({
-  //       pk: `yt#${song.youtubeId}`,
-  //       sk: 'songInfo',
-  //       youtube_id: song.youtubeId,
-  //       song_length: song.length,
-  //       song_title: song.title,
-  //       gsi_pk1: 'songRequest',
-  //       gsi_sk1: 'songRequest'
-  //     }),
-  //     ConditionExpression:
-  //       'attribute_not_exists(pk) AND attribute_not_exists(sk)'
-  //   };
-
-  //   console.log(
-  //     `Inserting song info: ${JSON.stringify(putSongInfoInput, null, 2)}`
-  //   );
-
-  //   try {
-  //     const result = await dynamoDBClient.send(
-  //       new PutItemCommand(putSongInfoInput)
-  //     );
-  //     console.log(`Result: ${JSON.stringify(result, null, 2)}`);
-  //     console.log('Song info saved successfully');
-  //   } catch (err) {
-  //     console.log(`Error: ${JSON.stringify(err, null, 2)}`);
-  //     if (err instanceof ConditionalCheckFailedException) {
-  //       console.log('Song info has already been added, skipping...');
-  //     } else {
-  //       console.error(err);
-  //       throw new Error('Failed to save song info');
-  //     }
-  //   }
-  // }
-
-  // async getAll(): Promise<Song[]> {
-  //   let result: QueryCommandOutput;
-  //   let accumulated: Record<string, AttributeValue>[] = [];
-  //   let ExclusiveStartKey;
-
-  //   do {
-  //     result = await dynamoDBClient.send(
-  //       new QueryCommand({
-  //         TableName: table,
-  //         IndexName: 'gsi1',
-  //         ProjectionExpression:
-  //           'youtube_id,song_title,song_length,requester,play_date,sotnContender,sk',
-  //         KeyConditionExpression: 'gsi_pk1 = :pk and begins_with(gsi_sk1, :sk)',
-
-  //         ExpressionAttributeValues: {
-  //           ':pk': {
-  //             S: 'songRequest'
-  //           },
-  //           ':sk': {
-  //             S: 'songRequest' // TODO Change this songRequest#songInfo
-  //           }
-  //         },
-  //         ExclusiveStartKey: ExclusiveStartKey
-  //       })
-  //     );
-
-  //     ExclusiveStartKey = result.LastEvaluatedKey;
-  //     accumulated = [...accumulated, ...result.Items!];
-  //   } while (result.LastEvaluatedKey);
-
-  //   const songList: Song[] = [];
-
-  //   console.log('Processing results');
-
-  //   console.log(`Count: ${accumulated.length}`);
-  //   for (const item of accumulated) {
-  //     const unmarshalledItem = unmarshall(item);
-
-  //     songList.push({
-  //       youtubeId: unmarshalledItem.youtube_id,
-  //       title: unmarshalledItem.song_title,
-  //       length: unmarshalledItem.song_length
-  //     });
-  //   }
-
-  //   return songList;
-  // }
 }

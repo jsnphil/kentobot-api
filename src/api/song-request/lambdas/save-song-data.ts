@@ -19,7 +19,7 @@ export const handler = async (event: SQSEvent) => {
   }
 };
 
-const saveSongData = async (playedSong: SongPlayedEvent) => {
+export const saveSongData = async (playedSong: SongPlayedEvent) => {
   logger.info(`Saving song data: ${JSON.stringify(playedSong, null, 2)}`);
 
   const songDataExists = await songRepository.songExists(playedSong.youtubeId);

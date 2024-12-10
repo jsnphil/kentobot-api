@@ -16,14 +16,9 @@ jest.mock('@aws-lambda-powertools/logger');
 const mockDynamoDBClient = mockClient(DynamoDBClient);
 
 describe('Song Repository', () => {
-  let logger: Logger;
   let songRepository: SongRepository;
 
   beforeEach(() => {
-    logger = new Logger({
-      serviceName: 'song-repository'
-    });
-
     songRepository = new SongRepository();
   });
 
@@ -97,13 +92,65 @@ describe('Song Repository', () => {
       });
 
       mockDynamoDBClient.on(TransactWriteItemsCommand).rejects(exception);
-      const loggerSpy = jest.spyOn(logger, 'warn');
+      const loggerSpy = jest.spyOn(Logger.prototype, 'warn');
 
       await songRepository.saveNewSongPlay('123', songPlay);
 
-      expect(logger.warn).toHaveBeenCalledWith(
+      expect(loggerSpy).toHaveBeenCalledWith(
         'Song play already exists, skipping...'
       );
+    });
+
+    it('should throw an error if the song play count update fails', async () => {
+      const songPlay = {
+        date: new Date(),
+        requestedBy: 'User1'
+      } as SongPlay;
+
+      const exception = new TransactionCanceledException({
+        $metadata: {},
+        message:
+          'Transaction cancelled, please refer cancellation reasons for specific reasons [ConditionalCheckFailed]',
+        CancellationReasons: [
+          {
+            Code: 'ErrorCode',
+            Message: 'Play count update failed'
+          },
+          {}
+        ]
+      });
+
+      mockDynamoDBClient.on(TransactWriteItemsCommand).rejects(exception);
+
+      await expect(
+        songRepository.saveNewSongPlay('123', songPlay)
+      ).rejects.toThrow('Error updating play count');
+    });
+
+    it('should throw an error if the song play information save fails', async () => {
+      const songPlay = {
+        date: new Date(),
+        requestedBy: 'User1'
+      } as SongPlay;
+
+      const exception = new TransactionCanceledException({
+        $metadata: {},
+        message:
+          'Transaction cancelled, please refer cancellation reasons for specific reasons [ConditionalCheckFailed]',
+        CancellationReasons: [
+          {},
+          {
+            Code: 'ErrorCode',
+            Message: 'Play count update failed'
+          }
+        ]
+      });
+
+      mockDynamoDBClient.on(TransactWriteItemsCommand).rejects(exception);
+
+      await expect(
+        songRepository.saveNewSongPlay('123', songPlay)
+      ).rejects.toThrow('Error adding song play');
     });
   });
 });

@@ -38,6 +38,7 @@
     "constructs": "^10.0.0",
     "iso8601-duration": "^2.1.2",
     "node-fetch": "^3.3.2",
-    "source-map-support": "^0.5.21"
+    "source-map-support": "^0.5.21",
+    "zod": "^3.24.1"
   }
 }

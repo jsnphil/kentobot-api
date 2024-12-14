@@ -4,7 +4,7 @@ import { SongPlayedEvent } from '../../../types/song-request';
 import { Logger } from '@aws-lambda-powertools/logger';
 import { saveSongData } from './save-song-data';
 
-jest.mock('../../../repositories/SongRepository');
+jest.mock('../../../repositories/song-repository');
 jest.mock('@aws-lambda-powertools/logger');
 
 describe('saveSongData', () => {

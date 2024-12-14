@@ -25,10 +25,10 @@ export interface SongPlay {
   readonly sotsWinner: boolean;
 }
 
-export interface SongPlayedEvent {
-  readonly youtubeId: string;
-  readonly title: string;
-  readonly length: number;
-  readonly requestedBy: string;
-  readonly played: string;
-}
+// export interface SongPlayedEvent {
+//   readonly youtubeId: string;
+//   readonly title: string;
+//   readonly length: number;
+//   readonly requestedBy: string;
+//   readonly played: string;
+// }

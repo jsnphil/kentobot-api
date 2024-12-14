@@ -1,7 +1,7 @@
 import { Logger } from '@aws-lambda-powertools/logger';
 import { EventBridgeEvent, SQSEvent } from 'aws-lambda';
 import { SongRepository } from '../../../repositories/song-repository';
-import { SongPlayedEvent } from '../../../types/song-request';
+import { SongRequest } from '../../../types/song-request';
 
 const logger = new Logger({ serviceName: 'saveSongDataLambda' });
 const songRepository = new SongRepository();
@@ -13,13 +13,15 @@ export const handler = async (event: SQSEvent) => {
     logger.info(`Processing record: ${JSON.stringify(record)}`);
     const event = JSON.parse(record.body) as EventBridgeEvent<
       'song-played',
-      SongPlayedEvent
+      SongRequest
     >;
+
+    logger.info(`Processing event: ${event.id}`);
     await saveSongData(event.detail);
   }
 };
 
-export const saveSongData = async (playedSong: SongPlayedEvent) => {
+export const saveSongData = async (playedSong: SongRequest) => {
   logger.info(`Saving song data: ${JSON.stringify(playedSong, null, 2)}`);
 
   const songDataExists = await songRepository.songExists(playedSong.youtubeId);

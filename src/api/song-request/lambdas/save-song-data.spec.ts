@@ -1,5 +1,5 @@
 import { SongRepository } from '../../../repositories/song-repository';
-import { SongPlayedEvent } from '../../../types/song-request';
+import { SongRequest } from '../../../types/song-request';
 
 import { Logger } from '@aws-lambda-powertools/logger';
 import { saveSongData } from './save-song-data';
@@ -13,7 +13,7 @@ describe('saveSongData', () => {
   });
 
   it('should save new song play if song exists', async () => {
-    const playedSong: SongPlayedEvent = {
+    const playedSong: SongRequest = {
       youtubeId: '123',
       title: 'Test Song',
       length: 300,
@@ -31,7 +31,7 @@ describe('saveSongData', () => {
   });
 
   it('should save new song song does not exist', async () => {
-    const playedSong: SongPlayedEvent = {
+    const playedSong: SongRequest = {
       youtubeId: '123',
       title: 'Test Song',
       length: 300,

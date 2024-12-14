@@ -1,5 +1,5 @@
 import { mockClient } from 'aws-sdk-client-mock';
-import { SongRepository } from './SongRepository';
+import { SongRepository } from './song-repository';
 import { SongInfo, SongPlay } from '../types/song-request';
 
 import {

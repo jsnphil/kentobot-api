@@ -1,4 +1,4 @@
-import { SongRepository } from '../../../repositories/SongRepository';
+import { SongRepository } from '../../../repositories/song-repository';
 import { SongPlayedEvent } from '../../../types/song-request';
 
 import { Logger } from '@aws-lambda-powertools/logger';

@@ -1,6 +1,6 @@
 import { Logger } from '@aws-lambda-powertools/logger';
 import { EventBridgeEvent, SQSEvent } from 'aws-lambda';
-import { SongRepository } from '../../../repositories/SongRepository';
+import { SongRepository } from '../../../repositories/song-repository';
 import { SongPlayedEvent } from '../../../types/song-request';
 
 const logger = new Logger({ serviceName: 'saveSongDataLambda' });

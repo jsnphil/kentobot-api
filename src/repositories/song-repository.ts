@@ -47,6 +47,7 @@ export class SongRepository {
                 {
                   pk: `yt#${song.youtubeId}`,
                   sk: 'songInfo',
+                  youtube_id: song.youtubeId,
                   song_title: song.title,
                   song_length: song.length,
                   play_count: 0,

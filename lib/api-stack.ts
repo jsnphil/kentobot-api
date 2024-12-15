@@ -252,14 +252,14 @@ export class ApiStack extends cdk.Stack {
 
     const getSongRequestResource =
       songRequestEndpointResource.addResource('{songId}');
-    // getSongResource.addMethod(
-    //   'GET',
-    //   new apiGateway.HttpIntegration())
-    // );
 
-    const apiGatewayRole = new iam.Role(this, 'getRole', {
-      assumedBy: new iam.ServicePrincipal('apigateway.amazonaws.com')
-    });
+    const apiGatewayRole = new iam.Role(
+      this,
+      `${props.environmentName}-api-role`,
+      {
+        assumedBy: new iam.ServicePrincipal('apigateway.amazonaws.com')
+      }
+    );
 
     const getItemPolicy = new iam.Policy(
       this,
@@ -305,16 +305,34 @@ export class ApiStack extends cdk.Stack {
         credentialsRole: apiGatewayRole,
         passthroughBehavior: apiGateway.PassthroughBehavior.WHEN_NO_MATCH,
         integrationResponses: [
+          // Success Response: Item Found
           {
             statusCode: '200',
             responseTemplates: {
               'application/json': `{
+                #if($input.path('$.Item') && $input.path('$.Item').size() > 0)
                 "status": "Success",
                 "data": {
                   "songTitle": "$input.path('$.Item.song_title.S')"
                 }
+                #else
+                #set($context.responseOverride.status = 404)
+                "error": "No request found with ID [$method.request.path.songId]."
+                #end
               }`
-            }
+            },
+            selectionPattern: '^(?!.*"error":).*$' // Match only when no "error" exists
+          },
+          // Not Found Response: No Items
+          {
+            statusCode: '404',
+            responseTemplates: {
+              'application/json': `{
+                "status": "Error",
+                "message": "No items found."
+              }`
+            },
+            selectionPattern: '.*"error":.*' // Match when "error" exists in the output
           },
           ...errorResponses
         ],

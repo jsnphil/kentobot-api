@@ -15,6 +15,7 @@ import { Construct } from 'constructs';
 import { createSongRequestParameters } from './song-request-parameters';
 import { ARCHITECTURE, NODE_RUNTIME } from './CDKConstants';
 import path = require('path');
+import { songRequestDetailsModel } from './api-models';
 
 export interface ApiStackProps extends cdk.StackProps {
   environmentName: string;
@@ -249,5 +250,125 @@ export class ApiStack extends cdk.Stack {
       'POST',
       new apiGateway.LambdaIntegration(eventProducerLambda)
     );
+
+    const getSongRequestResource =
+      songRequestEndpointResource.addResource('{songId}');
+
+    const getSongRequestDetailsResource =
+      getSongRequestResource.addResource('details');
+
+    const apiGatewayRole = new iam.Role(
+      this,
+      `${props.environmentName}-api-role`,
+      {
+        assumedBy: new iam.ServicePrincipal('apigateway.amazonaws.com')
+      }
+    );
+
+    const getItemPolicy = new iam.Policy(
+      this,
+      `${props.environmentName}-get-item-policy`,
+      {
+        statements: [
+          new iam.PolicyStatement({
+            actions: ['dynamodb:GetItem'],
+            effect: iam.Effect.ALLOW,
+            resources: [database.tableArn]
+          })
+        ]
+      }
+    );
+
+    apiGatewayRole.attachInlinePolicy(getItemPolicy);
+
+    const errorResponses = [
+      {
+        selectionPattern: '4\\d{2}', // Match all 4xx errors
+        statusCode: '400',
+        responseTemplates: {
+          'application/json': `{
+            "error": "Bad input!"
+          }`
+        }
+      },
+      {
+        selectionPattern: '5\\d{2}', // Match all 5xx errors
+        statusCode: '500',
+        responseTemplates: {
+          'application/json': `{
+            "error": "Internal Service Error!"
+          }`
+        }
+      }
+    ];
+
+    const getSongRequestIntegration = new apiGateway.AwsIntegration({
+      service: 'dynamodb',
+      action: 'GetItem',
+      options: {
+        credentialsRole: apiGatewayRole,
+        passthroughBehavior: apiGateway.PassthroughBehavior.WHEN_NO_MATCH,
+        integrationResponses: [
+          {
+            statusCode: '200',
+            responseTemplates: {
+              'application/json': `{
+                #if($input.path('$.Item') && $input.path('$.Item').size() > 0)
+                "items": [{
+                  "youtubeId": "$input.path('$.Item.youtube_id.S')",
+                  "title": "$input.path('$.Item.song_title.S')",
+                  "length": $input.path('$.Item.song_length.N')
+                  }]
+                #else
+                #set($context.responseOverride.status = 404)
+                "code": 404,
+                "message": "Not found",
+                "errors": ["No request found with ID [$method.request.path.songId]."]
+                #end
+              }`
+            },
+            selectionPattern: '2\\d{2}' // Match all 2xx successful responses
+          },
+          // Not Found Response: No Items
+          {
+            statusCode: '404',
+            responseTemplates: {
+              'application/json': `{
+                "code": 404,
+                "message": "Not found",
+                "errors": ["No request found with ID [$method.request.path.songId]."]
+              }`
+            },
+            selectionPattern: '.*"error":.*' // Match when "error" exists in the output
+          },
+          ...errorResponses
+        ],
+        requestTemplates: {
+          'application/json': `{
+            "Key": {
+              "pk": {
+                "S": "yt#$method.request.path.songId"
+              },
+              "sk": {
+                "S": "songInfo"
+              }
+            },
+            "TableName": "${database.tableName}"
+          }`
+        }
+      }
+    });
+
+    getSongRequestDetailsResource.addMethod('GET', getSongRequestIntegration, {
+      methodResponses: [
+        {
+          statusCode: '200',
+          responseModels: {
+            'application/json': songRequestDetailsModel(this, api)
+          }
+        },
+        ...errorResponses
+      ]
+    });
   }
 }

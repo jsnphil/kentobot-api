@@ -327,7 +327,7 @@ export class ApiStack extends cdk.Stack {
                 #end
               }`
             },
-            selectionPattern: '^(?!.*"error":).*$' // Match only when no "error" exists
+            selectionPattern: '2\\d{2}' // Match all 2xx successful responses
           },
           // Not Found Response: No Items
           {

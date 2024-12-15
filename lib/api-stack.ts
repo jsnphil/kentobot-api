@@ -249,5 +249,115 @@ export class ApiStack extends cdk.Stack {
       'POST',
       new apiGateway.LambdaIntegration(eventProducerLambda)
     );
+
+    const getSongRequestResource =
+      songRequestEndpointResource.addResource('{songId}');
+    // getSongResource.addMethod(
+    //   'GET',
+    //   new apiGateway.HttpIntegration())
+    // );
+
+    const apiGatewayRole = new iam.Role(this, 'getRole', {
+      assumedBy: new iam.ServicePrincipal('apigateway.amazonaws.com')
+    });
+
+    const getItemPolicy = new iam.Policy(
+      this,
+      `${props.environmentName}-get-item-policy`,
+      {
+        statements: [
+          new iam.PolicyStatement({
+            actions: ['dynamodb:GetItem'],
+            effect: iam.Effect.ALLOW,
+            resources: [database.tableArn]
+          })
+        ]
+      }
+    );
+
+    apiGatewayRole.attachInlinePolicy(getItemPolicy);
+
+    const errorResponses = [
+      {
+        selectionPattern: '4\\d{2}', // Match all 4xx errors
+        statusCode: '400',
+        responseTemplates: {
+          'application/json': `{
+            "error": "Bad input!"
+          }`
+        }
+      },
+      {
+        selectionPattern: '5\\d{2}', // Match all 5xx errors
+        statusCode: '500',
+        responseTemplates: {
+          'application/json': `{
+            "error": "Internal Service Error!"
+          }`
+        }
+      }
+    ];
+
+    const getSongRequestIntegration = new apiGateway.AwsIntegration({
+      service: 'dynamodb',
+      action: 'GetItem',
+      options: {
+        credentialsRole: apiGatewayRole,
+        passthroughBehavior: apiGateway.PassthroughBehavior.WHEN_NO_MATCH,
+        integrationResponses: [
+          {
+            statusCode: '200',
+            responseTemplates: {
+              'application/json': `{
+                "status": "Success",
+                "data": {
+                  "songTitle": "$input.path('$.Item.song_title.S')"
+                }
+              }`
+            }
+          },
+          ...errorResponses
+        ],
+        requestTemplates: {
+          'application/json': `{
+            "Key": {
+              "pk": {
+                "S": "yt#$method.request.path.songId"
+              },
+              "sk": {
+                "S": "songInfo"
+              }
+            },
+            "TableName": "${database.tableName}"
+          }`
+        }
+      }
+    });
+
+    getSongRequestResource.addMethod('GET', getSongRequestIntegration, {
+      methodResponses: [
+        {
+          statusCode: '200',
+          responseModels: {
+            'application/json': new apiGateway.Model(this, 'GetSongResponse', {
+              restApi: api,
+              schema: {
+                type: apiGateway.JsonSchemaType.OBJECT,
+                properties: {
+                  status: { type: apiGateway.JsonSchemaType.STRING },
+                  data: {
+                    type: apiGateway.JsonSchemaType.OBJECT,
+                    properties: {
+                      songTitle: { type: apiGateway.JsonSchemaType.STRING }
+                    }
+                  }
+                }
+              }
+            })
+          }
+        },
+        ...errorResponses
+      ]
+    });
   }
 }

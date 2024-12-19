@@ -1,0 +1,21 @@
+meta {
+  name: Save Song Play POC
+  type: http
+  seq: 5
+}
+
+post {
+  url: https://{{aws.api.id}}.execute-api.us-east-1.amazonaws.com/{{stage}}/song-requests/save
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "title": "Song Title 2",
+    "requestedBy": "user3",
+    "length": 180,
+    "played": "2024-10-25T01:09:05.456Z",
+    "youtubeId": "youtube-id"
+  }
+}

@@ -370,5 +370,84 @@ export class ApiStack extends cdk.Stack {
         ...errorResponses
       ]
     });
+
+    const saveNewSongResource =
+      songRequestEndpointResource.addResource('save-new-song');
+
+    const putEventsPolicy = new iam.Policy(
+      this,
+      `${props.environmentName}-put-events-policy`,
+      {
+        statements: [
+          new iam.PolicyStatement({
+            actions: ['events:PutEvents'],
+            effect: iam.Effect.ALLOW,
+            resources: [bus.eventBusArn]
+          })
+        ]
+      }
+    );
+
+    apiGatewayRole.attachInlinePolicy(putEventsPolicy);
+
+    const saveNewSongIntegration = new apiGateway.AwsIntegration({
+      service: 'events',
+      action: 'PutEvents',
+      options: {
+        credentialsRole: apiGatewayRole,
+        passthroughBehavior: apiGateway.PassthroughBehavior.WHEN_NO_MATCH,
+        integrationResponses: [
+          {
+            statusCode: '200',
+            responseTemplates: {
+              'application/json': `{
+                  "message": "Song saved successfully",
+                  "eventId": "$input.path('$.Entries[0].EventId')"
+                  
+                  
+                }`
+            },
+            selectionPattern: '2\\d{2}'
+          },
+          ...errorResponses
+        ],
+        requestTemplates: {
+          'application/json': `
+              #set($inputRoot = $input.path('$'))
+              #set($context.requestOverride.header.X-Amz-Target = "AWSEvents.PutEvents")
+              #set($context.requestOverride.header.Content-Type = "application/x-amz-json-1.1")
+              {
+                "Entries": [
+                  {
+                    "DetailType": "song-played",
+                    "Source": "kentobot-api",
+                    "Detail": "{\\"title\\": \\"$inputRoot.title\\", \\"youtubeId\\": \\"$inputRoot.youtubeId\\", \\"length\\": $inputRoot.length, \\"requestedBy\\": \\"$inputRoot.requestedBy\\", \\"date\\": \\"$inputRoot.date\\"}",
+                    "EventBusName": "${bus.eventBusName}"
+                  }
+                ]
+              }`
+        }
+      }
+    });
+    saveNewSongResource.addMethod('POST', saveNewSongIntegration, {
+      methodResponses: [
+        {
+          statusCode: '200',
+          responseModels: {
+            'application/json': api.addModel('SaveSongResponse', {
+              schema: {
+                type: apiGateway.JsonSchemaType.OBJECT,
+                properties: {
+                  message: {
+                    type: apiGateway.JsonSchemaType.STRING
+                  }
+                }
+              }
+            })
+          }
+        },
+        ...errorResponses
+      ]
+    });
   }
 }

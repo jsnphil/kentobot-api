@@ -15,7 +15,10 @@ import { Construct } from 'constructs';
 import { createSongRequestParameters } from './song-request-parameters';
 import { ARCHITECTURE, NODE_RUNTIME } from './CDKConstants';
 import path = require('path');
-import { songRequestDetailsModel } from './api-models';
+import {
+  saveSongPlayResponseModel,
+  songRequestDetailsModel
+} from './api-models';
 
 export interface ApiStackProps extends cdk.StackProps {
   environmentName: string;
@@ -52,6 +55,14 @@ export class ApiStack extends cdk.Stack {
           loggingLevel: apiGateway.MethodLoggingLevel.INFO,
           dataTraceEnabled: true
         }
+      }
+    );
+
+    const apiGatewayRole = new iam.Role(
+      this,
+      `${props.environmentName}-api-role`,
+      {
+        assumedBy: new iam.ServicePrincipal('apigateway.amazonaws.com')
       }
     );
 
@@ -220,67 +231,8 @@ export class ApiStack extends cdk.Stack {
 
     saveSongDataRule.addTarget(new eventsTargets.SqsQueue(saveSongQueue));
 
-    const eventProducerLambda = new lambda.NodejsFunction(
-      this,
-      `EventProducer-${props.environmentName}`,
-      {
-        runtime: NODE_RUNTIME,
-        handler: 'handler',
-        entry: path.join(__dirname, '../src/api/', 'event-producer.ts'),
-        bundling: {
-          minify: false,
-          externalModules: ['aws-sdk']
-        },
-        logRetention: logs.RetentionDays.ONE_WEEK,
-        environment: {
-          ENVIRONMENT: props.environmentName,
-          EVENT_BUS_NAME: bus.eventBusName
-          // STREAM_DATA_TABLE: this.database.tableName
-        },
-        timeout: cdk.Duration.minutes(1),
-        memorySize: 512,
-        architecture: ARCHITECTURE
-      }
-    );
-
-    bus.grantPutEventsTo(eventProducerLambda);
-
-    const saveSongResource = songRequestEndpointResource.addResource('save');
-    saveSongResource.addMethod(
-      'POST',
-      new apiGateway.LambdaIntegration(eventProducerLambda)
-    );
-
-    const getSongRequestResource =
-      songRequestEndpointResource.addResource('{songId}');
-
-    const getSongRequestDetailsResource =
-      getSongRequestResource.addResource('details');
-
-    const apiGatewayRole = new iam.Role(
-      this,
-      `${props.environmentName}-api-role`,
-      {
-        assumedBy: new iam.ServicePrincipal('apigateway.amazonaws.com')
-      }
-    );
-
-    const getItemPolicy = new iam.Policy(
-      this,
-      `${props.environmentName}-get-item-policy`,
-      {
-        statements: [
-          new iam.PolicyStatement({
-            actions: ['dynamodb:GetItem'],
-            effect: iam.Effect.ALLOW,
-            resources: [database.tableArn]
-          })
-        ]
-      }
-    );
-
-    apiGatewayRole.attachInlinePolicy(getItemPolicy);
-
+    // TODO Move this to a utility or constants file
+    // TODO Update the error responses
     const errorResponses = [
       {
         selectionPattern: '4\\d{2}', // Match all 4xx errors
@@ -301,6 +253,100 @@ export class ApiStack extends cdk.Stack {
         }
       }
     ];
+
+    // Save song played endpoint
+    const saveSongResource = songRequestEndpointResource.addResource('save');
+
+    const putEventsPolicy = new iam.Policy(
+      this,
+      `${props.environmentName}-put-events-policy`,
+      {
+        statements: [
+          new iam.PolicyStatement({
+            actions: ['events:PutEvents'],
+            effect: iam.Effect.ALLOW,
+            resources: [bus.eventBusArn]
+          })
+        ]
+      }
+    );
+
+    apiGatewayRole.attachInlinePolicy(putEventsPolicy);
+
+    const saveSongPlayedIntegration = new apiGateway.AwsIntegration({
+      service: 'events',
+      action: 'PutEvents',
+      options: {
+        credentialsRole: apiGatewayRole,
+        passthroughBehavior: apiGateway.PassthroughBehavior.WHEN_NO_MATCH,
+        integrationResponses: [
+          {
+            statusCode: '200',
+            responseTemplates: {
+              'application/json': `
+                  #set($context.responseOverride.status = 202)
+                  {
+                  "message": "Song request play received",
+                  "eventId": "$input.path('$.Entries[0].EventId')"
+                  }`
+            },
+            selectionPattern: '2\\d{2}'
+          },
+          ...errorResponses
+        ],
+        requestTemplates: {
+          'application/json': `
+              #set($inputRoot = $input.path('$'))
+              #set($context.requestOverride.header.X-Amz-Target = "AWSEvents.PutEvents")
+              #set($context.requestOverride.header.Content-Type = "application/x-amz-json-1.1")
+              {
+                "Entries": [
+                  {
+                    "DetailType": "song-played",
+                    "Source": "kentobot-api",
+                    "Detail": "{\\"title\\": \\"$inputRoot.title\\", \\"youtubeId\\": \\"$inputRoot.youtubeId\\", \\"length\\": $inputRoot.length, \\"requestedBy\\": \\"$inputRoot.requestedBy\\", \\"played\\": \\"$inputRoot.played\\"}",
+                    "EventBusName": "${bus.eventBusName}"
+                  }
+                ]
+              }`
+        }
+      }
+    });
+
+    saveSongResource.addMethod('POST', saveSongPlayedIntegration, {
+      methodResponses: [
+        {
+          statusCode: '200',
+          responseModels: {
+            'application/json': saveSongPlayResponseModel(this, api)
+          }
+        },
+        ...errorResponses
+      ]
+    });
+
+    // Get song request details endpoint
+    const getSongRequestResource =
+      songRequestEndpointResource.addResource('{songId}');
+
+    const getSongRequestDetailsResource =
+      getSongRequestResource.addResource('details');
+
+    const getItemPolicy = new iam.Policy(
+      this,
+      `${props.environmentName}-get-item-policy`,
+      {
+        statements: [
+          new iam.PolicyStatement({
+            actions: ['dynamodb:GetItem'],
+            effect: iam.Effect.ALLOW,
+            resources: [database.tableArn]
+          })
+        ]
+      }
+    );
+
+    apiGatewayRole.attachInlinePolicy(getItemPolicy);
 
     const getSongRequestIntegration = new apiGateway.AwsIntegration({
       service: 'dynamodb',

@@ -25,3 +25,21 @@ export const songRequestDetailsModel = (
     }
   });
 };
+
+export const saveSongPlayResponseModel = (
+  scope: Construct,
+  api: apiGateway.RestApi
+) => {
+  return new apiGateway.Model(scope, 'save-song-play-response-model', {
+    restApi: api,
+    schema: {
+      type: apiGateway.JsonSchemaType.OBJECT,
+      properties: {
+        message: { type: apiGateway.JsonSchemaType.STRING },
+        eventId: {
+          type: apiGateway.JsonSchemaType.STRING
+        }
+      }
+    }
+  });
+};

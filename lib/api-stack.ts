@@ -17,6 +17,7 @@ import { ARCHITECTURE, NODE_RUNTIME } from './CDKConstants';
 import path = require('path');
 import {
   saveSongPlayResponseModel,
+  saveSongRequestModel,
   songRequestDetailsModel
 } from './api-models';
 
@@ -67,10 +68,6 @@ export class ApiStack extends cdk.Stack {
     );
 
     const songRequestEndpointResource = api.root.addResource('song-requests');
-    songRequestEndpointResource.addMethod(
-      'GET',
-      new apiGateway.MockIntegration()
-    );
 
     const {
       publicVideoToggle,
@@ -231,15 +228,15 @@ export class ApiStack extends cdk.Stack {
 
     saveSongDataRule.addTarget(new eventsTargets.SqsQueue(saveSongQueue));
 
-    // TODO Move this to a utility or constants file
-    // TODO Update the error responses
     const errorResponses = [
       {
         selectionPattern: '4\\d{2}', // Match all 4xx errors
         statusCode: '400',
         responseTemplates: {
           'application/json': `{
-            "error": "Bad input!"
+            "code": 400,
+            "message": "Invalid input",
+            "errors": []
           }`
         }
       },
@@ -248,7 +245,9 @@ export class ApiStack extends cdk.Stack {
         statusCode: '500',
         responseTemplates: {
           'application/json': `{
-            "error": "Internal Service Error!"
+            "code": 400,
+            "message": "Invalid input",
+            "errors": []
           }`
         }
       }
@@ -322,7 +321,17 @@ export class ApiStack extends cdk.Stack {
           }
         },
         ...errorResponses
-      ]
+      ],
+      requestValidator: new apiGateway.RequestValidator(
+        this,
+        'body-validator',
+        {
+          restApi: api,
+          requestValidatorName: 'body-validator',
+          validateRequestBody: true
+        }
+      ),
+      requestModels: { 'application/json': saveSongRequestModel(this, api) }
     });
 
     // Get song request details endpoint

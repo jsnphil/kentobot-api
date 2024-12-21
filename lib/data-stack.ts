@@ -74,5 +74,11 @@ export class DataStack extends cdk.Stack {
         removalPolicy: cdk.RemovalPolicy.DESTROY
       }
     );
+
+    new cdk.CfnOutput(this, `BucketArnExport-${props.environmentName}`, {
+      value: dataBucket.bucketArn,
+      description: 'The ARN of the data bucket',
+      exportName: `bucket-arn-${props.environmentName}`
+    });
   }
 }

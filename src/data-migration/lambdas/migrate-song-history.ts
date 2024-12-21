@@ -37,8 +37,6 @@ export const handler = async (event: S3Event) => {
       continue;
     }
 
-    console.log('');
-
     logger.info(
       `Object to process: ${s3Data.bucket.name}/${s3Data.object.key}`
     );
@@ -68,12 +66,12 @@ const processData = async (data: SongData) => {
   let songsPlaysProcessed = 0;
   const checkedSongs = new Map<string, number>();
 
+  logger.info('Starting processing of song data');
   requests.map(async (request: Request) => {
     // logger.info(`Processing request: ${request.youtubeId} - ${request.title}`);
+
     songRequestProcessed++;
     request.plays.map(async (play: Play) => {
-      const songLength = await getSongLength(request.youtubeId, checkedSongs);
-      checkedSongs.set(request.youtubeId, songLength);
       songs.push(
         `${request.youtubeId},${request.title},${play.playDate},${play.requester},${songLength}`
       );
@@ -86,22 +84,16 @@ const processData = async (data: SongData) => {
   );
 };
 
-const getSongLength = async (
-  youtubeId: string,
-  checkedSongs: Map<string, number>
-) => {
-  if (checkedSongs.has(youtubeId)) {
-    return checkedSongs.get(youtubeId)!;
-  }
+// TODO Move the queue handler
+// const getSongLength = async (youtubeId: string) => {
+//   // TODO Will need to get the API key from SSM
 
-  // TODO Will need to get the API key from SSM
-  logger.info(`Getting song length form YouTube for ${youtubeId}`);
-  const videos = await searchForVideo(youtubeId);
+//   const videos = await searchForVideo(youtubeId);
 
-  if (!videos || videos.length === 0) {
-    return 0;
-  }
+//   if (!videos || videos.length === 0) {
+//     return 0;
+//   }
 
-  const duration = videos[0].contentDetails.duration;
-  return toSeconds(parse(duration));
-};
+//   const duration = videos[0].contentDetails.duration;
+//   return toSeconds(parse(duration));
+// };

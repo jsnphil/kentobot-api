@@ -6,6 +6,7 @@ import * as path from 'path';
 import * as s3Notifications from 'aws-cdk-lib/aws-s3-notifications';
 import * as lambda from 'aws-cdk-lib/aws-lambda-nodejs';
 import * as logs from 'aws-cdk-lib/aws-logs';
+import * as sqs from 'aws-cdk-lib/aws-sqs';
 
 import { Construct } from 'constructs';
 import { ARCHITECTURE, NODE_RUNTIME } from './CDKConstants';
@@ -45,6 +46,24 @@ export class DataMigrationStack extends cdk.Stack {
       destinationKeyPrefix: 'data-migration/song-data'
     });
 
+    const songHistoryQueue = new sqs.Queue(
+      this,
+      `SongHistoryQueue-${props.environmentName}`,
+      {
+        // TODO Consider a delay queue and then a DLQ
+        deadLetterQueue: {
+          maxReceiveCount: 3,
+          queue: new sqs.Queue(
+            this,
+            `song-history-migration-dlq-${props.environmentName}`,
+            {
+              queueName: `song-history-migration-dlq-${props.environmentName}`
+            }
+          )
+        }
+      }
+    );
+
     const songHistoryMigrationLambda = new lambda.NodejsFunction(
       this,
       `MigrateSongHistory-${props.environmentName}`,
@@ -61,7 +80,9 @@ export class DataMigrationStack extends cdk.Stack {
           externalModules: ['aws-sdk']
         },
         logRetention: logs.RetentionDays.ONE_WEEK,
-        environment: {},
+        environment: {
+          QUEUE_NAME: songHistoryQueue.queueName
+        },
         timeout: cdk.Duration.minutes(10),
         memorySize: 512,
         architecture: ARCHITECTURE
@@ -78,5 +99,6 @@ export class DataMigrationStack extends cdk.Stack {
     );
 
     bucket.grantRead(songHistoryMigrationLambda);
+    songHistoryQueue.grantSendMessages(songHistoryMigrationLambda);
   }
 }

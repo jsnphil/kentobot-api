@@ -245,7 +245,7 @@ export class ApiStack extends cdk.Stack {
         statusCode: '500',
         responseTemplates: {
           'application/json': `{
-            "code": 400,
+            "code": 500,
             "message": "Invalid input",
             "errors": []
           }`

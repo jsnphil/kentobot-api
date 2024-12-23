@@ -16,6 +16,7 @@ import { createSongRequestParameters } from './song-request-parameters';
 import { ARCHITECTURE, NODE_RUNTIME } from './CDKConstants';
 import path = require('path');
 import {
+  getSongPlaysResponseModel,
   saveSongPlayResponseModel,
   saveSongRequestModel,
   songRequestDetailsModel
@@ -341,23 +342,22 @@ export class ApiStack extends cdk.Stack {
     const getSongRequestDetailsResource =
       getSongRequestResource.addResource('details');
 
-    const getItemPolicy = new iam.Policy(
-      this,
-      `${props.environmentName}-get-item-policy`,
-      {
-        statements: [
-          new iam.PolicyStatement({
-            actions: ['dynamodb:GetItem'],
-            effect: iam.Effect.ALLOW,
-            resources: [database.tableArn]
-          })
-        ]
-      }
-    );
+    const getSongRequestPlaysResource =
+      getSongRequestResource.addResource('plays');
 
-    apiGatewayRole.attachInlinePolicy(getItemPolicy);
+    const dynamoApiPolicy = new iam.Policy(this, `api-dynamodb-policy`, {
+      statements: [
+        new iam.PolicyStatement({
+          actions: ['dynamodb:GetItem', 'dynamodb:Query'],
+          effect: iam.Effect.ALLOW,
+          resources: [database.tableArn]
+        })
+      ]
+    });
 
-    const getSongRequestIntegration = new apiGateway.AwsIntegration({
+    apiGatewayRole.attachInlinePolicy(dynamoApiPolicy);
+
+    const getSongRequestDetailsIntegration = new apiGateway.AwsIntegration({
       service: 'dynamodb',
       action: 'GetItem',
       options: {
@@ -414,16 +414,104 @@ export class ApiStack extends cdk.Stack {
       }
     });
 
-    getSongRequestDetailsResource.addMethod('GET', getSongRequestIntegration, {
-      methodResponses: [
-        {
-          statusCode: '200',
-          responseModels: {
-            'application/json': songRequestDetailsModel(this, api)
-          }
-        },
-        ...errorResponses
-      ]
+    getSongRequestDetailsResource.addMethod(
+      'GET',
+      getSongRequestDetailsIntegration,
+      {
+        methodResponses: [
+          {
+            statusCode: '200',
+            responseModels: {
+              'application/json': songRequestDetailsModel(this, api)
+            }
+          },
+          ...errorResponses
+        ]
+      }
+    );
+
+    // Get song request plays endpoint
+    const getSongRequestPlaysIntegration = new apiGateway.AwsIntegration({
+      service: 'dynamodb',
+      action: 'Query',
+      options: {
+        credentialsRole: apiGatewayRole,
+        passthroughBehavior: apiGateway.PassthroughBehavior.WHEN_NO_MATCH,
+        integrationResponses: [
+          {
+            statusCode: '200',
+            responseTemplates: {
+              'application/json': `{
+                #if($input.path('$.Items') && $input.path('$.Items').size() > 0)
+                  #set($inputRoot = $input.path('$'))
+                  "youtubeId": "$method.request.path.songId",
+                  "plays": [
+                    #foreach($item in $inputRoot.Items)
+                    {
+                      "date": "$item.request_date.S",
+                      "requestedBy": "$item.requested_by.S",
+                      "sotnContender": $item.sotn_contender.BOOL,
+                      "sotnWinner": $item.sotn_winner.BOOL,
+                      "sotsWinner": $item.sots_winner.BOOL
+                    }
+                    #if($foreach.hasNext),#end 
+                    #end
+                  ]
+                #else
+                #set($context.responseOverride.status = 404)
+                "code": 404,
+                "message": "Not found",
+                "errors": ["No request found with ID [$method.request.path.songId]."]
+                #end
+              }`
+            },
+            selectionPattern: '2\\d{2}' // Match all 2xx successful responses
+          },
+          // Not Found Response: No Items
+          {
+            statusCode: '404',
+            responseTemplates: {
+              'application/json': `{
+                "code": 404,
+                "message": "Not found",
+                "errors": ["No request found with ID [$method.request.path.songId]."]
+              }`
+            },
+            selectionPattern: '.*"error":.*' // Match when "error" exists in the output
+          },
+          ...errorResponses
+        ],
+        requestTemplates: {
+          'application/json': `{
+            "TableName": "${database.tableName}",
+            "KeyConditionExpression": "pk = :pk AND begins_with(sk, :sk)",
+            "ExpressionAttributeValues": {
+              ":pk": {
+                "S": "yt#$method.request.path.songId"
+              },
+              ":sk": {
+                "S": "songPlay"
+              }
+            }
+          }`
+        }
+      }
     });
+
+    getSongRequestPlaysResource.addMethod(
+      'GET',
+      getSongRequestPlaysIntegration,
+      {
+        methodResponses: [
+          {
+            statusCode: '200',
+            responseModels: {
+              'application/json': getSongPlaysResponseModel(this, api)
+            }
+          },
+          ...errorResponses
+        ]
+      }
+    );
   }
 }

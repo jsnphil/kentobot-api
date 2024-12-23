@@ -64,3 +64,31 @@ export const saveSongPlayResponseModel = (
     }
   });
 };
+
+export const getSongPlaysResponseModel = (
+  scope: Construct,
+  api: apiGateway.RestApi
+) => {
+  return new apiGateway.Model(scope, 'get-song-plays-response-model', {
+    restApi: api,
+    schema: {
+      type: apiGateway.JsonSchemaType.OBJECT,
+      properties: {
+        youtubeId: { type: apiGateway.JsonSchemaType.STRING },
+        plays: {
+          type: apiGateway.JsonSchemaType.ARRAY,
+          items: {
+            type: apiGateway.JsonSchemaType.OBJECT,
+            properties: {
+              date: { type: apiGateway.JsonSchemaType.STRING },
+              requestedBy: { type: apiGateway.JsonSchemaType.STRING },
+              sotnContender: { type: apiGateway.JsonSchemaType.BOOLEAN },
+              sotnWinner: { type: apiGateway.JsonSchemaType.BOOLEAN },
+              sotsWinner: { type: apiGateway.JsonSchemaType.BOOLEAN }
+            }
+          }
+        }
+      }
+    }
+  });
+};

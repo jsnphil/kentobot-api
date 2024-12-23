@@ -5,9 +5,12 @@ import { streamToString } from '../../utils/utilities';
 import { Readable } from 'stream';
 import { searchForVideo } from '../../utils/youtube-client';
 import { parse, toSeconds } from 'iso8601-duration';
+import { SendMessageCommand, SQSClient } from '@aws-sdk/client-sqs';
+import { Queue } from 'aws-cdk-lib/aws-sqs';
 
 const logger = new Logger({ serviceName: 'migrateSongHistory' });
 const s3Client = new S3Client({ region: 'us-east-1' });
+const sqsClient = new SQSClient({ region: 'us-east-1' });
 
 interface SongData {
   readonly generated: string;
@@ -27,8 +30,6 @@ interface Play {
 }
 
 export const handler = async (event: S3Event) => {
-  console.log('Received event:', JSON.stringify(event, null, 2));
-
   for (const record of event.Records) {
     const s3Data = record.s3;
 
@@ -59,29 +60,20 @@ export const handler = async (event: S3Event) => {
 };
 
 const processData = async (data: SongData) => {
-  const requests = data.requests;
-
-  let songs: string[] = [];
-  let songRequestProcessed = 0;
-  let songsPlaysProcessed = 0;
-  const checkedSongs = new Map<string, number>();
-
   logger.info('Starting processing of song data');
-  requests.map(async (request: Request) => {
+
+  for (const request of data.requests) {
     // logger.info(`Processing request: ${request.youtubeId} - ${request.title}`);
 
-    songRequestProcessed++;
-    request.plays.map(async (play: Play) => {
-      songs.push(
-        `${request.youtubeId},${request.title},${play.playDate},${play.requester},${songLength}`
-      );
-      songsPlaysProcessed++;
-    });
-  });
+    await sqsClient.send(
+      new SendMessageCommand({
+        QueueUrl: process.env.SONG_HISTORY_QUEUE_URL,
+        MessageBody: JSON.stringify(request)
+      })
+    );
+  }
 
-  logger.info(
-    `Processed ${songRequestProcessed} song requests, ${songsPlaysProcessed} song plays`
-  );
+  logger.info(`Song requests added to queue`);
 };
 
 // TODO Move the queue handler

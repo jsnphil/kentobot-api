@@ -49,24 +49,22 @@ export class DataMigrationStack extends cdk.Stack {
     const songHistoryQueue = new sqs.Queue(
       this,
       `SongHistoryQueue-${props.environmentName}`,
+
       {
         // TODO Consider a delay queue and then a DLQ
         deadLetterQueue: {
           maxReceiveCount: 3,
-          queue: new sqs.Queue(
-            this,
-            `song-history-migration-dlq-${props.environmentName}`,
-            {
-              queueName: `song-history-migration-dlq-${props.environmentName}`
-            }
-          )
-        }
+          queue: new sqs.Queue(this, `song-history-migration-dlq`, {
+            queueName: `song-history-migration-dlq-${props.environmentName}`
+          })
+        },
+        visibilityTimeout: cdk.Duration.seconds(10)
       }
     );
 
     const songHistoryMigrationLambda = new lambda.NodejsFunction(
       this,
-      `MigrateSongHistory-${props.environmentName}`,
+      `MigrateSongHistory`,
       {
         runtime: NODE_RUNTIME,
         handler: 'handler',
@@ -81,7 +79,7 @@ export class DataMigrationStack extends cdk.Stack {
         },
         logRetention: logs.RetentionDays.ONE_WEEK,
         environment: {
-          QUEUE_NAME: songHistoryQueue.queueName
+          SONG_HISTORY_QUEUE_URL: songHistoryQueue.queueUrl
         },
         timeout: cdk.Duration.minutes(10),
         memorySize: 512,

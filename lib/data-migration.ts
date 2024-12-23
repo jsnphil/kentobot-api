@@ -7,6 +7,9 @@ import * as s3Notifications from 'aws-cdk-lib/aws-s3-notifications';
 import * as lambda from 'aws-cdk-lib/aws-lambda-nodejs';
 import * as logs from 'aws-cdk-lib/aws-logs';
 import * as sqs from 'aws-cdk-lib/aws-sqs';
+import * as ssm from 'aws-cdk-lib/aws-ssm';
+import * as lambdaEventSources from 'aws-cdk-lib/aws-lambda-event-sources';
+import * as events from 'aws-cdk-lib/aws-events';
 
 import { Construct } from 'constructs';
 import { ARCHITECTURE, NODE_RUNTIME } from './CDKConstants';
@@ -58,9 +61,18 @@ export class DataMigrationStack extends cdk.Stack {
             queueName: `song-history-migration-dlq-${props.environmentName}`
           })
         },
-        visibilityTimeout: cdk.Duration.seconds(10)
+        visibilityTimeout: cdk.Duration.minutes(5)
       }
     );
+
+    const apiKeyParameter =
+      ssm.StringParameter.fromSecureStringParameterAttributes(
+        this,
+        'ApiKeyParameter',
+        {
+          parameterName: 'youtube-api-key'
+        }
+      );
 
     const songHistoryMigrationLambda = new lambda.NodejsFunction(
       this,
@@ -87,6 +99,8 @@ export class DataMigrationStack extends cdk.Stack {
       }
     );
 
+    apiKeyParameter.grantRead(songHistoryMigrationLambda);
+
     bucket.addEventNotification(
       s3.EventType.OBJECT_CREATED_PUT,
       new s3Notifications.LambdaDestination(songHistoryMigrationLambda),
@@ -98,5 +112,46 @@ export class DataMigrationStack extends cdk.Stack {
 
     bucket.grantRead(songHistoryMigrationLambda);
     songHistoryQueue.grantSendMessages(songHistoryMigrationLambda);
+
+    const bus = events.EventBus.fromEventBusName(
+      this,
+      'kentobot-event-bus',
+      `Kentobot-EventBus-${props.environmentName}`
+    );
+
+    const processSongRequestLambda = new lambda.NodejsFunction(
+      this,
+      'ProcessSongRequest',
+      {
+        runtime: NODE_RUNTIME,
+        handler: 'handler',
+        entry: path.join(
+          __dirname,
+          '../src/',
+          'data-migration/lambdas/process-song-request.ts'
+        ),
+        bundling: {
+          minify: false,
+          externalModules: ['aws-sdk']
+        },
+        logRetention: logs.RetentionDays.ONE_WEEK,
+        environment: {
+          EVENT_BUS_NAME: bus.eventBusName
+        },
+        timeout: cdk.Duration.seconds(30),
+        memorySize: 512,
+        architecture: ARCHITECTURE
+      }
+    );
+
+    processSongRequestLambda.addEventSource(
+      new lambdaEventSources.SqsEventSource(songHistoryQueue, {
+        batchSize: 1
+      })
+    );
+
+    apiKeyParameter.grantRead(processSongRequestLambda);
+
+    bus.grantPutEventsTo(processSongRequestLambda);
   }
 }

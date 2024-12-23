@@ -18,17 +18,6 @@ interface SongData {
   readonly requests: Request[];
 }
 
-interface Request {
-  readonly youtubeId: string;
-  readonly title: string;
-  readonly plays: Play[];
-}
-
-interface Play {
-  readonly playDate: string;
-  readonly requester: string;
-}
-
 export const handler = async (event: S3Event) => {
   for (const record of event.Records) {
     const s3Data = record.s3;

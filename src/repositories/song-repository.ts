@@ -50,7 +50,7 @@ export class SongRepository {
                   youtube_id: song.youtubeId,
                   song_title: song.title,
                   song_length: song.length,
-                  play_count: 0,
+                  play_count: 1,
                   gsi_pk1: 'songRequest',
                   gsi_sk1: 'songRequest'
                 },

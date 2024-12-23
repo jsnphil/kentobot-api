@@ -70,6 +70,7 @@ const createNewErrorResponse = (
   };
 };
 
+// TODO Move this a utility?
 const getYouTubeVideo = async (songId: string) => {
   const videos = await searchForVideo(songId);
 

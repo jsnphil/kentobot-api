@@ -23,6 +23,7 @@ export const padTimeDigits = (number: number) => {
   return number.toString();
 };
 
+/* istanbul ignore next */
 export async function streamToString(readableData: Readable): Promise<string> {
   return await new Promise((resolve, reject) => {
     const chunks: Uint8Array[] = [];

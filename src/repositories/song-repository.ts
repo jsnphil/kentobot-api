@@ -8,7 +8,7 @@ import {
   TransactionCanceledException,
   TransactWriteItemsCommand
 } from '@aws-sdk/client-dynamodb';
-import { SongInfo, SongPlay, SongRequest } from '../types/song-request';
+import { SongInfo, SongPlay } from '../types/song-request';
 import { Logger } from '@aws-lambda-powertools/logger';
 import { marshall, unmarshall } from '@aws-sdk/util-dynamodb';
 

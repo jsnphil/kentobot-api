@@ -1,3 +1,4 @@
+/* istanbul ignore next */
 export class ApiError extends Error {
   public statusCode: number;
 

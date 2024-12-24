@@ -1,13 +1,16 @@
 import {
+  AttributeValue,
   DynamoDBClient,
   GetItemCommand,
   ProjectionType,
+  QueryCommand,
+  QueryCommandOutput,
   TransactionCanceledException,
   TransactWriteItemsCommand
 } from '@aws-sdk/client-dynamodb';
-import { SongInfo, SongPlay } from '../types/song-request';
+import { SongInfo, SongPlay, SongRequest } from '../types/song-request';
 import { Logger } from '@aws-lambda-powertools/logger';
-import { marshall } from '@aws-sdk/util-dynamodb';
+import { marshall, unmarshall } from '@aws-sdk/util-dynamodb';
 
 const dynamoDBClient = new DynamoDBClient({ region: 'us-east-1' });
 const logger = new Logger({ serviceName: 'song-repository' });
@@ -154,5 +157,59 @@ export class SongRepository {
         }
       }
     }
+  }
+
+  async getAllSongs() {
+    let queryCount = 1;
+    let lastEvaluatedKey;
+    let hasMoreItems = false;
+
+    const songs: SongInfo[] = [];
+
+    do {
+      logger.debug(`Querying for songs, iteration ${queryCount++}`);
+
+      const response: QueryCommandOutput = await dynamoDBClient.send(
+        new QueryCommand({
+          TableName: process.env.STREAM_DATA_TABLE!,
+          KeyConditionExpression:
+            'gsi_pk1 = :gsi_pk1 AND begins_with(gsi_sk1, :gsi_sk1)',
+          IndexName: 'gsi1',
+          ExpressionAttributeValues: {
+            ':gsi_pk1': { S: 'songRequest' },
+            ':gsi_sk1': { S: 'songRequest' }
+          },
+          ExclusiveStartKey: lastEvaluatedKey
+        })
+      );
+
+      const items = response.Items;
+
+      if (items) {
+        items.forEach(
+          (item: AttributeValue | Record<string, AttributeValue>) => {
+            const unmarshalledItem = unmarshall(item);
+
+            const songInfo: SongInfo = {
+              title: unmarshalledItem.song_title,
+              youtubeId: unmarshalledItem.youtube_id,
+              length: unmarshalledItem.song_length
+            };
+            songs.push(songInfo);
+          }
+        );
+      }
+
+      if (response.LastEvaluatedKey) {
+        logger.debug('More songs available');
+        lastEvaluatedKey = response.LastEvaluatedKey;
+        hasMoreItems = true;
+      } else {
+        logger.debug('No more songs available');
+        hasMoreItems = false;
+      }
+    } while (hasMoreItems);
+
+    return songs;
   }
 }

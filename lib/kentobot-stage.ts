@@ -23,5 +23,6 @@ export class KentobotStage extends cdk.Stage {
 
     apiStack.addDependency(dataStack);
     dataMigration.addDependency(dataStack);
+    dataMigration.addDependency(apiStack);
   }
 }

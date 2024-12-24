@@ -60,6 +60,12 @@ export class DataStack extends cdk.Stack {
       exportName: `table-arn-${props.environmentName}`
     });
 
+    new cdk.CfnOutput(this, `StreamArnExport`, {
+      value: streamDataTable.tableStreamArn!,
+      description: 'The ARN of the table stream',
+      exportName: `database-stream-arn-${props.environmentName}`
+    });
+
     const dataBucket = new s3.Bucket(this, 'StreamDataBucket', {
       bucketName: `stream-data-${props.environmentName}`,
       publicReadAccess: false,

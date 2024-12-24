@@ -33,16 +33,16 @@ export class ApiStack extends cdk.Stack {
     // Import shared resources
     const tableArn = cdk.Fn.importValue(`table-arn-${props.environmentName}`);
 
-    // const tableStreamArn = Fn.importValue(
-    //   `kb-data-table-arn-${this.environmentName}`
-    // );
+    const tableStreamArn = cdk.Fn.importValue(
+      `database-stream-arn-${props.environmentName}`
+    );
 
     const database = ddb.Table.fromTableAttributes(
       this,
       `stream-data-${props.environmentName}`,
       {
-        tableArn: tableArn
-        // tableStreamArn: tableStreamArn
+        tableArn: tableArn,
+        tableStreamArn: tableStreamArn
       }
     );
 
@@ -512,6 +512,45 @@ export class ApiStack extends cdk.Stack {
           ...errorResponses
         ]
       }
+    );
+
+    // Get all songs endpoint
+    const getAllSongRequestsLambda = new lambda.NodejsFunction(
+      this,
+      'GetAllSongRequests',
+      {
+        runtime: NODE_RUNTIME,
+        handler: 'handler',
+        entry: path.join(
+          __dirname,
+          '../src/api/song-request/lambdas/get-all-song-requests.ts'
+        ),
+        bundling: {
+          minify: false,
+          externalModules: ['aws-sdk']
+        },
+        logRetention: logs.RetentionDays.ONE_WEEK,
+        environment: {
+          STREAM_DATA_TABLE: database.tableName
+        },
+        timeout: cdk.Duration.minutes(1),
+        memorySize: 2048,
+        architecture: ARCHITECTURE
+      }
+    );
+
+    database.grantReadData(getAllSongRequestsLambda);
+
+    getAllSongRequestsLambda.addToRolePolicy(
+      new iam.PolicyStatement({
+        actions: ['dynamodb:Query'],
+        resources: [`${database.tableArn}/index/gsi1`]
+      })
+    );
+
+    songRequestEndpointResource.addMethod(
+      'GET',
+      new apiGateway.LambdaIntegration(getAllSongRequestsLambda)
     );
   }
 }

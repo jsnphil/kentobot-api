@@ -3,9 +3,11 @@ import { handler } from './request-song';
 import { searchForVideo } from '../../../utils/youtube-client';
 import { processSongRequestRules } from '../../../utils/song-request-rules';
 import { VideoListItem } from '../../../types/youtube';
+import { SongRepository } from '../../../repositories/song-repository';
 
 jest.mock('../../../utils/youtube-client');
 jest.mock('../../../utils/song-request-rules');
+jest.mock('../../../repositories/song-repository');
 
 const mockSearchForVideo = searchForVideo as jest.MockedFunction<
   typeof searchForVideo
@@ -21,6 +23,10 @@ describe('request-song handler', () => {
   });
 
   it('should return 200 with valid song request', async () => {
+    jest
+      .spyOn(SongRepository.prototype, 'getSongInfo')
+      .mockResolvedValue(undefined);
+
     const event: APIGatewayEvent = {
       pathParameters: { songId: 'validSongId' }
     } as any;
@@ -51,6 +57,10 @@ describe('request-song handler', () => {
   });
 
   it('should return 404 if no results found', async () => {
+    jest
+      .spyOn(SongRepository.prototype, 'getSongInfo')
+      .mockResolvedValue(undefined);
+
     const event: APIGatewayEvent = {
       pathParameters: { songId: 'noResultsSongId' }
     } as any;
@@ -64,6 +74,10 @@ describe('request-song handler', () => {
   });
 
   it('should return 400 if too many results found', async () => {
+    jest
+      .spyOn(SongRepository.prototype, 'getSongInfo')
+      .mockResolvedValue(undefined);
+
     const event: APIGatewayEvent = {
       pathParameters: { songId: 'multipleResultsSongId' }
     } as any;
@@ -90,6 +104,10 @@ describe('request-song handler', () => {
   });
 
   it('should return 400 if song request fails rules check', async () => {
+    jest
+      .spyOn(SongRepository.prototype, 'getSongInfo')
+      .mockResolvedValue(undefined);
+
     const event: APIGatewayEvent = {
       pathParameters: { songId: 'invalidSongId' }
     } as any;
@@ -117,6 +135,10 @@ describe('request-song handler', () => {
   });
 
   it('should return 400 if song ID is missing', async () => {
+    jest
+      .spyOn(SongRepository.prototype, 'getSongInfo')
+      .mockResolvedValue(undefined);
+
     const event: APIGatewayEvent = {
       pathParameters: {}
     } as any;
@@ -128,6 +150,10 @@ describe('request-song handler', () => {
   });
 
   it('should return 500 for unexpected errors', async () => {
+    jest
+      .spyOn(SongRepository.prototype, 'getSongInfo')
+      .mockResolvedValue(undefined);
+
     const event: APIGatewayEvent = {
       pathParameters: { songId: 'errorSongId' }
     } as any;
@@ -138,5 +164,38 @@ describe('request-song handler', () => {
 
     expect(result.statusCode).toBe(500);
     expect(JSON.parse(result.body).message).toBe('Unexpected error');
+  });
+
+  it('should return 200 with existing song info', async () => {
+    jest.spyOn(SongRepository.prototype, 'getSongInfo').mockResolvedValue({
+      title: 'Existing Song',
+      youtubeId: 'validSongId',
+      length: 210,
+      playCount: 10
+    });
+
+    const event: APIGatewayEvent = {
+      pathParameters: { songId: 'validSongId' }
+    } as any;
+
+    const mockVidoes = [
+      {
+        id: 'validSongId',
+        snippet: { title: 'Valid Song' },
+        contentDetails: { duration: 'PT3M30S' }
+      }
+    ] as any as VideoListItem[];
+
+    const result = await handler(event);
+
+    expect(result.statusCode).toBe(200);
+    expect(JSON.parse(result.body)).toEqual({
+      title: 'Existing Song',
+      youtubeId: 'validSongId',
+      length: 210,
+      playCount: 10
+    });
+
+    expect(mockSearchForVideo).not.toHaveBeenCalled();
   });
 });

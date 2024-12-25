@@ -193,7 +193,8 @@ export class SongRepository {
             const songInfo: SongInfo = {
               title: unmarshalledItem.song_title,
               youtubeId: unmarshalledItem.youtube_id,
-              length: unmarshalledItem.song_length
+              length: unmarshalledItem.song_length,
+              playCount: unmarshalledItem.play_count
             };
             songs.push(songInfo);
           }
@@ -211,5 +212,34 @@ export class SongRepository {
     } while (hasMoreItems);
 
     return songs;
+  }
+
+  async getSongInfo(youtubeId: string): Promise<SongInfo | undefined> {
+    const { Item } = await dynamoDBClient.send(
+      new GetItemCommand({
+        TableName: table,
+        Key: {
+          pk: {
+            S: `yt#${youtubeId}`
+          },
+          sk: {
+            S: 'songInfo'
+          }
+        }
+      })
+    );
+
+    if (!Item) {
+      return undefined;
+    }
+
+    const unmarshalledItem = unmarshall(Item);
+
+    return {
+      title: unmarshalledItem.song_title,
+      youtubeId: unmarshalledItem.youtube_id,
+      length: unmarshalledItem.song_length,
+      playCount: unmarshalledItem.play_count
+    } as SongInfo;
   }
 }

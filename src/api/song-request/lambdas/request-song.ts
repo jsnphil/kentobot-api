@@ -3,14 +3,29 @@ import { Logger } from '@aws-lambda-powertools/logger';
 import { searchForVideo } from '../../../utils/youtube-client';
 import { processSongRequestRules } from '../../../utils/song-request-rules';
 import { parse, toSeconds } from 'iso8601-duration';
+import { SongRepository } from '../../../repositories/song-repository';
 
 const logger = new Logger({ serviceName: 'requestSongLambda' });
+const songRepository = new SongRepository();
 
 export const handler = async (
   event: APIGatewayEvent
 ): Promise<APIGatewayProxyResult> => {
   try {
     const songId = getSongId(event);
+
+    const songInfo = await songRepository.getSongInfo(songId);
+    if (songInfo) {
+      return {
+        statusCode: 200,
+        body: JSON.stringify({
+          title: songInfo.title,
+          youtubeId: songInfo.youtubeId,
+          length: songInfo.length,
+          playCount: songInfo.playCount
+        })
+      };
+    }
 
     logger.info(`Getting song request for song ID: ${songId}`);
 

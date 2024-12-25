@@ -15,6 +15,7 @@ export interface SongInfo {
   readonly youtubeId: string;
   readonly title: string;
   readonly length: number;
+  readonly playCount?: number;
 }
 
 export interface SongPlay {

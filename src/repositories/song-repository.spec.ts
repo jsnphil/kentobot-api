@@ -245,4 +245,42 @@ describe('Song Repository', () => {
       expect(result).toEqual([]);
     });
   });
+
+  describe('Get Song Info', () => {
+    it('should return song info when the song exists', async () => {
+      const youtubeId = '123';
+
+      const songInfo = {
+        pk: { S: 'yt#123' },
+        sk: { S: 'songInfo' },
+        song_title: { S: 'Test Song' },
+        song_length: { N: '300' },
+        play_count: { N: '1' },
+        youtube_id: { S: '123' }
+      };
+
+      mockDynamoDBClient.on(GetItemCommand).resolves({
+        Item: songInfo
+      });
+
+      const result = await songRepository.getSongInfo(youtubeId);
+
+      expect(result).toEqual({
+        youtubeId: '123',
+        title: 'Test Song',
+        length: 300,
+        playCount: 1
+      });
+    });
+
+    it('should return undefined when the song does not exist', async () => {
+      const youtubeId = '123';
+
+      mockDynamoDBClient.on(GetItemCommand).resolves({});
+
+      const result = await songRepository.getSongInfo(youtubeId);
+
+      expect(result).toBeUndefined();
+    });
+  });
 });

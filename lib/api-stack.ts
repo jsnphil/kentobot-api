@@ -111,8 +111,8 @@ export class ApiStack extends cdk.Stack {
           PUBLIC_VIDEO_TOGGLE_NAME: publicVideoToggle.parameterName,
           REQUEST_DURATION_NAME: requestDurationLimit.parameterName,
           DJ_HOUR_REQUEST_DURATION_NAME: djRequestDurationLimit.parameterName,
-          LICENSED_VIDEO_TOGGLE_NAME: licensedContentToggle.parameterName
-          // STREAM_DATA_TABLE: this.database.tableName
+          LICENSED_VIDEO_TOGGLE_NAME: licensedContentToggle.parameterName,
+          STREAM_DATA_TABLE: database.tableName
         },
         timeout: cdk.Duration.minutes(1),
         memorySize: 512,
@@ -125,6 +125,7 @@ export class ApiStack extends cdk.Stack {
     djRequestDurationLimit.grantRead(songRequestLambda);
     licensedContentToggle.grantRead(songRequestLambda);
     apiKeyParameter.grantRead(songRequestLambda);
+    database.grantReadData(songRequestLambda);
 
     requestSongResource.addMethod(
       'GET',

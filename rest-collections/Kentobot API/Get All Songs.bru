@@ -5,11 +5,7 @@ meta {
 }
 
 get {
-  url: https://{{aws.api.id}}.execute-api.us-east-1.amazonaws.com/{{stage}}/song-requests/:youtubeId/plays
+  url: https://{{aws.api.id}}.execute-api.us-east-1.amazonaws.com/{{stage}}/song-requests
   body: none
   auth: none
-}
-
-params:path {
-  youtubeId: SOFCQ2bfmHw
 }

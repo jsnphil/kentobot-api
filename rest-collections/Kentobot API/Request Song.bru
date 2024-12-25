@@ -8,6 +8,7 @@ get {
   url: https://{{aws.api.id}}.execute-api.us-east-1.amazonaws.com/{{stage}}/song-requests/request/:youtubeId
   body: none
   auth: apikey
+  auth: apikey
 }
 
 params:path {
@@ -16,6 +17,6 @@ params:path {
 
 auth:apikey {
   key: X-API-Key
-  value: PU6YJuQhbv3Fty0c79u1VeG2sM6jJEJ58ZtFLSe2
+  value: {{kentobot.api.key}}
   placement: header
 }

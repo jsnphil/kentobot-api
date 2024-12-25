@@ -12,14 +12,16 @@ post {
 
 auth:apikey {
   key: X-Api-Key
-  value: PU6YJuQhbv3Fty0c79u1VeG2sM6jJEJ58ZtFLSe2
+  value: {{kentobot.api.key}}
   placement: header
 }
 
 body:json {
   {
+    "youtubeId": "youtube-id",
     "title": "Another new song",
     "requestedBy": "jsnphil2",
-    "length": 154
+    "length": 154,
+    "played": "2024-12-25"
   }
 }

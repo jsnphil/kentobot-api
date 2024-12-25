@@ -24,23 +24,3 @@ new KentobotStage(app, 'Prod', {
     region: region
   }
 });
-
-// if (!environment) {
-//   throw Error('No environment set');
-// }
-
-// const dataStack = new DataStack(app, `KB-DataStack-${environment}`, {
-//   environment
-// });
-
-// const apiStack = new ApiStack(app, `KB-ApiStack-${environment}`, {
-//   environment
-// });
-
-// dataStack.addDependency(apiStack);
-// // dataStack.addDependency(dataMigrationStack);
-
-// Tags.of(app).add('environment', environment);
-// Tags.of(dataStack).add('system', 'data-repository');
-// Tags.of(dataStack).add('system', 'api');
-// // Tags.of(dataMigrationStack).add('system', 'data-migration');

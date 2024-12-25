@@ -1,6 +1,31 @@
 import * as apiGateway from 'aws-cdk-lib/aws-apigateway';
 import { Construct } from 'constructs';
 
+export const errorResponses = [
+  {
+    selectionPattern: '4\\d{2}', // Match all 4xx errors
+    statusCode: '400',
+    responseTemplates: {
+      'application/json': `{
+            "code": 400,
+            "message": "Invalid input",
+            "errors": []
+          }`
+    }
+  },
+  {
+    selectionPattern: '5\\d{2}', // Match all 5xx errors
+    statusCode: '500',
+    responseTemplates: {
+      'application/json': `{
+            "code": 500,
+            "message": "Invalid input",
+            "errors": []
+          }`
+    }
+  }
+];
+
 export const songRequestDetailsModel = (
   scope: Construct,
   api: apiGateway.RestApi

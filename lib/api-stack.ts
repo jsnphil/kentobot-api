@@ -1,12 +1,9 @@
 import * as cdk from 'aws-cdk-lib';
 import * as apiGateway from 'aws-cdk-lib/aws-apigateway';
-import * as apiGatewayV2 from 'aws-cdk-lib/aws-apigatewayv2';
 import * as lambda from 'aws-cdk-lib/aws-lambda-nodejs';
 import * as logs from 'aws-cdk-lib/aws-logs';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
-import * as events from 'aws-cdk-lib/aws-events';
 import * as sqs from 'aws-cdk-lib/aws-sqs';
-import * as eventsTargets from 'aws-cdk-lib/aws-events-targets';
 import * as lambdaEventSources from 'aws-cdk-lib/aws-lambda-event-sources';
 import * as ddb from 'aws-cdk-lib/aws-dynamodb';
 import * as iam from 'aws-cdk-lib/aws-iam';
@@ -16,11 +13,14 @@ import { createSongRequestParameters } from './song-request-parameters';
 import { ARCHITECTURE, NODE_RUNTIME } from './CDKConstants';
 import path = require('path');
 import {
+  errorResponses,
   getSongPlaysResponseModel,
   saveSongPlayResponseModel,
   saveSongRequestModel,
   songRequestDetailsModel
 } from './api-models';
+import { EventBus } from './constructs/event-bus';
+import { Api } from './constructs/api';
 
 export interface ApiStackProps extends cdk.StackProps {
   environmentName: string;
@@ -30,7 +30,9 @@ export class ApiStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: ApiStackProps) {
     super(scope, id, props);
 
+    // ***********************
     // Import shared resources
+    // ***********************
     const tableArn = cdk.Fn.importValue(`table-arn-${props.environmentName}`);
 
     const tableStreamArn = cdk.Fn.importValue(
@@ -46,51 +48,26 @@ export class ApiStack extends cdk.Stack {
       }
     );
 
-    const api = new apiGateway.RestApi(
-      this,
-      `KentobotAPI-${props.environmentName}`,
-      {
-        restApiName: `KentobotAPI-${props.environmentName}`,
-        description: `Kentobot API for ${props.environmentName}`,
-        deployOptions: {
-          stageName: props.environmentName,
-          loggingLevel: apiGateway.MethodLoggingLevel.INFO,
-          dataTraceEnabled: true
-        }
-      }
-    );
-
-    const plan = api.addUsagePlan('usage-plans', {
-      throttle: {
-        rateLimit: 10,
-        burstLimit: 2
-      }
+    // ***********************
+    // Setup main resources
+    // ***********************
+    const eventBus = new EventBus(this, 'Kentobot-Event-Bus', {
+      environmentName: props.environmentName
     });
 
-    const kentobotApiKey = new apiGateway.ApiKey(this, 'kentobot-api-key', {
-      apiKeyName: 'Kentobot'
-    });
-    plan.addApiKey(kentobotApiKey);
+    const api = new Api(this, 'Kentobot-API', props);
+    api.createApiKey('kentobot');
+    api.createApiKey('kentobeans-live');
 
-    const websiteApiKey = new apiGateway.ApiKey(this, 'website-api-key', {
-      apiKeyName: 'Kentobeans-live'
-    });
-    plan.addApiKey(websiteApiKey);
+    // ***********************
+    // Setup song request resources
+    // ***********************
+    const songRequestEndpointResource =
+      api.apiGateway.root.addResource('song-requests');
 
-    plan.addApiStage({
-      stage: api.deploymentStage
-    });
-
-    const apiGatewayRole = new iam.Role(
-      this,
-      `${props.environmentName}-api-role`,
-      {
-        assumedBy: new iam.ServicePrincipal('apigateway.amazonaws.com')
-      }
-    );
-
-    const songRequestEndpointResource = api.root.addResource('song-requests');
-
+    // ***********************
+    // Request song resource
+    // ***********************
     const {
       publicVideoToggle,
       requestDurationLimit,
@@ -102,7 +79,7 @@ export class ApiStack extends cdk.Stack {
       .addResource('request')
       .addResource('{songId}');
 
-    const apiKeyParameter =
+    const youtubeApiKeyParameter =
       ssm.StringParameter.fromSecureStringParameterAttributes(
         this,
         'ApiKeyParameter',
@@ -111,41 +88,37 @@ export class ApiStack extends cdk.Stack {
         }
       );
 
-    const songRequestLambda = new lambda.NodejsFunction(
-      this,
-      `RequestSong-${props.environmentName}`,
-      {
-        runtime: NODE_RUNTIME,
-        handler: 'handler',
-        entry: path.join(
-          __dirname,
-          '../src/api/',
-          'song-request/lambdas/request-song.ts'
-        ),
-        bundling: {
-          minify: false,
-          externalModules: ['aws-sdk']
-        },
-        logRetention: logs.RetentionDays.ONE_WEEK,
-        environment: {
-          ENVIRONMENT: props.environmentName,
-          PUBLIC_VIDEO_TOGGLE_NAME: publicVideoToggle.parameterName,
-          REQUEST_DURATION_NAME: requestDurationLimit.parameterName,
-          DJ_HOUR_REQUEST_DURATION_NAME: djRequestDurationLimit.parameterName,
-          LICENSED_VIDEO_TOGGLE_NAME: licensedContentToggle.parameterName,
-          STREAM_DATA_TABLE: database.tableName
-        },
-        timeout: cdk.Duration.minutes(1),
-        memorySize: 512,
-        architecture: ARCHITECTURE
-      }
-    );
+    const songRequestLambda = new lambda.NodejsFunction(this, 'RequestSong', {
+      runtime: NODE_RUNTIME,
+      handler: 'handler',
+      entry: path.join(
+        __dirname,
+        '../src/api/',
+        'song-request/lambdas/request-song.ts'
+      ),
+      bundling: {
+        minify: false,
+        externalModules: ['aws-sdk']
+      },
+      logRetention: logs.RetentionDays.ONE_WEEK,
+      environment: {
+        ENVIRONMENT: props.environmentName,
+        PUBLIC_VIDEO_TOGGLE_NAME: publicVideoToggle.parameterName,
+        REQUEST_DURATION_NAME: requestDurationLimit.parameterName,
+        DJ_HOUR_REQUEST_DURATION_NAME: djRequestDurationLimit.parameterName,
+        LICENSED_VIDEO_TOGGLE_NAME: licensedContentToggle.parameterName,
+        STREAM_DATA_TABLE: database.tableName
+      },
+      timeout: cdk.Duration.minutes(1),
+      memorySize: 512,
+      architecture: ARCHITECTURE
+    });
 
     publicVideoToggle.grantRead(songRequestLambda);
     requestDurationLimit.grantRead(songRequestLambda);
     djRequestDurationLimit.grantRead(songRequestLambda);
     licensedContentToggle.grantRead(songRequestLambda);
-    apiKeyParameter.grantRead(songRequestLambda);
+    youtubeApiKeyParameter.grantRead(songRequestLambda);
     database.grantReadData(songRequestLambda);
 
     requestSongResource.addMethod(
@@ -156,54 +129,24 @@ export class ApiStack extends cdk.Stack {
       }
     );
 
-    // Create the event bus
-    const bus = new events.EventBus(
-      this,
-      `kentobot-event-bus-${props.environmentName}`,
-      {
-        eventBusName: `Kentobot-EventBus-${props.environmentName}`
+    // ***********************
+    // Save song data resource
+    // ***********************
+    const saveSongQueue = new sqs.Queue(this, 'save-song-data', {
+      queueName: `${props.environmentName}-save-song-data`,
+      visibilityTimeout: cdk.Duration.seconds(300),
+      retentionPeriod: cdk.Duration.days(14),
+      deadLetterQueue: {
+        maxReceiveCount: 3,
+        queue: new sqs.Queue(this, 'save-song-data-dlq', {
+          queueName: `${props.environmentName}-save-song-data-dlq`
+        })
       }
-    );
-
-    bus.archive(`kentobot-event-archive-${props.environmentName}`, {
-      archiveName: `KentobotEventArchive-${props.environmentName}`,
-      eventPattern: {
-        account: [cdk.Stack.of(this).account]
-      },
-      retention: cdk.Duration.days(365)
     });
-
-    new events.Rule(this, `kentobot-event-logger-rule`, {
-      description: 'Log all events',
-      eventPattern: {
-        region: ['us-east-1']
-      },
-      eventBus: bus
-    });
-
-    const saveSongQueue = new sqs.Queue(
-      this,
-      `save-song-data-${props.environmentName}`,
-      {
-        queueName: `save-song-data-${props.environmentName}`,
-        visibilityTimeout: cdk.Duration.seconds(300),
-        retentionPeriod: cdk.Duration.days(14),
-        deadLetterQueue: {
-          maxReceiveCount: 3,
-          queue: new sqs.Queue(
-            this,
-            `save-song-data-dlq-${props.environmentName}`,
-            {
-              queueName: `save-song-data-dlq-${props.environmentName}`
-            }
-          )
-        }
-      }
-    );
 
     const playedSongEventLambda = new lambda.NodejsFunction(
       this,
-      `playedSongEventHandler-${props.environmentName}`,
+      'playedSongEventHandler',
       {
         runtime: NODE_RUNTIME,
         handler: 'handler',
@@ -236,69 +179,34 @@ export class ApiStack extends cdk.Stack {
     saveSongQueue.grantConsumeMessages(playedSongEventLambda);
     database.grantReadWriteData(playedSongEventLambda);
 
-    const saveSongDataRule = new events.Rule(
-      this,
-      `save-song-data-rule-${props.environmentName}`,
-      {
-        eventBus: bus,
-        eventPattern: {
-          source: ['kentobot-api'],
-          detailType: ['song-played']
-        }
-      }
-    );
-
-    saveSongDataRule.addTarget(new eventsTargets.SqsQueue(saveSongQueue));
-
-    const errorResponses = [
-      {
-        selectionPattern: '4\\d{2}', // Match all 4xx errors
-        statusCode: '400',
-        responseTemplates: {
-          'application/json': `{
-            "code": 400,
-            "message": "Invalid input",
-            "errors": []
-          }`
-        }
+    eventBus.addQueueTarget(this, 'save-song-data-target', {
+      source: 'kentobot-api',
+      eventPattern: {
+        detailType: ['song-played']
       },
-      {
-        selectionPattern: '5\\d{2}', // Match all 5xx errors
-        statusCode: '500',
-        responseTemplates: {
-          'application/json': `{
-            "code": 500,
-            "message": "Invalid input",
-            "errors": []
-          }`
-        }
-      }
-    ];
+      queue: saveSongQueue
+    });
 
     // Save song played endpoint
     const saveSongResource = songRequestEndpointResource.addResource('save');
 
-    const putEventsPolicy = new iam.Policy(
-      this,
-      `${props.environmentName}-put-events-policy`,
-      {
+    api.role.attachInlinePolicy(
+      new iam.Policy(this, 'put-events-policy', {
         statements: [
           new iam.PolicyStatement({
             actions: ['events:PutEvents'],
             effect: iam.Effect.ALLOW,
-            resources: [bus.eventBusArn]
+            resources: [eventBus.bus.eventBusArn]
           })
         ]
-      }
+      })
     );
-
-    apiGatewayRole.attachInlinePolicy(putEventsPolicy);
 
     const saveSongPlayedIntegration = new apiGateway.AwsIntegration({
       service: 'events',
       action: 'PutEvents',
       options: {
-        credentialsRole: apiGatewayRole,
+        credentialsRole: api.role,
         passthroughBehavior: apiGateway.PassthroughBehavior.WHEN_NO_MATCH,
         integrationResponses: [
           {
@@ -326,7 +234,7 @@ export class ApiStack extends cdk.Stack {
                     "DetailType": "song-played",
                     "Source": "kentobot-api",
                     "Detail": "{\\"title\\": \\"$inputRoot.title\\", \\"youtubeId\\": \\"$inputRoot.youtubeId\\", \\"length\\": $inputRoot.length, \\"requestedBy\\": \\"$inputRoot.requestedBy\\", \\"played\\": \\"$inputRoot.played\\"}",
-                    "EventBusName": "${bus.eventBusName}"
+                    "EventBusName": "${eventBus.bus.eventBusName}"
                   }
                 ]
               }`
@@ -340,7 +248,7 @@ export class ApiStack extends cdk.Stack {
         {
           statusCode: '200',
           responseModels: {
-            'application/json': saveSongPlayResponseModel(this, api)
+            'application/json': saveSongPlayResponseModel(this, api.apiGateway)
           }
         },
         ...errorResponses
@@ -349,15 +257,19 @@ export class ApiStack extends cdk.Stack {
         this,
         'body-validator',
         {
-          restApi: api,
+          restApi: api.apiGateway,
           requestValidatorName: 'body-validator',
           validateRequestBody: true
         }
       ),
-      requestModels: { 'application/json': saveSongRequestModel(this, api) }
+      requestModels: {
+        'application/json': saveSongRequestModel(this, api.apiGateway)
+      }
     });
 
-    // Get song request details endpoint
+    // ***********************
+    // Get song details and plays endpoint
+    // ***********************
     const getSongRequestResource =
       songRequestEndpointResource.addResource('{songId}');
 
@@ -367,23 +279,26 @@ export class ApiStack extends cdk.Stack {
     const getSongRequestPlaysResource =
       getSongRequestResource.addResource('plays');
 
-    const dynamoApiPolicy = new iam.Policy(this, `api-dynamodb-policy`, {
-      statements: [
-        new iam.PolicyStatement({
-          actions: ['dynamodb:GetItem', 'dynamodb:Query'],
-          effect: iam.Effect.ALLOW,
-          resources: [database.tableArn]
-        })
-      ]
-    });
+    api.role.attachInlinePolicy(
+      new iam.Policy(this, `api-dynamodb-policy`, {
+        statements: [
+          new iam.PolicyStatement({
+            actions: ['dynamodb:GetItem', 'dynamodb:Query'],
+            effect: iam.Effect.ALLOW,
+            resources: [database.tableArn]
+          })
+        ]
+      })
+    );
 
-    apiGatewayRole.attachInlinePolicy(dynamoApiPolicy);
-
+    // ***********************
+    // Get song details
+    // ***********************
     const getSongRequestDetailsIntegration = new apiGateway.AwsIntegration({
       service: 'dynamodb',
       action: 'GetItem',
       options: {
-        credentialsRole: apiGatewayRole,
+        credentialsRole: api.role,
         passthroughBehavior: apiGateway.PassthroughBehavior.WHEN_NO_MATCH,
         integrationResponses: [
           {
@@ -444,7 +359,7 @@ export class ApiStack extends cdk.Stack {
           {
             statusCode: '200',
             responseModels: {
-              'application/json': songRequestDetailsModel(this, api)
+              'application/json': songRequestDetailsModel(this, api.apiGateway)
             }
           },
           ...errorResponses
@@ -452,12 +367,14 @@ export class ApiStack extends cdk.Stack {
       }
     );
 
-    // Get song request plays endpoint
+    // ***********************
+    // Get song plays endpoint
+    // ***********************
     const getSongRequestPlaysIntegration = new apiGateway.AwsIntegration({
       service: 'dynamodb',
       action: 'Query',
       options: {
-        credentialsRole: apiGatewayRole,
+        credentialsRole: api.role,
         passthroughBehavior: apiGateway.PassthroughBehavior.WHEN_NO_MATCH,
         integrationResponses: [
           {
@@ -528,7 +445,10 @@ export class ApiStack extends cdk.Stack {
           {
             statusCode: '200',
             responseModels: {
-              'application/json': getSongPlaysResponseModel(this, api)
+              'application/json': getSongPlaysResponseModel(
+                this,
+                api.apiGateway
+              )
             }
           },
           ...errorResponses
@@ -555,7 +475,7 @@ export class ApiStack extends cdk.Stack {
         environment: {
           STREAM_DATA_TABLE: database.tableName
         },
-        timeout: cdk.Duration.minutes(1),
+        timeout: cdk.Duration.seconds(30),
         memorySize: 2048,
         architecture: ARCHITECTURE
       }

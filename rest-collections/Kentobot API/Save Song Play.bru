@@ -7,12 +7,18 @@ meta {
 post {
   url: https://{{aws.api.id}}.execute-api.us-east-1.amazonaws.com/{{stage}}/song-requests/save
   body: json
-  auth: none
+  auth: apikey
+}
+
+auth:apikey {
+  key: X-Api-Key
+  value: PU6YJuQhbv3Fty0c79u1VeG2sM6jJEJ58ZtFLSe2
+  placement: header
 }
 
 body:json {
   {
-    "title": "A new song",
+    "title": "Another new song",
     "requestedBy": "jsnphil2",
     "length": 154
   }

@@ -60,6 +60,27 @@ export class ApiStack extends cdk.Stack {
       }
     );
 
+    const plan = api.addUsagePlan('usage-plans', {
+      throttle: {
+        rateLimit: 10,
+        burstLimit: 2
+      }
+    });
+
+    const kentobotApiKey = new apiGateway.ApiKey(this, 'kentobot-api-key', {
+      apiKeyName: 'Kentobot'
+    });
+    plan.addApiKey(kentobotApiKey);
+
+    const websiteApiKey = new apiGateway.ApiKey(this, 'website-api-key', {
+      apiKeyName: 'Kentobeans-live'
+    });
+    plan.addApiKey(websiteApiKey);
+
+    plan.addApiStage({
+      stage: api.deploymentStage
+    });
+
     const apiGatewayRole = new iam.Role(
       this,
       `${props.environmentName}-api-role`,
@@ -129,7 +150,10 @@ export class ApiStack extends cdk.Stack {
 
     requestSongResource.addMethod(
       'GET',
-      new apiGateway.LambdaIntegration(songRequestLambda)
+      new apiGateway.LambdaIntegration(songRequestLambda),
+      {
+        apiKeyRequired: true
+      }
     );
 
     // Create the event bus
@@ -149,17 +173,13 @@ export class ApiStack extends cdk.Stack {
       retention: cdk.Duration.days(365)
     });
 
-    const eventLoggerRule = new events.Rule(
-      this,
-      `kentobot-event-logger-rule`,
-      {
-        description: 'Log all events',
-        eventPattern: {
-          region: ['us-east-1']
-        },
-        eventBus: bus
-      }
-    );
+    new events.Rule(this, `kentobot-event-logger-rule`, {
+      description: 'Log all events',
+      eventPattern: {
+        region: ['us-east-1']
+      },
+      eventBus: bus
+    });
 
     const saveSongQueue = new sqs.Queue(
       this,
@@ -315,6 +335,7 @@ export class ApiStack extends cdk.Stack {
     });
 
     saveSongResource.addMethod('POST', saveSongPlayedIntegration, {
+      apiKeyRequired: true,
       methodResponses: [
         {
           statusCode: '200',

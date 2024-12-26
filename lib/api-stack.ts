@@ -244,7 +244,6 @@ export class ApiStack extends cdk.Stack {
 
     saveSongResource.addMethod('POST', saveSongPlayedIntegration, {
       apiKeyRequired: true,
-      apiKeyRequired: true,
       methodResponses: [
         {
           statusCode: '200',

@@ -3,6 +3,7 @@ import { Construct } from 'constructs';
 import { ApiStack } from './api-stack';
 import { DataStack } from './data-stack';
 import { DataMigrationStack } from './data-migration';
+import { WebSocketsPocStack } from './web-sockets';
 
 export interface KentobotProps extends cdk.StageProps {
   readonly environmentName: string;
@@ -20,6 +21,8 @@ export class KentobotStage extends cdk.Stage {
       'DataMigrationStack',
       props
     );
+
+    new WebSocketsPocStack(this, 'WebSocketsPocStack', props);
 
     apiStack.addDependency(dataStack);
     dataMigration.addDependency(dataStack);

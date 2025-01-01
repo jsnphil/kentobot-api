@@ -8,7 +8,7 @@ export interface SongRequest {
   readonly title: string;
   readonly length: number;
   readonly requestedBy: string;
-  readonly played: string;
+  readonly played?: string;
 }
 
 export interface SongInfo {
@@ -24,4 +24,15 @@ export interface SongPlay {
   readonly sotnContender: boolean;
   readonly sotnWinner: boolean;
   readonly sotsWinner: boolean;
+}
+
+export interface SongQueueItem {
+  readonly position: number;
+  readonly youtubeId: string;
+  readonly title: string;
+  readonly length: number;
+  readonly requestedBy: string;
+  readonly isBumped: boolean;
+  readonly isShuffled: boolean;
+  readonly isShuffleEntered: boolean;
 }

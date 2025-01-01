@@ -179,7 +179,9 @@ export class SongRepository {
             ':gsi_pk1': { S: 'songRequest' },
             ':gsi_sk1': { S: 'songRequest' }
           },
-          ExclusiveStartKey: lastEvaluatedKey
+          ExclusiveStartKey: lastEvaluatedKey,
+          ProjectionExpression:
+            'song_title, youtube_id, song_length, play_count'
         })
       );
 
@@ -225,7 +227,8 @@ export class SongRepository {
           sk: {
             S: 'songInfo'
           }
-        }
+        },
+        ProjectionExpression: 'song_title, youtube_id, song_length, play_count'
       })
     );
 

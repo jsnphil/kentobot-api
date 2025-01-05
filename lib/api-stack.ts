@@ -244,7 +244,6 @@ export class ApiStack extends cdk.Stack {
 
     saveSongResource.addMethod('POST', saveSongPlayedIntegration, {
       apiKeyRequired: true,
-      apiKeyRequired: true,
       methodResponses: [
         {
           statusCode: '200',
@@ -495,5 +494,28 @@ export class ApiStack extends cdk.Stack {
       'GET',
       new apiGateway.LambdaIntegration(getAllSongRequestsLambda)
     );
+
+    // ***********************
+    // TEst code for song queue
+    // ***********************
+    const queueTestLambda = new lambda.NodejsFunction(this, 'queueTest', {
+      runtime: NODE_RUNTIME,
+      handler: 'handler',
+      entry: path.join(__dirname, '../src/test-code', 'queue-test.ts'),
+      bundling: {
+        minify: false,
+        externalModules: ['aws-sdk']
+      },
+      logRetention: logs.RetentionDays.ONE_WEEK,
+      environment: {
+        ENVIRONMENT: props.environmentName,
+        STREAM_DATA_TABLE: database.tableName
+      },
+      timeout: cdk.Duration.minutes(1),
+      memorySize: 512,
+      architecture: ARCHITECTURE
+    });
+
+    database.grantReadWriteData(queueTestLambda);
   }
 }

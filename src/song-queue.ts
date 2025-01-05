@@ -1,10 +1,26 @@
+import { SongQueueRepository } from './repositories/song-queue-repository';
 import { SongQueueItem, SongRequest } from './types/song-request';
 
 export class SongQueue {
   private songs: SongQueueItem[] = [];
+  private songRepository: SongQueueRepository;
+  private streamDate: Date;
 
-  constructor() {
+  private constructor() {
     this.songs = [];
+    this.songRepository = new SongQueueRepository();
+    this.streamDate = new Date();
+  }
+
+  static async load() {
+    const queue = new SongQueue();
+    const songQueue = await queue.songRepository.loadQueue(queue.streamDate);
+
+    if (songQueue) {
+      queue.songs = songQueue.songlist;
+    }
+
+    return queue;
   }
 
   addSong(song: SongRequest) {
@@ -74,5 +90,18 @@ export class SongQueue {
 
   getLength() {
     return this.songs.length;
+  }
+
+  async clear() {
+    this.songs = [];
+    await this.songRepository.deleteQueue(this);
+  }
+
+  async save() {
+    await this.songRepository.saveQueue(this);
+  }
+
+  getStreamDate() {
+    return this.streamDate;
   }
 }

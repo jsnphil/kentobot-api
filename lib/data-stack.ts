@@ -25,7 +25,8 @@ export class DataStack extends cdk.Stack {
         type: ddb.AttributeType.STRING
       },
       stream: ddb.StreamViewType.NEW_IMAGE,
-      deletionProtection: props.environmentName === 'prod' || false
+      deletionProtection: props.environmentName === 'prod' || false,
+      timeToLiveAttribute: 'ttl'
     });
 
     streamDataTable.addGlobalSecondaryIndex({

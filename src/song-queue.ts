@@ -1,26 +1,30 @@
 import { SongQueueRepository } from './repositories/song-queue-repository';
 import { SongQueueItem, SongRequest } from './types/song-request';
+import { generateStreamDate } from './utils/utilities';
 
 export class SongQueue {
   private songs: SongQueueItem[] = [];
-  private songRepository: SongQueueRepository;
-  private streamDate: Date;
+  private songRepository = new SongQueueRepository();
+  private streamDate: string;
 
-  private constructor() {
-    this.songs = [];
-    this.songRepository = new SongQueueRepository();
-    this.streamDate = new Date();
-  }
+  private constructor() {}
 
-  static async load() {
+  static async loadQueue() {
+    console.log('Creating new queue');
     const queue = new SongQueue();
-    const songQueue = await queue.songRepository.loadQueue(queue.streamDate);
 
-    if (songQueue) {
-      queue.songs = songQueue.songlist;
-    }
+    queue.streamDate = generateStreamDate();
+    console.log(`Trying to load queue for stream date: ${queue.streamDate}`);
+    await queue.load();
+
+    console.log(`Queue loaded with ${queue.getLength()} songs`);
+    console.log(`Queue: ${JSON.stringify(queue.toArray(), null, 2)}`);
 
     return queue;
+  }
+
+  async load() {
+    this.songs = await this.songRepository.getQueue(this.streamDate);
   }
 
   addSong(song: SongRequest) {

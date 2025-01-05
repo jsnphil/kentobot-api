@@ -34,3 +34,16 @@ export async function streamToString(readableData: Readable): Promise<string> {
     );
   });
 }
+
+export const generateStreamDate = () => {
+  return new Date()
+    .toLocaleDateString('en-US', {
+      timeZone: 'America/Chicago',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    })
+    .split('/')
+    .reverse()
+    .join('-');
+};

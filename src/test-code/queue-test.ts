@@ -1,7 +1,7 @@
 import { SongQueue } from '../song-queue';
 
-export const handler = async (event) => {
-  const songQueue = new SongQueue();
+export const handler = async (event: any) => {
+  const songQueue = await SongQueue.loadQueue();
 
   // Populate the song queue with 10 items
   for (let i = 1; i <= 10; i++) {
@@ -16,16 +16,7 @@ export const handler = async (event) => {
   }
 
   console.log(`Queue length: ${songQueue.getLength()}`);
-
   console.log(`Queue: ${JSON.stringify(songQueue.toArray(), null, 2)}`);
-  //   // Get the queue as an array
-  //   const queueArray = songQueue.toArray();
-
-  //   // Get the length of the queue
-  //   const queueLength = songQueue.getLength();
-
-  //   // Clear the queue
-  //   songQueue.clear();
 
   // Save the queue
   console.log('Saving the queue');

@@ -1,11 +1,20 @@
 import { SongQueue } from './song-queue';
-import { SongQueueItem, SongRequest } from './types/song-request';
+import { SongRequest } from './types/song-request';
+import { DynamoDBClient, GetItemCommand } from '@aws-sdk/client-dynamodb';
+import { mockClient } from 'aws-sdk-client-mock';
+
+const mockDynamoDBClient = mockClient(DynamoDBClient);
+
+// TODO Can the test be refactored to use a beforeEach to setup the queue
 
 describe('SongQueue', () => {
   describe('addSong', () => {
-    it('Should add a song to the queue', () => {
+    it('Should add a song to the queue', async () => {
       // Arrange
-      const songQueue = new SongQueue();
+      mockDynamoDBClient.on(GetItemCommand).resolves({
+        Item: undefined
+      });
+      const songQueue = await SongQueue.loadQueue();
 
       const songRequest: SongRequest = {
         youtubeId: 'youtubeId',
@@ -33,9 +42,11 @@ describe('SongQueue', () => {
       expect(songQueue.getLength()).toBe(1);
     });
 
-    it('Should add a song to the end of the queue', () => {
-      // Arrange
-      const songQueue = new SongQueue();
+    it('Should add a song to the end of the queue', async () => {
+      mockDynamoDBClient.on(GetItemCommand).resolves({
+        Item: undefined
+      });
+      const songQueue = await SongQueue.loadQueue();
 
       const songRequest1: SongRequest = {
         youtubeId: 'youtubeId',
@@ -82,9 +93,12 @@ describe('SongQueue', () => {
   });
 
   describe('removeSong', () => {
-    it('Should remove a song from the start of the queue', () => {
+    it('Should remove a song from the start of the queue', async () => {
       // Arrange
-      const songQueue = new SongQueue();
+      mockDynamoDBClient.on(GetItemCommand).resolves({
+        Item: undefined
+      });
+      const songQueue = await SongQueue.loadQueue();
 
       const songRequest1: SongRequest = {
         youtubeId: 'youtubeId1',
@@ -121,9 +135,12 @@ describe('SongQueue', () => {
       expect(songQueue.toArray()[1].youtubeId).toEqual('youtubeId3');
     });
 
-    it('Should remove a song from the end of the queue', () => {
+    it('Should remove a song from the end of the queue', async () => {
       // Arrange
-      const songQueue = new SongQueue();
+      mockDynamoDBClient.on(GetItemCommand).resolves({
+        Item: undefined
+      });
+      const songQueue = await SongQueue.loadQueue();
 
       const songRequest1: SongRequest = {
         youtubeId: 'youtubeId1',
@@ -160,9 +177,12 @@ describe('SongQueue', () => {
       expect(songQueue.toArray()[1].youtubeId).toEqual('youtubeId2');
     });
 
-    it('Should remove a song from the middle of the queue', () => {
+    it('Should remove a song from the middle of the queue', async () => {
       // Arrange
-      const songQueue = new SongQueue();
+      mockDynamoDBClient.on(GetItemCommand).resolves({
+        Item: undefined
+      });
+      const songQueue = await SongQueue.loadQueue();
 
       const songRequest1: SongRequest = {
         youtubeId: 'youtubeId1',
@@ -198,9 +218,12 @@ describe('SongQueue', () => {
       expect(songQueue.toArray()[1].youtubeId).toEqual('youtubeId3');
     });
 
-    it('Should throw an error if the song is not in the queue', () => {
+    it('Should throw an error if the song is not in the queue', async () => {
       // Arrange
-      const songQueue = new SongQueue();
+      mockDynamoDBClient.on(GetItemCommand).resolves({
+        Item: undefined
+      });
+      const songQueue = await SongQueue.loadQueue();
 
       const songRequest: SongRequest = {
         youtubeId: 'youtubeId',
@@ -219,8 +242,11 @@ describe('SongQueue', () => {
       );
     });
 
-    it('Should throw an error if the queue is empty', () => {
-      const songQueue = new SongQueue();
+    it('Should throw an error if the queue is empty', async () => {
+      mockDynamoDBClient.on(GetItemCommand).resolves({
+        Item: undefined
+      });
+      const songQueue = await SongQueue.loadQueue();
 
       expect(() => songQueue.removeSong('youtubeId2')).toThrow(
         'Queue is empty'
@@ -229,9 +255,12 @@ describe('SongQueue', () => {
   });
 
   describe('removeSongForUser', () => {
-    it('Should remove a song the user if they have a song in the queue', () => {
+    it('Should remove a song the user if they have a song in the queue', async () => {
       // Arrange
-      const songQueue = new SongQueue();
+      mockDynamoDBClient.on(GetItemCommand).resolves({
+        Item: undefined
+      });
+      const songQueue = await SongQueue.loadQueue();
 
       const songRequest1: SongRequest = {
         youtubeId: 'youtubeId1',
@@ -268,9 +297,12 @@ describe('SongQueue', () => {
       expect(songQueue.toArray()[1].youtubeId).toEqual('youtubeId3');
     });
 
-    it('Should throw an error if the user does not have a song in the queue', () => {
+    it('Should throw an error if the user does not have a song in the queue', async () => {
       // Arrange
-      const songQueue = new SongQueue();
+      mockDynamoDBClient.on(GetItemCommand).resolves({
+        Item: undefined
+      });
+      const songQueue = await SongQueue.loadQueue();
 
       const songRequest1: SongRequest = {
         youtubeId: 'youtubeId1',
@@ -305,9 +337,12 @@ describe('SongQueue', () => {
   });
 
   describe('findSongById', () => {
-    it('Should return the song if it is in the queue', () => {
+    it('Should return the song if it is in the queue', async () => {
       // Arrange
-      const songQueue = new SongQueue();
+      mockDynamoDBClient.on(GetItemCommand).resolves({
+        Item: undefined
+      });
+      const songQueue = await SongQueue.loadQueue();
 
       const songRequest1: SongRequest = {
         youtubeId: 'youtubeId1',
@@ -341,9 +376,12 @@ describe('SongQueue', () => {
       expect(result?.youtubeId).toEqual('youtubeId2');
     });
 
-    it('Should return undefined if the song is not in the queue', () => {
+    it('Should return undefined if the song is not in the queue', async () => {
       // Arrange
-      const songQueue = new SongQueue();
+      mockDynamoDBClient.on(GetItemCommand).resolves({
+        Item: undefined
+      });
+      const songQueue = await SongQueue.loadQueue();
 
       const songRequest: SongRequest = {
         youtubeId: 'youtubeId',
@@ -363,9 +401,12 @@ describe('SongQueue', () => {
   });
 
   describe('findSongByUser', () => {
-    it('Should return the song if the user has a song in the queue', () => {
+    it('Should return the song if the user has a song in the queue', async () => {
       // Arrange
-      const songQueue = new SongQueue();
+      mockDynamoDBClient.on(GetItemCommand).resolves({
+        Item: undefined
+      });
+      const songQueue = await SongQueue.loadQueue();
 
       const songRequest1: SongRequest = {
         youtubeId: 'youtubeId1',
@@ -399,9 +440,12 @@ describe('SongQueue', () => {
       expect(result?.youtubeId).toEqual('youtubeId2');
     });
 
-    it('Should return undefined if the user does not have a song in the queue', () => {
+    it('Should return undefined if the user does not have a song in the queue', async () => {
       // Arrange
-      const songQueue = new SongQueue();
+      mockDynamoDBClient.on(GetItemCommand).resolves({
+        Item: undefined
+      });
+      const songQueue = await SongQueue.loadQueue();
 
       const songRequest: SongRequest = {
         youtubeId: 'youtubeId',
@@ -421,9 +465,12 @@ describe('SongQueue', () => {
   });
 
   describe('moveSong', () => {
-    it('Should move a song to the top of the queue', () => {
+    it('Should move a song to the top of the queue', async () => {
       // Arrange
-      const songQueue = new SongQueue();
+      mockDynamoDBClient.on(GetItemCommand).resolves({
+        Item: undefined
+      });
+      const songQueue = await SongQueue.loadQueue();
 
       const songRequest1: SongRequest = {
         youtubeId: 'youtubeId1',
@@ -477,9 +524,12 @@ describe('SongQueue', () => {
       expect(songQueue.toArray()[4].youtubeId).toEqual('youtubeId4');
     });
 
-    it('Should move a song to the bottom of the queue', () => {
+    it('Should move a song to the bottom of the queue', async () => {
       // Arrange
-      const songQueue = new SongQueue();
+      mockDynamoDBClient.on(GetItemCommand).resolves({
+        Item: undefined
+      });
+      const songQueue = await SongQueue.loadQueue();
 
       const songRequest1: SongRequest = {
         youtubeId: 'youtubeId1',
@@ -533,9 +583,12 @@ describe('SongQueue', () => {
       expect(songQueue.toArray()[4].youtubeId).toEqual('youtubeId1');
     });
 
-    it('Should move a song in the middle of the queue', () => {
+    it('Should move a song in the middle of the queue', async () => {
       // Arrange
-      const songQueue = new SongQueue();
+      mockDynamoDBClient.on(GetItemCommand).resolves({
+        Item: undefined
+      });
+      const songQueue = await SongQueue.loadQueue();
 
       const songRequest1: SongRequest = {
         youtubeId: 'youtubeId1',
@@ -589,9 +642,12 @@ describe('SongQueue', () => {
       expect(songQueue.toArray()[4].youtubeId).toEqual('youtubeId5');
     });
 
-    it('Should throw an error if the song is not in the queue', () => {
+    it('Should throw an error if the song is not in the queue', async () => {
       // Arrange
-      const songQueue = new SongQueue();
+      mockDynamoDBClient.on(GetItemCommand).resolves({
+        Item: undefined
+      });
+      const songQueue = await SongQueue.loadQueue();
 
       const songRequest: SongRequest = {
         youtubeId: 'youtubeId',
@@ -610,12 +666,15 @@ describe('SongQueue', () => {
       );
     });
 
-    it('Should throw an error if the queue is empty', () => {
-      const songQueue = new SongQueue();
+    it('Should throw an error if the queue is empty', async () => {
+      mockDynamoDBClient.on(GetItemCommand).resolves({
+        Item: undefined
+      });
+      const songQueue = await SongQueue.loadQueue();
 
-      expect(() => songQueue.moveSong('youtubeId2', 1)).toThrow(
-        'Queue is empty'
-      );
+      expect(
+        async () => await songQueue.moveSong('youtubeId2', 1)
+      ).rejects.toThrow('Queue is empty');
     });
   });
 });

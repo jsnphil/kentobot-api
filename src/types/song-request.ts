@@ -27,7 +27,7 @@ export interface SongPlay {
 }
 
 export interface SongQueueItem {
-  readonly position: number;
+  // readonly position: number;
   readonly youtubeId: string;
   readonly title: string;
   readonly length: number;

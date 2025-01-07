@@ -38,7 +38,6 @@ export class SongQueueRepository {
   }
 
   async saveQueue(queue: SongQueue) {
-    console.log('Saving queue');
     try {
       const response = await dynamoDBClient.send(
         new PutItemCommand({
@@ -54,8 +53,8 @@ export class SongQueueRepository {
           }
         })
       );
-      console.log('Queue saved');
-      console.log(JSON.stringify(response));
+
+      logger.debug('Queue saved');
     } catch (error) {
       logger.error(`Failed to save the queue: ${error}`);
       throw new Error('Failed to save the queue');

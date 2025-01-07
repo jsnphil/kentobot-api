@@ -28,7 +28,15 @@ export class SongQueue {
   }
 
   addSong(song: SongRequest) {
-    // TODO Add queue rules here?
+    /*
+     Rules to check
+     - Song is not already in the queue
+     - User already has a song in the queue (how to handle mods?)
+     - Song is too long
+     - Song is blacklisted (later feature)
+     - User is blacklisted (later feature)
+    */
+
     this.songs.push({
       youtubeId: song.youtubeId,
       title: song.title,

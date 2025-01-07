@@ -37,7 +37,7 @@ export const saveSongData = async (playedSong: SongRequest) => {
   };
 
   const songPlay = {
-    date: new Date(playedSong.played) || new Date().toISOString(),
+    date: new Date(playedSong.played || new Date()),
     requestedBy: playedSong.requestedBy,
     sotnContender: false,
     sotnWinner: false,

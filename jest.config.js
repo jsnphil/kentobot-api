@@ -25,7 +25,8 @@ module.exports = {
     'types/*',
     'utils/youtube-client.ts',
     'mocks/*',
-    'data-migration/*'
+    'data-migration/*',
+    'test-code/*'
   ],
   resetMocks: true
 };

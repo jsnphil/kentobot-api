@@ -1,13 +1,20 @@
+import { GetParameterCommand, SSMClient } from '@aws-sdk/client-ssm';
 import { SongQueueRepository } from './repositories/song-queue-repository';
 import { SongQueueItem, SongRequest } from './types/song-request';
-import { generateStreamDate } from './utils/utilities';
+import { generateStreamDate, secondsToMinutes } from './utils/utilities';
+import { Logger } from '@aws-lambda-powertools/logger';
 
 export class SongQueue {
   private songs: SongQueueItem[] = [];
   private songRepository = new SongQueueRepository();
   private streamDate: string;
+  private logger = new Logger({ serviceName: 'song-queue' });
 
-  private constructor() {}
+  private ssmClient;
+
+  private constructor() {
+    this.ssmClient = new SSMClient({ region: 'us-east-1' });
+  }
 
   static async loadQueue() {
     console.log('Creating new queue');
@@ -27,15 +34,39 @@ export class SongQueue {
     this.songs = await this.songRepository.getQueue(this.streamDate);
   }
 
-  addSong(song: SongRequest) {
-    /*
-     Rules to check
-     - Song is not already in the queue
-     - User already has a song in the queue (how to handle mods?)
-     - Song is too long
-     - Song is blacklisted (later feature)
-     - User is blacklisted (later feature)
-    */
+  async addSong(song: SongRequest) {
+    const maxDuration = await this.getMaxDuration();
+    const maxSongsPerUser = await this.getMaxNumberOfRequests();
+
+    const queueRules = [
+      {
+        name: 'Song is already in the queue',
+        fn: (song: SongRequest) =>
+          !this.songs.find((s) => s.youtubeId === song.youtubeId)
+      },
+      {
+        name: `User already has ${maxSongsPerUser} songs in the queue`,
+        fn: (song: SongRequest) => {
+          const userSongsCount = this.songs.filter(
+            (s) => s.requestedBy === song.requestedBy
+          ).length;
+          return userSongsCount < maxSongsPerUser || song.allowOverride;
+        }
+      },
+      {
+        name: `Song length must be under ${secondsToMinutes(maxDuration)}`,
+        fn: async (song: SongRequest) => {
+          return song.length <= maxDuration;
+        }
+      }
+    ];
+
+    for (const rule of queueRules) {
+      const result = await rule.fn(song);
+      if (!result) {
+        throw new Error(rule.name);
+      }
+    }
 
     this.songs.push({
       youtubeId: song.youtubeId,
@@ -46,6 +77,10 @@ export class SongQueue {
       isShuffled: false,
       isShuffleEntered: false
     });
+
+    this.logger.info(
+      `Song [${song.youtubeId}], requested by [${song.requestedBy}] added to queue`
+    );
   }
 
   removeSong(youtubeId: string) {
@@ -115,5 +150,25 @@ export class SongQueue {
 
   getStreamDate() {
     return this.streamDate;
+  }
+
+  async getMaxDuration() {
+    const response = await this.ssmClient.send(
+      new GetParameterCommand({
+        Name: process.env.REQUEST_DURATION_NAME
+      })
+    );
+    response;
+    return Number(response.Parameter?.Value);
+  }
+
+  async getMaxNumberOfRequests() {
+    const response = await this.ssmClient.send(
+      new GetParameterCommand({
+        Name: process.env.MAX_SONGS_PER_USER
+      })
+    );
+    this.logger.debug(JSON.stringify(response));
+    return Number(response.Parameter?.Value);
   }
 }

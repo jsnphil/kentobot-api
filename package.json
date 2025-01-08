@@ -36,7 +36,7 @@
     "@aws-sdk/client-ssm": "^3.716.0",
     "@aws-sdk/util-dynamodb": "^3.716.0",
     "@types/youtube": "^0.1.0",
-    "aws-cdk-lib": "2.167.1",
+    "aws-cdk-lib": "2.174.0",
     "constructs": "^10.4.2",
     "iso8601-duration": "^2.1.2",
     "node-fetch": "^3.3.2",

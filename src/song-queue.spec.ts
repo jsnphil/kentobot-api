@@ -1,19 +1,43 @@
+import { GetParameterCommand, SSMClient } from '@aws-sdk/client-ssm';
 import { SongQueue } from './song-queue';
 import { SongRequest } from './types/song-request';
 import { DynamoDBClient, GetItemCommand } from '@aws-sdk/client-dynamodb';
 import { mockClient } from 'aws-sdk-client-mock';
 
 const mockDynamoDBClient = mockClient(DynamoDBClient);
+const mockSSMClient = mockClient(SSMClient);
 
 // TODO Can the test be refactored to use a beforeEach to setup the queue
 
 describe('SongQueue', () => {
+  beforeEach(() => {
+    process.env.REQUEST_DURATION_NAME = 'REQUEST_DURATION_NAME';
+    process.env.MAX_SONGS_PER_USER = 'MAX_SONGS_PER_USER';
+  });
+
   describe('addSong', () => {
     it('Should add a song to the queue', async () => {
       // Arrange
       mockDynamoDBClient.on(GetItemCommand).resolves({
         Item: undefined
       });
+
+      mockSSMClient
+        .on(GetParameterCommand, {
+          Name: 'REQUEST_DURATION_NAME'
+        })
+        .resolves({
+          Parameter: {
+            Value: '360'
+          }
+        });
+
+      mockSSMClient
+        .on(GetParameterCommand, {
+          Name: 'MAX_SONGS_PER_USER'
+        })
+        .resolves({ Parameter: { Value: '1' } });
+
       const songQueue = await SongQueue.loadQueue();
 
       const songRequest: SongRequest = {
@@ -24,7 +48,7 @@ describe('SongQueue', () => {
       };
 
       // Act
-      songQueue.addSong(songRequest);
+      await songQueue.addSong(songRequest);
 
       // Assert
       expect(songQueue.toArray()).toEqual([
@@ -46,6 +70,23 @@ describe('SongQueue', () => {
       mockDynamoDBClient.on(GetItemCommand).resolves({
         Item: undefined
       });
+
+      mockSSMClient
+        .on(GetParameterCommand, {
+          Name: 'REQUEST_DURATION_NAME'
+        })
+        .resolves({
+          Parameter: {
+            Value: '360'
+          }
+        });
+
+      mockSSMClient
+        .on(GetParameterCommand, {
+          Name: 'MAX_SONGS_PER_USER'
+        })
+        .resolves({ Parameter: { Value: '1' } });
+
       const songQueue = await SongQueue.loadQueue();
 
       const songRequest1: SongRequest = {
@@ -63,8 +104,8 @@ describe('SongQueue', () => {
       };
 
       // Act
-      songQueue.addSong(songRequest1);
-      songQueue.addSong(songRequest2);
+      await songQueue.addSong(songRequest1);
+      await songQueue.addSong(songRequest2);
 
       // Assert
       expect(songQueue.toArray()).toEqual([
@@ -90,6 +131,188 @@ describe('SongQueue', () => {
 
       expect(songQueue.getLength()).toBe(2);
     });
+
+    it('should throw an error if the song is already in the queue', async () => {
+      mockDynamoDBClient.on(GetItemCommand).resolves({
+        Item: undefined
+      });
+
+      mockSSMClient
+        .on(GetParameterCommand, {
+          Name: 'REQUEST_DURATION_NAME'
+        })
+        .resolves({
+          Parameter: {
+            Value: '360'
+          }
+        });
+
+      mockSSMClient
+        .on(GetParameterCommand, {
+          Name: 'MAX_SONGS_PER_USER'
+        })
+        .resolves({ Parameter: { Value: '1' } });
+
+      const songQueue = await SongQueue.loadQueue();
+
+      const songRequest: SongRequest = {
+        youtubeId: 'youtubeId',
+        title: 'Song title',
+        length: 100,
+        requestedBy: 'user'
+      };
+
+      await songQueue.addSong(songRequest);
+
+      expect(
+        async () =>
+          await songQueue.addSong({
+            youtubeId: 'youtubeId',
+            title: 'Song title',
+            length: 100,
+            requestedBy: 'a-different-user'
+          })
+      ).rejects.toThrow('Song is already in the queue');
+    });
+
+    it('should throw an error if the user already has a song in the queue', async () => {
+      mockDynamoDBClient.on(GetItemCommand).resolves({
+        Item: undefined
+      });
+
+      mockSSMClient
+        .on(GetParameterCommand, {
+          Name: 'REQUEST_DURATION_NAME'
+        })
+        .resolves({
+          Parameter: {
+            Value: '360'
+          }
+        });
+
+      mockSSMClient
+        .on(GetParameterCommand, {
+          Name: 'MAX_SONGS_PER_USER'
+        })
+        .resolves({ Parameter: { Value: '1' } });
+
+      const songQueue = await SongQueue.loadQueue();
+
+      const songRequest: SongRequest = {
+        youtubeId: 'youtubeId',
+        title: 'Song title',
+        length: 100,
+        requestedBy: 'user'
+      };
+
+      await songQueue.addSong(songRequest);
+
+      expect(
+        async () =>
+          await songQueue.addSong({
+            youtubeId: 'youtubeId2',
+            title: 'Song title 2',
+            length: 100,
+            requestedBy: 'user'
+          })
+      ).rejects.toThrow('User already has 1 song(s) in the queue');
+    });
+
+    it('should add to the queue if the user already has a song in the queue and the override is set', async () => {
+      mockDynamoDBClient.on(GetItemCommand).resolves({
+        Item: undefined
+      });
+
+      mockSSMClient
+        .on(GetParameterCommand, {
+          Name: 'REQUEST_DURATION_NAME'
+        })
+        .resolves({
+          Parameter: {
+            Value: '360'
+          }
+        });
+
+      mockSSMClient
+        .on(GetParameterCommand, {
+          Name: 'MAX_SONGS_PER_USER'
+        })
+        .resolves({ Parameter: { Value: '1' } });
+
+      const songQueue = await SongQueue.loadQueue();
+
+      const songRequest: SongRequest = {
+        youtubeId: 'youtubeId',
+        title: 'Song title',
+        length: 100,
+        requestedBy: 'user'
+      };
+
+      await songQueue.addSong(songRequest);
+      await songQueue.addSong({
+        youtubeId: 'youtubeId2',
+        title: 'Song title 2',
+        length: 100,
+        requestedBy: 'user',
+        allowOverride: true
+      });
+
+      expect(songQueue.getLength()).toBe(2);
+      expect(songQueue.toArray()).toEqual([
+        {
+          youtubeId: 'youtubeId',
+          title: 'Song title',
+          length: 100,
+          requestedBy: 'user',
+          isBumped: false,
+          isShuffled: false,
+          isShuffleEntered: false
+        },
+        {
+          youtubeId: 'youtubeId2',
+          title: 'Song title 2',
+          length: 100,
+          requestedBy: 'user',
+          isBumped: false,
+          isShuffled: false,
+          isShuffleEntered: false
+        }
+      ]);
+    });
+
+    it('should throw an error if the song is too long', async () => {
+      mockDynamoDBClient.on(GetItemCommand).resolves({
+        Item: undefined
+      });
+
+      mockSSMClient
+        .on(GetParameterCommand, {
+          Name: 'REQUEST_DURATION_NAME'
+        })
+        .resolves({
+          Parameter: {
+            Value: '360'
+          }
+        });
+
+      mockSSMClient
+        .on(GetParameterCommand, {
+          Name: 'MAX_SONGS_PER_USER'
+        })
+        .resolves({ Parameter: { Value: '1' } });
+
+      const songQueue = await SongQueue.loadQueue();
+
+      expect(
+        async () =>
+          await songQueue.addSong({
+            youtubeId: 'youtubeId2',
+            title: 'Song title 2',
+            length: 400,
+            requestedBy: 'user'
+          })
+      ).rejects.toThrow('Song length must be under 6:00');
+    });
   });
 
   describe('removeSong', () => {
@@ -98,6 +321,23 @@ describe('SongQueue', () => {
       mockDynamoDBClient.on(GetItemCommand).resolves({
         Item: undefined
       });
+
+      mockSSMClient
+        .on(GetParameterCommand, {
+          Name: 'REQUEST_DURATION_NAME'
+        })
+        .resolves({
+          Parameter: {
+            Value: '360'
+          }
+        });
+
+      mockSSMClient
+        .on(GetParameterCommand, {
+          Name: 'MAX_SONGS_PER_USER'
+        })
+        .resolves({ Parameter: { Value: '1' } });
+
       const songQueue = await SongQueue.loadQueue();
 
       const songRequest1: SongRequest = {
@@ -121,9 +361,9 @@ describe('SongQueue', () => {
         requestedBy: 'user3'
       };
 
-      songQueue.addSong(songRequest1);
-      songQueue.addSong(songRequest2);
-      songQueue.addSong(songRequest3);
+      await songQueue.addSong(songRequest1);
+      await songQueue.addSong(songRequest2);
+      await songQueue.addSong(songRequest3);
 
       // Act
       songQueue.removeSong('youtubeId1');
@@ -140,6 +380,23 @@ describe('SongQueue', () => {
       mockDynamoDBClient.on(GetItemCommand).resolves({
         Item: undefined
       });
+
+      mockSSMClient
+        .on(GetParameterCommand, {
+          Name: 'REQUEST_DURATION_NAME'
+        })
+        .resolves({
+          Parameter: {
+            Value: '360'
+          }
+        });
+
+      mockSSMClient
+        .on(GetParameterCommand, {
+          Name: 'MAX_SONGS_PER_USER'
+        })
+        .resolves({ Parameter: { Value: '1' } });
+
       const songQueue = await SongQueue.loadQueue();
 
       const songRequest1: SongRequest = {
@@ -163,9 +420,9 @@ describe('SongQueue', () => {
         requestedBy: 'user3'
       };
 
-      songQueue.addSong(songRequest1);
-      songQueue.addSong(songRequest2);
-      songQueue.addSong(songRequest3);
+      await songQueue.addSong(songRequest1);
+      await songQueue.addSong(songRequest2);
+      await songQueue.addSong(songRequest3);
 
       // Act
       songQueue.removeSong('youtubeId3');
@@ -182,6 +439,23 @@ describe('SongQueue', () => {
       mockDynamoDBClient.on(GetItemCommand).resolves({
         Item: undefined
       });
+
+      mockSSMClient
+        .on(GetParameterCommand, {
+          Name: 'REQUEST_DURATION_NAME'
+        })
+        .resolves({
+          Parameter: {
+            Value: '360'
+          }
+        });
+
+      mockSSMClient
+        .on(GetParameterCommand, {
+          Name: 'MAX_SONGS_PER_USER'
+        })
+        .resolves({ Parameter: { Value: '1' } });
+
       const songQueue = await SongQueue.loadQueue();
 
       const songRequest1: SongRequest = {
@@ -205,9 +479,9 @@ describe('SongQueue', () => {
         requestedBy: 'user3'
       };
 
-      songQueue.addSong(songRequest1);
-      songQueue.addSong(songRequest2);
-      songQueue.addSong(songRequest3);
+      await songQueue.addSong(songRequest1);
+      await songQueue.addSong(songRequest2);
+      await songQueue.addSong(songRequest3);
 
       // Act
       songQueue.removeSong('youtubeId2');
@@ -223,6 +497,23 @@ describe('SongQueue', () => {
       mockDynamoDBClient.on(GetItemCommand).resolves({
         Item: undefined
       });
+
+      mockSSMClient
+        .on(GetParameterCommand, {
+          Name: 'REQUEST_DURATION_NAME'
+        })
+        .resolves({
+          Parameter: {
+            Value: '360'
+          }
+        });
+
+      mockSSMClient
+        .on(GetParameterCommand, {
+          Name: 'MAX_SONGS_PER_USER'
+        })
+        .resolves({ Parameter: { Value: '1' } });
+
       const songQueue = await SongQueue.loadQueue();
 
       const songRequest: SongRequest = {
@@ -232,7 +523,7 @@ describe('SongQueue', () => {
         requestedBy: 'user'
       };
 
-      songQueue.addSong(songRequest);
+      await songQueue.addSong(songRequest);
 
       // Act
 
@@ -246,6 +537,7 @@ describe('SongQueue', () => {
       mockDynamoDBClient.on(GetItemCommand).resolves({
         Item: undefined
       });
+
       const songQueue = await SongQueue.loadQueue();
 
       expect(() => songQueue.removeSong('youtubeId2')).toThrow(
@@ -260,6 +552,23 @@ describe('SongQueue', () => {
       mockDynamoDBClient.on(GetItemCommand).resolves({
         Item: undefined
       });
+
+      mockSSMClient
+        .on(GetParameterCommand, {
+          Name: 'REQUEST_DURATION_NAME'
+        })
+        .resolves({
+          Parameter: {
+            Value: '360'
+          }
+        });
+
+      mockSSMClient
+        .on(GetParameterCommand, {
+          Name: 'MAX_SONGS_PER_USER'
+        })
+        .resolves({ Parameter: { Value: '1' } });
+
       const songQueue = await SongQueue.loadQueue();
 
       const songRequest1: SongRequest = {
@@ -283,9 +592,9 @@ describe('SongQueue', () => {
         requestedBy: 'user3'
       };
 
-      songQueue.addSong(songRequest1);
-      songQueue.addSong(songRequest2);
-      songQueue.addSong(songRequest3);
+      await songQueue.addSong(songRequest1);
+      await songQueue.addSong(songRequest2);
+      await songQueue.addSong(songRequest3);
 
       // Act
       songQueue.removeSongForUser('user2');
@@ -302,6 +611,23 @@ describe('SongQueue', () => {
       mockDynamoDBClient.on(GetItemCommand).resolves({
         Item: undefined
       });
+
+      mockSSMClient
+        .on(GetParameterCommand, {
+          Name: 'REQUEST_DURATION_NAME'
+        })
+        .resolves({
+          Parameter: {
+            Value: '360'
+          }
+        });
+
+      mockSSMClient
+        .on(GetParameterCommand, {
+          Name: 'MAX_SONGS_PER_USER'
+        })
+        .resolves({ Parameter: { Value: '1' } });
+
       const songQueue = await SongQueue.loadQueue();
 
       const songRequest1: SongRequest = {
@@ -325,9 +651,9 @@ describe('SongQueue', () => {
         requestedBy: 'user3'
       };
 
-      songQueue.addSong(songRequest1);
-      songQueue.addSong(songRequest2);
-      songQueue.addSong(songRequest3);
+      await songQueue.addSong(songRequest1);
+      await songQueue.addSong(songRequest2);
+      await songQueue.addSong(songRequest3);
 
       // Assert
       expect(() => songQueue.removeSongForUser('user4')).toThrow(
@@ -342,6 +668,23 @@ describe('SongQueue', () => {
       mockDynamoDBClient.on(GetItemCommand).resolves({
         Item: undefined
       });
+
+      mockSSMClient
+        .on(GetParameterCommand, {
+          Name: 'REQUEST_DURATION_NAME'
+        })
+        .resolves({
+          Parameter: {
+            Value: '360'
+          }
+        });
+
+      mockSSMClient
+        .on(GetParameterCommand, {
+          Name: 'MAX_SONGS_PER_USER'
+        })
+        .resolves({ Parameter: { Value: '1' } });
+
       const songQueue = await SongQueue.loadQueue();
 
       const songRequest1: SongRequest = {
@@ -365,9 +708,9 @@ describe('SongQueue', () => {
         requestedBy: 'user3'
       };
 
-      songQueue.addSong(songRequest1);
-      songQueue.addSong(songRequest2);
-      songQueue.addSong(songRequest3);
+      await songQueue.addSong(songRequest1);
+      await songQueue.addSong(songRequest2);
+      await songQueue.addSong(songRequest3);
 
       // Act
       const result = songQueue.findSongById('youtubeId2');
@@ -381,6 +724,23 @@ describe('SongQueue', () => {
       mockDynamoDBClient.on(GetItemCommand).resolves({
         Item: undefined
       });
+
+      mockSSMClient
+        .on(GetParameterCommand, {
+          Name: 'REQUEST_DURATION_NAME'
+        })
+        .resolves({
+          Parameter: {
+            Value: '360'
+          }
+        });
+
+      mockSSMClient
+        .on(GetParameterCommand, {
+          Name: 'MAX_SONGS_PER_USER'
+        })
+        .resolves({ Parameter: { Value: '1' } });
+
       const songQueue = await SongQueue.loadQueue();
 
       const songRequest: SongRequest = {
@@ -390,7 +750,7 @@ describe('SongQueue', () => {
         requestedBy: 'user'
       };
 
-      songQueue.addSong(songRequest);
+      await songQueue.addSong(songRequest);
 
       // Act
       const result = songQueue.findSongById('youtubeId2');
@@ -406,6 +766,23 @@ describe('SongQueue', () => {
       mockDynamoDBClient.on(GetItemCommand).resolves({
         Item: undefined
       });
+
+      mockSSMClient
+        .on(GetParameterCommand, {
+          Name: 'REQUEST_DURATION_NAME'
+        })
+        .resolves({
+          Parameter: {
+            Value: '360'
+          }
+        });
+
+      mockSSMClient
+        .on(GetParameterCommand, {
+          Name: 'MAX_SONGS_PER_USER'
+        })
+        .resolves({ Parameter: { Value: '1' } });
+
       const songQueue = await SongQueue.loadQueue();
 
       const songRequest1: SongRequest = {
@@ -429,9 +806,9 @@ describe('SongQueue', () => {
         requestedBy: 'user3'
       };
 
-      songQueue.addSong(songRequest1);
-      songQueue.addSong(songRequest2);
-      songQueue.addSong(songRequest3);
+      await songQueue.addSong(songRequest1);
+      await songQueue.addSong(songRequest2);
+      await songQueue.addSong(songRequest3);
 
       // Act
       const result = songQueue.findSongByUser('user2');
@@ -445,6 +822,22 @@ describe('SongQueue', () => {
       mockDynamoDBClient.on(GetItemCommand).resolves({
         Item: undefined
       });
+
+      mockSSMClient
+        .on(GetParameterCommand, {
+          Name: 'REQUEST_DURATION_NAME'
+        })
+        .resolves({
+          Parameter: {
+            Value: '360'
+          }
+        });
+
+      mockSSMClient
+        .on(GetParameterCommand, {
+          Name: 'MAX_SONGS_PER_USER'
+        })
+        .resolves({ Parameter: { Value: '1' } });
       const songQueue = await SongQueue.loadQueue();
 
       const songRequest: SongRequest = {
@@ -454,7 +847,7 @@ describe('SongQueue', () => {
         requestedBy: 'user'
       };
 
-      songQueue.addSong(songRequest);
+      await songQueue.addSong(songRequest);
 
       // Act
       const result = songQueue.findSongByUser('user2');
@@ -470,6 +863,23 @@ describe('SongQueue', () => {
       mockDynamoDBClient.on(GetItemCommand).resolves({
         Item: undefined
       });
+
+      mockSSMClient
+        .on(GetParameterCommand, {
+          Name: 'REQUEST_DURATION_NAME'
+        })
+        .resolves({
+          Parameter: {
+            Value: '360'
+          }
+        });
+
+      mockSSMClient
+        .on(GetParameterCommand, {
+          Name: 'MAX_SONGS_PER_USER'
+        })
+        .resolves({ Parameter: { Value: '1' } });
+
       const songQueue = await SongQueue.loadQueue();
 
       const songRequest1: SongRequest = {
@@ -497,21 +907,21 @@ describe('SongQueue', () => {
         youtubeId: 'youtubeId4',
         title: 'Song title',
         length: 100,
-        requestedBy: 'user3'
+        requestedBy: 'user4'
       };
 
       const songRequest5: SongRequest = {
         youtubeId: 'youtubeId5',
         title: 'Song title',
         length: 100,
-        requestedBy: 'user3'
+        requestedBy: 'user5'
       };
 
-      songQueue.addSong(songRequest1);
-      songQueue.addSong(songRequest2);
-      songQueue.addSong(songRequest3);
-      songQueue.addSong(songRequest4);
-      songQueue.addSong(songRequest5);
+      await songQueue.addSong(songRequest1);
+      await songQueue.addSong(songRequest2);
+      await songQueue.addSong(songRequest3);
+      await songQueue.addSong(songRequest4);
+      await songQueue.addSong(songRequest5);
 
       // Act
       songQueue.moveSong('youtubeId5', 1);
@@ -529,6 +939,23 @@ describe('SongQueue', () => {
       mockDynamoDBClient.on(GetItemCommand).resolves({
         Item: undefined
       });
+
+      mockSSMClient
+        .on(GetParameterCommand, {
+          Name: 'REQUEST_DURATION_NAME'
+        })
+        .resolves({
+          Parameter: {
+            Value: '360'
+          }
+        });
+
+      mockSSMClient
+        .on(GetParameterCommand, {
+          Name: 'MAX_SONGS_PER_USER'
+        })
+        .resolves({ Parameter: { Value: '1' } });
+
       const songQueue = await SongQueue.loadQueue();
 
       const songRequest1: SongRequest = {
@@ -556,21 +983,21 @@ describe('SongQueue', () => {
         youtubeId: 'youtubeId4',
         title: 'Song title',
         length: 100,
-        requestedBy: 'user3'
+        requestedBy: 'user4'
       };
 
       const songRequest5: SongRequest = {
         youtubeId: 'youtubeId5',
         title: 'Song title',
         length: 100,
-        requestedBy: 'user3'
+        requestedBy: 'user5'
       };
 
-      songQueue.addSong(songRequest1);
-      songQueue.addSong(songRequest2);
-      songQueue.addSong(songRequest3);
-      songQueue.addSong(songRequest4);
-      songQueue.addSong(songRequest5);
+      await songQueue.addSong(songRequest1);
+      await songQueue.addSong(songRequest2);
+      await songQueue.addSong(songRequest3);
+      await songQueue.addSong(songRequest4);
+      await songQueue.addSong(songRequest5);
 
       // Act
       songQueue.moveSong('youtubeId1', 5);
@@ -588,6 +1015,23 @@ describe('SongQueue', () => {
       mockDynamoDBClient.on(GetItemCommand).resolves({
         Item: undefined
       });
+
+      mockSSMClient
+        .on(GetParameterCommand, {
+          Name: 'REQUEST_DURATION_NAME'
+        })
+        .resolves({
+          Parameter: {
+            Value: '360'
+          }
+        });
+
+      mockSSMClient
+        .on(GetParameterCommand, {
+          Name: 'MAX_SONGS_PER_USER'
+        })
+        .resolves({ Parameter: { Value: '1' } });
+
       const songQueue = await SongQueue.loadQueue();
 
       const songRequest1: SongRequest = {
@@ -615,21 +1059,21 @@ describe('SongQueue', () => {
         youtubeId: 'youtubeId4',
         title: 'Song title',
         length: 100,
-        requestedBy: 'user3'
+        requestedBy: 'user4'
       };
 
       const songRequest5: SongRequest = {
         youtubeId: 'youtubeId5',
         title: 'Song title',
         length: 100,
-        requestedBy: 'user3'
+        requestedBy: 'user5'
       };
 
-      songQueue.addSong(songRequest1);
-      songQueue.addSong(songRequest2);
-      songQueue.addSong(songRequest3);
-      songQueue.addSong(songRequest4);
-      songQueue.addSong(songRequest5);
+      await songQueue.addSong(songRequest1);
+      await songQueue.addSong(songRequest2);
+      await songQueue.addSong(songRequest3);
+      await songQueue.addSong(songRequest4);
+      await songQueue.addSong(songRequest5);
 
       // Act
       songQueue.moveSong('youtubeId4', 2);
@@ -647,6 +1091,23 @@ describe('SongQueue', () => {
       mockDynamoDBClient.on(GetItemCommand).resolves({
         Item: undefined
       });
+
+      mockSSMClient
+        .on(GetParameterCommand, {
+          Name: 'REQUEST_DURATION_NAME'
+        })
+        .resolves({
+          Parameter: {
+            Value: '360'
+          }
+        });
+
+      mockSSMClient
+        .on(GetParameterCommand, {
+          Name: 'MAX_SONGS_PER_USER'
+        })
+        .resolves({ Parameter: { Value: '1' } });
+
       const songQueue = await SongQueue.loadQueue();
 
       const songRequest: SongRequest = {
@@ -656,7 +1117,7 @@ describe('SongQueue', () => {
         requestedBy: 'user'
       };
 
-      songQueue.addSong(songRequest);
+      await songQueue.addSong(songRequest);
 
       // Act
 

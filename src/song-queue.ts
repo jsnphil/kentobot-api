@@ -45,7 +45,7 @@ export class SongQueue {
           !this.songs.find((s) => s.youtubeId === song.youtubeId)
       },
       {
-        name: `User already has ${maxSongsPerUser} songs in the queue`,
+        name: `User already has ${maxSongsPerUser} song(s) in the queue`,
         fn: (song: SongRequest) => {
           const userSongsCount = this.songs.filter(
             (s) => s.requestedBy === song.requestedBy
@@ -158,7 +158,6 @@ export class SongQueue {
         Name: process.env.REQUEST_DURATION_NAME
       })
     );
-    response;
     return Number(response.Parameter?.Value);
   }
 
@@ -168,7 +167,6 @@ export class SongQueue {
         Name: process.env.MAX_SONGS_PER_USER
       })
     );
-    this.logger.debug(JSON.stringify(response));
     return Number(response.Parameter?.Value);
   }
 }

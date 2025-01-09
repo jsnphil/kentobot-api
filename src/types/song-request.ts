@@ -9,6 +9,7 @@ export interface SongRequest {
   readonly length: number;
   readonly requestedBy: string;
   readonly played?: string;
+  readonly allowOverride?: boolean;
 }
 
 export interface SongInfo {

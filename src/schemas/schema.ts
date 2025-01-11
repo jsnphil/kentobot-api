@@ -13,3 +13,8 @@ export const SongRequestSchema = z.object({
   played: isoDateString,
   requestedBy: z.string()
 });
+
+export const WebSocketMessageSchema = z.object({
+  action: z.string(),
+  message: z.string()
+});

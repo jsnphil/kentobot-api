@@ -3,6 +3,7 @@ import { Construct } from 'constructs';
 import { ApiStack } from './api-stack';
 import { DataStack } from './data-stack';
 import { DataMigrationStack } from './data-migration';
+import { WebSocketStack } from './stacks/web-socket-stack';
 
 export interface KentobotProps extends cdk.StageProps {
   readonly environmentName: string;
@@ -21,9 +22,12 @@ export class KentobotStage extends cdk.Stage {
       props
     );
 
+    const webSocketStack = new WebSocketStack(this, 'WebSocketStack', props);
+
     apiStack.addDependency(dataStack);
     dataMigration.addDependency(dataStack);
     dataMigration.addDependency(apiStack);
+    webSocketStack.addDependency(dataStack);
 
     cdk.Tags.of(this).add('environment', props.environmentName);
     cdk.Tags.of(apiStack).add('system', 'api');

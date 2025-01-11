@@ -7,8 +7,6 @@ import {
 import { WebSocketConnectionsRepository } from './websocket-connections-repository';
 import { mockClient } from 'aws-sdk-client-mock';
 import { Logger } from '@aws-lambda-powertools/logger';
-import { mock } from 'node:test';
-import { connect } from 'http2';
 
 describe('WebsocketConnectionsRepository', () => {
   const mockDynamoDBClient = mockClient(DynamoDBClient);

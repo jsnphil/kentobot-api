@@ -2,7 +2,7 @@ import * as apiGateway from 'aws-cdk-lib/aws-apigateway';
 import * as iam from 'aws-cdk-lib/aws-iam';
 
 import { Construct } from 'constructs';
-import { ApiStackProps } from '../api-stack';
+import { ApiStackProps } from '../stacks/api-stack';
 
 export interface ApiProps extends ApiStackProps {}
 

@@ -5,7 +5,6 @@ import {
   PutItemCommand,
   QueryCommand
 } from '@aws-sdk/client-dynamodb';
-import { connected } from 'process';
 import { WebSocketConnection } from '../types/websockets';
 
 const logger = new Logger({ serviceName: 'web-socket-connection-repository' });

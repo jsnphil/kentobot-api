@@ -1,9 +1,9 @@
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-import { ApiStack } from './api-stack';
-import { DataStack } from './data-stack';
-import { DataMigrationStack } from './data-migration';
-import { WebSocketStack } from './stacks/web-socket-stack';
+import { DataStack } from '../lib/stacks/data-stack';
+import { ApiStack } from '../lib/stacks/api-stack';
+import { DataMigrationStack } from '../lib/stacks/data-migration-stack';
+import { WebSocketStack } from '../lib/stacks/web-socket-stack';
 
 export interface KentobotProps extends cdk.StageProps {
   readonly environmentName: string;

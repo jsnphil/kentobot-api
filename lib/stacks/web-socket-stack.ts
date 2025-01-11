@@ -31,8 +31,8 @@ export class WebSocketStack extends cdk.Stack {
       handler: 'handler',
       entry: path.join(
         __dirname,
-        '../../src/api/',
-        'web-sockets/lambdas/message-handler.ts'
+        '../../src/lambdas/',
+        'web-sockets/message-handler.ts'
       ),
       bundling: {
         minify: false,

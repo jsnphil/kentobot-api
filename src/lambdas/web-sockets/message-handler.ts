@@ -5,8 +5,8 @@ import {
 } from '@aws-sdk/client-apigatewaymanagementapi';
 import { APIGatewayProxyWebsocketEventV2 } from 'aws-lambda';
 import { Logger } from '@aws-lambda-powertools/logger';
-import { WebSocketMessageSchema } from '../../../schemas/schema';
-import { WebSocketConnectionsRepository } from '../../../repositories/websocket-connections-repository';
+import { WebSocketMessageSchema } from '../../schemas/schema';
+import { WebSocketConnectionsRepository } from '../../repositories/websocket-connections-repository';
 
 interface MessageBody {
   readonly action: string;

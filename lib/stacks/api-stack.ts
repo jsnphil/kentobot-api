@@ -9,8 +9,8 @@ import * as ddb from 'aws-cdk-lib/aws-dynamodb';
 import * as iam from 'aws-cdk-lib/aws-iam';
 
 import { Construct } from 'constructs';
-import { createSongRequestParameters } from './song-request-parameters';
-import { ARCHITECTURE, NODE_RUNTIME } from './CDKConstants';
+import { createSongRequestParameters } from '../constructs/song-request-parameters';
+import { ARCHITECTURE, NODE_RUNTIME } from '../CDKConstants';
 import path = require('path');
 import {
   errorResponses,
@@ -18,9 +18,9 @@ import {
   saveSongPlayResponseModel,
   saveSongRequestModel,
   songRequestDetailsModel
-} from './api-models';
-import { EventBus } from './constructs/event-bus';
-import { Api } from './constructs/api';
+} from '../constructs/api-models';
+import { EventBus } from '../constructs/event-bus';
+import { Api } from '../constructs/api';
 
 export interface ApiStackProps extends cdk.StackProps {
   environmentName: string;
@@ -93,8 +93,8 @@ export class ApiStack extends cdk.Stack {
       handler: 'handler',
       entry: path.join(
         __dirname,
-        '../src/api/',
-        'song-request/lambdas/request-song.ts'
+        '../../src/lambdas/rest-api/',
+        'song-request/request-song.ts'
       ),
       bundling: {
         minify: false,
@@ -152,8 +152,8 @@ export class ApiStack extends cdk.Stack {
         handler: 'handler',
         entry: path.join(
           __dirname,
-          '../src/api/',
-          'song-request/lambdas/save-song-data.ts'
+          '../../src/lambdas/rest-api/',
+          'song-request/save-song-data.ts'
         ),
         bundling: {
           minify: false,
@@ -465,7 +465,8 @@ export class ApiStack extends cdk.Stack {
         handler: 'handler',
         entry: path.join(
           __dirname,
-          '../src/api/song-request/lambdas/get-all-song-requests.ts'
+          '../../src/lambdas/rest-api/',
+          'song-request/get-all-song-requests.ts'
         ),
         bundling: {
           minify: false,
@@ -501,7 +502,7 @@ export class ApiStack extends cdk.Stack {
     const queueTestLambda = new lambda.NodejsFunction(this, 'queueTest', {
       runtime: NODE_RUNTIME,
       handler: 'handler',
-      entry: path.join(__dirname, '../src/test-code', 'queue-test.ts'),
+      entry: path.join(__dirname, '../../src/test-code', 'queue-test.ts'),
       bundling: {
         minify: false,
         externalModules: ['aws-sdk']

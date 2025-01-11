@@ -12,7 +12,7 @@ import * as lambdaEventSources from 'aws-cdk-lib/aws-lambda-event-sources';
 import * as events from 'aws-cdk-lib/aws-events';
 
 import { Construct } from 'constructs';
-import { ARCHITECTURE, NODE_RUNTIME } from './CDKConstants';
+import { ARCHITECTURE, NODE_RUNTIME } from '../CDKConstants';
 
 export interface DataMigrationStackProps extends cdk.StackProps {
   environmentName: string;
@@ -43,7 +43,7 @@ export class DataMigrationStack extends cdk.Stack {
 
     new s3deploy.BucketDeployment(this, 'DeployWebsite', {
       sources: [
-        s3deploy.Source.asset(path.join(__dirname, '..', '/resources/'))
+        s3deploy.Source.asset(path.join(__dirname, '../..', '/resources/'))
       ],
       destinationBucket: bucket,
       destinationKeyPrefix: 'data-migration/song-data'
@@ -82,8 +82,8 @@ export class DataMigrationStack extends cdk.Stack {
         handler: 'handler',
         entry: path.join(
           __dirname,
-          '../src/',
-          'data-migration/lambdas/migrate-song-history.ts'
+          '../../src/',
+          'lambdas/data-migration/migrate-song-history.ts'
         ),
         bundling: {
           minify: false,
@@ -127,8 +127,8 @@ export class DataMigrationStack extends cdk.Stack {
         handler: 'handler',
         entry: path.join(
           __dirname,
-          '../src/',
-          'data-migration/lambdas/process-song-request.ts'
+          '../../src/',
+          'lambdas/data-migration/process-song-request.ts'
         ),
         bundling: {
           minify: false,

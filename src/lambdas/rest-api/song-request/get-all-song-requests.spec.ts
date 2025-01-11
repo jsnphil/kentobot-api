@@ -1,7 +1,7 @@
 import { APIGatewayEvent, Context } from 'aws-lambda';
-import { handler } from './get-all-song-requests';
 import { SongRepository } from '../../../repositories/song-repository';
 import { Logger } from '@aws-lambda-powertools/logger';
+import { handler } from './get-all-song-requests';
 
 jest.mock('../../../repositories/song-repository');
 jest.mock('@aws-lambda-powertools/logger');

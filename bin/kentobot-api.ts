@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import * as cdk from 'aws-cdk-lib';
-import { KentobotStage } from '../lib/kentobot-stage';
+import { KentobotStage } from './kentobot-stage';
 
 const app = new cdk.App();
 

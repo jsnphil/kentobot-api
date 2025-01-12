@@ -202,19 +202,27 @@ describe('Request Song', () => {
   describe('getSongId', () => {
     it('should return a song ID for a valid POST body without an override flag', () => {
       const event: APIGatewayEvent = {
-        body: JSON.stringify({ youtubeId: 'validSongId' })
-      } as any;
-
-      expect(getSongId(event)).toEqual({ youtubeId: 'validSongId' });
-    });
-
-    it('should return a song ID for a valid POST body with an override flag', () => {
-      const event: APIGatewayEvent = {
-        body: JSON.stringify({ youtubeId: 'validSongId', modOverride: true })
+        body: JSON.stringify({ youtubeId: 'validSongId', requestedBy: 'user' })
       } as any;
 
       expect(getSongId(event)).toEqual({
         youtubeId: 'validSongId',
+        requestedBy: 'user'
+      });
+    });
+
+    it('should return a song ID for a valid POST body with an override flag', () => {
+      const event: APIGatewayEvent = {
+        body: JSON.stringify({
+          youtubeId: 'validSongId',
+          requestedBy: 'user',
+          modOverride: true
+        })
+      } as any;
+
+      expect(getSongId(event)).toEqual({
+        youtubeId: 'validSongId',
+        requestedBy: 'user',
         modOverride: true
       });
     });

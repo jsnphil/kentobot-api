@@ -21,5 +21,6 @@ export const WebSocketMessageSchema = z.object({
 
 export const RequestSongSchema = z.object({
   youtubeId: z.string(),
+  requestedBy: z.string(),
   modOverride: z.boolean().optional()
 });

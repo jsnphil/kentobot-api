@@ -40,5 +40,6 @@ export interface SongQueueItem {
 
 export interface RequestSongBody {
   readonly youtubeId: string;
+  readonly requestedBy: string;
   readonly modOverride?: boolean;
 }

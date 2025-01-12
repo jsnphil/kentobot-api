@@ -6,6 +6,7 @@ import { parse, toSeconds } from 'iso8601-duration';
 import { SongRepository } from '../../../repositories/song-repository';
 import { RequestSongSchema } from '../../../schemas/schema';
 import { RequestSongBody } from '../../../types/song-request';
+import { SongQueue } from '../../../song-queue';
 
 const logger = new Logger({ serviceName: 'requestSongLambda' });
 const songRepository = new SongRepository();
@@ -18,7 +19,16 @@ export const handler = async (
     const songRequest = getSongId(event);
 
     const songInfo = await songRepository.getSongInfo(songRequest.youtubeId);
+
     if (songInfo) {
+      const songQueue = await SongQueue.loadQueue();
+      await songQueue.addSong({
+        youtubeId: songRequest.youtubeId,
+        title: songInfo.title,
+        length: songInfo.length,
+        requestedBy: songRequest.requestedBy
+      });
+
       return {
         statusCode: 200,
         body: JSON.stringify({
@@ -45,6 +55,14 @@ export const handler = async (
       );
     } else {
       const length = toSeconds(parse(video.contentDetails.duration));
+
+      const songQueue = await SongQueue.loadQueue();
+      await songQueue.addSong({
+        youtubeId: songRequest.youtubeId,
+        title: video.snippet.title,
+        length: length,
+        requestedBy: songRequest.requestedBy
+      });
 
       return {
         statusCode: 200,

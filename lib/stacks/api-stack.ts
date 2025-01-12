@@ -66,70 +66,6 @@ export class ApiStack extends cdk.Stack {
       api.apiGateway.root.addResource('song-requests');
 
     // ***********************
-    // Request song resource
-    // ***********************
-    const {
-      publicVideoToggle,
-      requestDurationLimit,
-      djRequestDurationLimit,
-      licensedContentToggle
-    } = createSongRequestParameters(this, props.environmentName);
-
-    const requestSongResource = songRequestEndpointResource
-      .addResource('request')
-      .addResource('{songId}');
-
-    const youtubeApiKeyParameter =
-      ssm.StringParameter.fromSecureStringParameterAttributes(
-        this,
-        'ApiKeyParameter',
-        {
-          parameterName: 'youtube-api-key'
-        }
-      );
-
-    const songRequestLambda = new lambda.NodejsFunction(this, 'RequestSong', {
-      runtime: NODE_RUNTIME,
-      handler: 'handler',
-      entry: path.join(
-        __dirname,
-        '../../src/lambdas/rest-api/',
-        'song-request/request-song.ts'
-      ),
-      bundling: {
-        minify: false,
-        externalModules: ['aws-sdk']
-      },
-      logRetention: logs.RetentionDays.ONE_WEEK,
-      environment: {
-        ENVIRONMENT: props.environmentName,
-        PUBLIC_VIDEO_TOGGLE_NAME: publicVideoToggle.parameterName,
-        REQUEST_DURATION_NAME: requestDurationLimit.parameterName,
-        DJ_HOUR_REQUEST_DURATION_NAME: djRequestDurationLimit.parameterName,
-        LICENSED_VIDEO_TOGGLE_NAME: licensedContentToggle.parameterName,
-        STREAM_DATA_TABLE: database.tableName
-      },
-      timeout: cdk.Duration.minutes(1),
-      memorySize: 512,
-      architecture: ARCHITECTURE
-    });
-
-    publicVideoToggle.grantRead(songRequestLambda);
-    requestDurationLimit.grantRead(songRequestLambda);
-    djRequestDurationLimit.grantRead(songRequestLambda);
-    licensedContentToggle.grantRead(songRequestLambda);
-    youtubeApiKeyParameter.grantRead(songRequestLambda);
-    database.grantReadData(songRequestLambda);
-
-    requestSongResource.addMethod(
-      'GET',
-      new apiGateway.LambdaIntegration(songRequestLambda),
-      {
-        apiKeyRequired: true
-      }
-    );
-
-    // ***********************
     // Save song data resource
     // ***********************
     const saveSongQueue = new sqs.Queue(this, 'save-song-data', {
@@ -494,6 +430,76 @@ export class ApiStack extends cdk.Stack {
     songRequestEndpointResource.addMethod(
       'GET',
       new apiGateway.LambdaIntegration(getAllSongRequestsLambda)
+    );
+
+    // ***********************
+    // Queue Management Resources
+    // ***********************
+
+    const queueManagmentResource =
+      api.apiGateway.root.addResource('song-queue');
+
+    // ***********************
+    // Request song resource
+    // ***********************
+    const {
+      publicVideoToggle,
+      requestDurationLimit,
+      djRequestDurationLimit,
+      licensedContentToggle
+    } = createSongRequestParameters(this, props.environmentName);
+
+    const requestSongResource = queueManagmentResource.addResource('request');
+
+    const youtubeApiKeyParameter =
+      ssm.StringParameter.fromSecureStringParameterAttributes(
+        this,
+        'ApiKeyParameter',
+        {
+          parameterName: 'youtube-api-key'
+        }
+      );
+
+    const songRequestLambda = new lambda.NodejsFunction(this, 'RequestSong', {
+      runtime: NODE_RUNTIME,
+      handler: 'handler',
+      entry: path.join(
+        __dirname,
+        '../../src/lambdas/rest-api/',
+        'queue-management/request-song.ts'
+      ),
+      bundling: {
+        minify: false,
+        externalModules: ['aws-sdk']
+      },
+      logRetention: logs.RetentionDays.ONE_WEEK,
+      environment: {
+        ENVIRONMENT: props.environmentName,
+        PUBLIC_VIDEO_TOGGLE_NAME: publicVideoToggle.parameterName,
+        REQUEST_DURATION_NAME: requestDurationLimit.parameterName,
+        DJ_HOUR_REQUEST_DURATION_NAME: djRequestDurationLimit.parameterName,
+        LICENSED_VIDEO_TOGGLE_NAME: licensedContentToggle.parameterName,
+        STREAM_DATA_TABLE: database.tableName,
+        POWERTOOLS_LOG_LEVEL: 'DEBUG'
+      },
+      timeout: cdk.Duration.minutes(1),
+      memorySize: 512,
+      architecture: ARCHITECTURE
+    });
+
+    publicVideoToggle.grantRead(songRequestLambda);
+    requestDurationLimit.grantRead(songRequestLambda);
+    djRequestDurationLimit.grantRead(songRequestLambda);
+    licensedContentToggle.grantRead(songRequestLambda);
+    youtubeApiKeyParameter.grantRead(songRequestLambda);
+    database.grantReadData(songRequestLambda);
+
+    requestSongResource.addMethod(
+      'POST',
+      new apiGateway.LambdaIntegration(songRequestLambda),
+      {
+        apiKeyRequired: true
+      }
     );
 
     // ***********************

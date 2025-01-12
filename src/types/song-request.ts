@@ -37,3 +37,8 @@ export interface SongQueueItem {
   readonly isShuffled: boolean;
   readonly isShuffleEntered: boolean;
 }
+
+export interface RequestSongBody {
+  readonly youtubeId: string;
+  readonly modOverride?: boolean;
+}

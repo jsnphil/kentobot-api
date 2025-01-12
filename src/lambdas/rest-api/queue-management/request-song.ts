@@ -4,6 +4,8 @@ import { searchForVideo } from '../../../utils/youtube-client';
 import { processSongRequestRules } from '../../../utils/song-request-rules';
 import { parse, toSeconds } from 'iso8601-duration';
 import { SongRepository } from '../../../repositories/song-repository';
+import { RequestSongSchema } from '../../../schemas/schema';
+import { RequestSongBody } from '../../../types/song-request';
 
 const logger = new Logger({ serviceName: 'requestSongLambda' });
 const songRepository = new SongRepository();
@@ -12,9 +14,10 @@ export const handler = async (
   event: APIGatewayEvent
 ): Promise<APIGatewayProxyResult> => {
   try {
-    const songId = getSongId(event);
+    logger.debug(`Event: ${JSON.stringify(event, null, 2)}`);
+    const songRequest = getSongId(event);
 
-    const songInfo = await songRepository.getSongInfo(songId);
+    const songInfo = await songRepository.getSongInfo(songRequest.youtubeId);
     if (songInfo) {
       return {
         statusCode: 200,
@@ -27,9 +30,9 @@ export const handler = async (
       };
     }
 
-    logger.info(`Getting song request for song ID: ${songId}`);
+    logger.info(`Getting song request for song ID: ${songRequest.youtubeId}`);
 
-    const video = await getYouTubeVideo(songId);
+    const video = await getYouTubeVideo(songRequest.youtubeId);
 
     const rulesCheck = await processSongRequestRules(video);
 
@@ -100,12 +103,21 @@ const getYouTubeVideo = async (songId: string) => {
   return videos[0];
 };
 
-const getSongId = (event: APIGatewayEvent) => {
-  const songId = event.pathParameters?.songId;
-
-  if (!songId) {
+export const getSongId = (event: APIGatewayEvent) => {
+  if (!event.body) {
     throw new Error('Missing song ID');
   }
 
-  return songId;
+  try {
+    const songId: RequestSongBody = RequestSongSchema.parse(
+      JSON.parse(event.body)
+    );
+
+    return songId;
+  } catch (error) {
+    if (error instanceof Error) {
+      logger.error(`Error parsing song ID: ${error.message}`);
+    }
+    throw new Error('Invalid song request');
+  }
 };

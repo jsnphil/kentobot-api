@@ -49,7 +49,9 @@ export class WebSocketStack extends cdk.Stack {
 
     database.grantReadWriteData(messageHandler);
 
-    const webSocketApi = new apiGateway.WebSocketApi(this, 'web-socket-api', {
+    const webSocketApi = new apiGateway.WebSocketApi(this, 'Kentobot-WSS', {
+      apiName: `KentobotWSS-${props.environmentName}`,
+      description: `Kentobot Web Socket API for ${props.environmentName}`,
       connectRouteOptions: {
         integration: new apiGatewayIntegrations.WebSocketLambdaIntegration(
           'SendMessageIntegration',

@@ -31,6 +31,20 @@ export const handler = async (
   const songRequest = getSongId(event);
   const songRequestResult = await findRequestedSong(songRequest.youtubeId);
 
+  if (songRequestResult?.songInfo) {
+    const songQueue = await SongQueue.loadQueue();
+    await songQueue.addSong({
+      youtubeId: songRequestResult.songInfo.youtubeId,
+      title: songRequestResult.songInfo.title,
+      length: songRequestResult.songInfo.length,
+      allowOverride: songRequest.modOverride,
+      requestedBy: songRequest.requestedBy
+    });
+
+    await songQueue.save();
+    // TODO Push queue to WS clients
+  }
+
   return createResponse(songRequestResult);
 };
 

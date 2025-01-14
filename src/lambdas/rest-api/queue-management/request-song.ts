@@ -1,124 +1,111 @@
 import { APIGatewayEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { Logger } from '@aws-lambda-powertools/logger';
 import { searchForVideo } from '../../../utils/youtube-client';
-import { processSongRequestRules } from '../../../utils/song-request-rules';
+import { checkRequestRules } from '../../../utils/song-request-rules';
 import { parse, toSeconds } from 'iso8601-duration';
 import { SongRepository } from '../../../repositories/song-repository';
 import { RequestSongSchema } from '../../../schemas/schema';
-import { RequestSongBody } from '../../../types/song-request';
+import {
+  RequestSongBody,
+  SongInfo,
+  SongRequestResult,
+  YouTubeSearchResult
+} from '../../../types/song-request';
 import { SongQueue } from '../../../song-queue';
+import { VideoListItem } from '../../../types/youtube';
 
 const logger = new Logger({ serviceName: 'requestSongLambda' });
 const songRepository = new SongRepository();
 
+export interface SongRequestLookup {
+  readonly validSongRequest: boolean;
+  readonly failedRule?: string;
+  readonly songInfo?: SongInfo;
+}
+
 export const handler = async (
   event: APIGatewayEvent
 ): Promise<APIGatewayProxyResult> => {
-  try {
-    logger.debug(`Event: ${JSON.stringify(event, null, 2)}`);
-    const songRequest = getSongId(event);
+  logger.debug(`Event: ${JSON.stringify(event, null, 2)}`);
 
-    const songInfo = await songRepository.getSongInfo(songRequest.youtubeId);
+  const songRequest = getSongId(event);
+  const songRequestResult = await findRequestedSong(songRequest.youtubeId);
 
-    if (songInfo) {
-      const songQueue = await SongQueue.loadQueue();
-      await songQueue.addSong({
-        youtubeId: songRequest.youtubeId,
-        title: songInfo.title,
-        length: songInfo.length,
-        requestedBy: songRequest.requestedBy
-      });
-
-      return {
-        statusCode: 200,
-        body: JSON.stringify({
-          title: songInfo.title,
-          youtubeId: songInfo.youtubeId,
-          length: songInfo.length,
-          playCount: songInfo.playCount
-        })
-      };
-    }
-
-    logger.info(`Getting song request for song ID: ${songRequest.youtubeId}`);
-
-    const video = await getYouTubeVideo(songRequest.youtubeId);
-
-    const rulesCheck = await processSongRequestRules(video);
-
-    if (!rulesCheck.status) {
-      logger.warn(`Song request failed rules check`);
-
-      return createNewErrorResponse(
-        new Error('Invalid song request'),
-        rulesCheck.failedRules
-      );
-    } else {
-      const length = toSeconds(parse(video.contentDetails.duration));
-
-      const songQueue = await SongQueue.loadQueue();
-      await songQueue.addSong({
-        youtubeId: songRequest.youtubeId,
-        title: video.snippet.title,
-        length: length,
-        requestedBy: songRequest.requestedBy
-      });
-
-      return {
-        statusCode: 200,
-        body: JSON.stringify({
-          title: video.snippet.title,
-          youtubeId: video.id,
-          length: length
-        })
-      };
-    }
-  } catch (error) {
-    return createNewErrorResponse(error as Error);
-  }
+  return createResponse(songRequestResult);
 };
 
-const createNewErrorResponse = (
-  error: Error,
-  failedRules?: string[]
-): APIGatewayProxyResult => {
-  logger.error(`Error processing song request: ${error.message}`);
-
-  let statusCode = 500;
-
-  if (error.message === 'No results found') {
-    statusCode = 404;
-  } else if (
-    error.message === 'Missing song ID' ||
-    error.message === 'Too many results' ||
-    error.message === 'Invalid song request'
-  ) {
-    statusCode = 400;
+export const createResponse = (songRequestResult?: SongRequestResult) => {
+  let response: APIGatewayProxyResult;
+  if (songRequestResult?.songInfo) {
+    response = {
+      statusCode: 200,
+      body: JSON.stringify({
+        title: songRequestResult.songInfo.title,
+        youtubeId: songRequestResult.songInfo.youtubeId,
+        length: songRequestResult.songInfo.length,
+        playCount: songRequestResult.songInfo.playCount
+      })
+    };
+  } else if (songRequestResult?.failedRule) {
+    response = {
+      statusCode: 400,
+      body: JSON.stringify({
+        code: 400,
+        message: 'Invalid song request for ID',
+        error: [songRequestResult.failedRule]
+      })
+    };
+  } else if (songRequestResult?.error) {
+    return {
+      statusCode: 500,
+      body: JSON.stringify({
+        code: 500,
+        message: 'Song request lookup failed'
+      })
+    };
+  } else {
+    response = {
+      statusCode: 404,
+      body: JSON.stringify({
+        code: 404,
+        message: 'No result found',
+        error: ['No request found for ID']
+      })
+    };
   }
 
-  return {
-    statusCode: statusCode,
-    body: JSON.stringify({
-      code: statusCode,
-      message: error.message,
-      errors: failedRules || []
-    })
-  };
+  return response;
 };
 
 // TODO Move this a utility?
-const getYouTubeVideo = async (songId: string) => {
+
+export const getYouTubeVideo = async (
+  songId: string
+): Promise<YouTubeSearchResult | undefined> => {
   const videos = await searchForVideo(songId);
 
   logger.debug(`YouTube data: ${JSON.stringify(videos, null, 2)}`);
 
   if (!videos || videos.length === 0) {
-    throw new Error('No results found');
+    return undefined;
   } else if (videos.length > 1) {
-    throw new Error('Too many results');
+    return {
+      failedRule: 'Too many results'
+    } as YouTubeSearchResult;
   }
 
-  return videos[0];
+  const video = videos[0];
+
+  const ruleStatus = await checkRequestRules(video);
+  if (ruleStatus.allowedVideo) {
+    return {
+      video
+    };
+  } else {
+    return {
+      failedRule: ruleStatus.failedRule
+    };
+  }
 };
 
 export const getSongId = (event: APIGatewayEvent) => {
@@ -137,5 +124,50 @@ export const getSongId = (event: APIGatewayEvent) => {
       logger.error(`Error parsing song ID: ${error.message}`);
     }
     throw new Error('Invalid song request');
+  }
+};
+
+export const findRequestedSong = async (
+  songId: string
+): Promise<SongRequestResult | undefined> => {
+  try {
+    logger.debug('Checking if song exists in database');
+    const songInfo = await songRepository.getSongInfo(songId);
+
+    if (songInfo) {
+      logger.info('Song found in database');
+
+      return {
+        songInfo
+      } as SongRequestResult;
+    }
+
+    logger.info(`Getting song request for song ID: ${songId} from YouTube`);
+    const youtubeResult = await getYouTubeVideo(songId);
+
+    if (youtubeResult?.video) {
+      return {
+        songInfo: {
+          youtubeId: youtubeResult.video.id,
+          title: youtubeResult.video.snippet.title,
+          length: toSeconds(parse(youtubeResult.video.contentDetails.duration)),
+          playCount: 0
+        }
+      } as SongRequestResult;
+    } else if (youtubeResult?.failedRule) {
+      return {
+        failedRule: youtubeResult.failedRule
+      };
+    } else {
+      return undefined;
+    }
+  } catch (error) {
+    if (error instanceof Error) {
+      logger.error(error.message);
+    }
+
+    return {
+      error: new Error('System failure looking up song')
+    };
   }
 };

@@ -14,43 +14,43 @@ import { parse, toSeconds } from 'iso8601-duration';
 console.log('Initializing SSM Client');
 const client = new SSMClient({ region: 'us-east-1' });
 
-export async function processSongRequestRules(video: VideoListItem) {
-  const failedRules = [];
-  if (!isEmbeddable(video.status)) {
-    failedRules.push('Video cannot be embedded');
-  }
+export async function checkRequestRules(video: VideoListItem) {
+  const rules = [
+    {
+      name: 'Video is not embeddable',
+      fn: (video: VideoListItem) => isEmbeddable(video.status)
+    },
+    {
+      name: 'Video is not public',
+      fn: async (video: VideoListItem) => await isPublicVideo(video.status)
+    },
+    {
+      name: 'Video is a live stream',
+      fn: (video: VideoListItem) => isLivestream(video.snippet)
+    },
+    {
+      name: 'Video is not available in the US',
+      fn: (video: VideoListItem) =>
+        validRegion(video.contentDetails.regionRestriction)
+    },
+    {
+      name: 'Video is not licensed',
+      fn: async (video: VideoListItem) => await isLicensed(video.contentDetails)
+    }
+  ];
 
-  if (!(await isPublicVideo(video.status))) {
-    failedRules.push('Video is not public');
-  }
-
-  if (isLivestream(video.snippet)) {
-    failedRules.push('Video is a live stream');
-  }
-
-  if (!(await validDuration(video.contentDetails.duration))) {
-    const limit = await getValidDuration();
-
-    const minutes = Math.floor(limit / 60);
-    const remainingSeconds = limit % 60;
-    const formattedSeconds = padTimeDigits(remainingSeconds);
-
-    failedRules.push(
-      `Video exceeds max duration (${minutes}:${formattedSeconds})`
-    );
-  }
-
-  if (!validRegion(video.contentDetails.regionRestriction)) {
-    failedRules.push('Video is not available in the US');
-  }
-
-  if (!(await isLicensed(video.contentDetails))) {
-    failedRules.push('Video is not licensed');
+  for (const rule of rules) {
+    const result = await rule.fn(video);
+    if (!result) {
+      return {
+        allowedVideo: false,
+        failedRule: rule.name
+      };
+    }
   }
 
   return {
-    status: failedRules.length == 0,
-    failedRules: failedRules
+    allowedVideo: true
   };
 }
 
@@ -76,7 +76,7 @@ export async function isPublicVideo(status: Status) {
 }
 
 export function isLivestream(snippet: Snippet) {
-  return snippet.liveBroadcastContent == 'live';
+  return snippet.liveBroadcastContent !== 'live';
 }
 
 /* c8 ignore start */ // Ignoring this function as it is a wrapper around an AWS SDK call

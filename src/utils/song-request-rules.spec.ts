@@ -112,56 +112,22 @@ describe('isPublicVideo', () => {
 });
 
 describe('isLivestream', () => {
-  it('should return true if the video is a livestream', () => {
+  it('should return false if the video is not a livestream', () => {
     const snippet = {
       liveBroadcastContent: 'live'
     } as any;
 
     const result = songRules.isLivestream(snippet);
-    expect(result).toBe(true);
+    expect(result).toBe(false);
   });
 
-  it('should return false if the video is not a livestream', () => {
+  it('should return true if the video is not a livestream', () => {
     const snippet = {
       liveBroadcastContent: 'none'
     } as any;
 
     const result = songRules.isLivestream(snippet);
-    expect(result).toBe(false);
-  });
-});
-
-describe('validDuration', () => {
-  const ssmMock = mockClient(SSMClient);
-  beforeEach(() => {
-    ssmMock.reset();
-  });
-
-  it('should return true for a normal song request if the duration is less than the limit', async () => {
-    ssmMock
-      .on(GetParameterCommand, {})
-      .resolves({ Parameter: { Value: '300' } });
-
-    const result = await songRules.validDuration('PT4M');
     expect(result).toBe(true);
-  });
-
-  it('should return true for a normal song request if the duration is equal to the limit', async () => {
-    ssmMock
-      .on(GetParameterCommand, {})
-      .resolves({ Parameter: { Value: '300' } });
-
-    const result = await songRules.validDuration('PT5M');
-    expect(result).toBe(true);
-  });
-
-  it('should return false for a normal song request if the duration is greater than the limit', async () => {
-    ssmMock
-      .on(GetParameterCommand, {})
-      .resolves({ Parameter: { Value: '300' } });
-
-    const result = await songRules.validDuration('PT10M');
-    expect(result).toBe(false);
   });
 });
 
@@ -238,7 +204,7 @@ describe('processSongRequestRules', () => {
     ssmMock.reset();
   });
 
-  it('should return status true and empty failedRules if all rules pass', async () => {
+  it('should return true when all rules pass', async () => {
     process.env.PUBLIC_VIDEO_TOGGLE_NAME = 'PUBLIC_VIDEO_TOGGLE_NAME';
     process.env.REQUEST_DURATION_NAME = 'REQUEST_DURATION_NAME';
     process.env.LICENSED_VIDEO_TOGGLE_NAME = 'LICENSED_VIDEO_TOGGLE_NAME';
@@ -276,13 +242,12 @@ describe('processSongRequestRules', () => {
       }
     } as any;
 
-    const result = await songRules.processSongRequestRules(mockVideo);
+    const result = await songRules.checkRequestRules(mockVideo);
 
-    expect(result.status).toBe(true);
-    expect(result.failedRules).toEqual([]);
+    expect(result.allowedVideo).toBe(true);
   });
 
-  it('should return status false and a list of the failed rules when the song fails the checks', async () => {
+  it('should return status false and the rule name if the video is not embeddable', async () => {
     process.env.PUBLIC_VIDEO_TOGGLE_NAME = 'PUBLIC_VIDEO_TOGGLE_NAME';
     process.env.REQUEST_DURATION_NAME = 'REQUEST_DURATION_NAME';
     process.env.LICENSED_VIDEO_TOGGLE_NAME = 'LICENSED_VIDEO_TOGGLE_NAME';
@@ -320,18 +285,103 @@ describe('processSongRequestRules', () => {
       }
     } as any;
 
-    const result = await songRules.processSongRequestRules(mockVideo);
+    const result = await songRules.checkRequestRules(mockVideo);
 
     console.log(result);
 
-    expect(result.status).toBe(false);
-    expect(result.failedRules).toEqual([
-      'Video cannot be embedded',
-      'Video is not public',
-      'Video is a live stream',
-      'Video exceeds max duration (5:00)',
-      'Video is not available in the US',
-      'Video is not licensed'
-    ]);
+    expect(result.allowedVideo).toBe(false);
+    expect(result.failedRule).toBe('Video is not embeddable');
+  });
+
+  it('should return status false and the rule name if the video is not public', async () => {
+    process.env.PUBLIC_VIDEO_TOGGLE_NAME = 'PUBLIC_VIDEO_TOGGLE_NAME';
+    process.env.REQUEST_DURATION_NAME = 'REQUEST_DURATION_NAME';
+    process.env.LICENSED_VIDEO_TOGGLE_NAME = 'LICENSED_VIDEO_TOGGLE_NAME';
+
+    ssmMock
+      .on(GetParameterCommand, { Name: 'PUBLIC_VIDEO_TOGGLE_NAME' })
+      .resolves({ Parameter: { Value: 'true' } });
+    ssmMock
+      .on(GetParameterCommand, { Name: 'REQUEST_DURATION_NAME' })
+      .resolves({ Parameter: { Value: '300' } });
+    ssmMock
+      .on(GetParameterCommand, { Name: 'LICENSED_VIDEO_TOGGLE_NAME' })
+      .resolves({ Parameter: { Value: 'true' } });
+
+    const mockVideo = {
+      snippet: {
+        liveBroadcastContent: 'live'
+      } as Snippet,
+      status: {
+        embeddable: true,
+        uploadStatus: '',
+        failureReason: '',
+        rejectionReason: '',
+        privacyStatus: 'private',
+        license: '',
+        publicStatsViewable: true,
+        madeForKids: false
+      },
+      contentDetails: {
+        licensedContent: true,
+        duration: 'PT6M',
+        regionRestriction: {
+          allowed: ['US']
+        }
+      }
+    } as any;
+
+    const result = await songRules.checkRequestRules(mockVideo);
+
+    console.log(result);
+
+    expect(result.allowedVideo).toBe(false);
+    expect(result.failedRule).toBe('Video is not public');
+  });
+
+  it('should return status false and the rule name if the video is a live stream', async () => {
+    process.env.PUBLIC_VIDEO_TOGGLE_NAME = 'PUBLIC_VIDEO_TOGGLE_NAME';
+    process.env.REQUEST_DURATION_NAME = 'REQUEST_DURATION_NAME';
+    process.env.LICENSED_VIDEO_TOGGLE_NAME = 'LICENSED_VIDEO_TOGGLE_NAME';
+
+    ssmMock
+      .on(GetParameterCommand, { Name: 'PUBLIC_VIDEO_TOGGLE_NAME' })
+      .resolves({ Parameter: { Value: 'true' } });
+    ssmMock
+      .on(GetParameterCommand, { Name: 'REQUEST_DURATION_NAME' })
+      .resolves({ Parameter: { Value: '300' } });
+    ssmMock
+      .on(GetParameterCommand, { Name: 'LICENSED_VIDEO_TOGGLE_NAME' })
+      .resolves({ Parameter: { Value: 'true' } });
+
+    const mockVideo = {
+      snippet: {
+        liveBroadcastContent: 'live'
+      } as Snippet,
+      status: {
+        embeddable: true,
+        uploadStatus: '',
+        failureReason: '',
+        rejectionReason: '',
+        privacyStatus: 'public',
+        license: '',
+        publicStatsViewable: true,
+        madeForKids: false
+      },
+      contentDetails: {
+        licensedContent: true,
+        duration: 'PT6M',
+        regionRestriction: {
+          allowed: ['US']
+        }
+      }
+    } as any;
+
+    const result = await songRules.checkRequestRules(mockVideo);
+
+    console.log(result);
+
+    expect(result.allowedVideo).toBe(false);
+    expect(result.failedRule).toBe('Video is a live stream');
   });
 });

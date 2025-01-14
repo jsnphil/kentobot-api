@@ -1,3 +1,5 @@
+import { VideoListItem } from './youtube';
+
 export enum RequestType {
   Song_Request,
   DJ_Hour
@@ -42,4 +44,16 @@ export interface RequestSongBody {
   readonly youtubeId: string;
   readonly requestedBy: string;
   readonly modOverride?: boolean;
+}
+
+export interface SongRequestResult {
+  readonly songInfo?: SongInfo;
+  readonly failedRule?: string;
+  readonly error?: Error;
+}
+
+export interface YouTubeSearchResult {
+  readonly video?: VideoListItem;
+  readonly failedRule?: string;
+  readonly error?: Error;
 }

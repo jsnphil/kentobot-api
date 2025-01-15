@@ -178,21 +178,6 @@ describe('Request Song', () => {
   });
 
   describe('createResponse', () => {
-    it('should return a 200 response with a song info for a successful lookup', () => {
-      const songRequestResult = {
-        songInfo: {
-          youtubeId: 'validSongId',
-          title: 'Valid Song',
-          length: 210
-        }
-      };
-
-      const response = createResponse(songRequestResult);
-
-      expect(response.statusCode).toBe(200);
-      expect(JSON.parse(response.body)).toEqual(songRequestResult.songInfo);
-    });
-
     it('should return a 400 response with an error for a failed rule', () => {
       const songRequestResult = {
         failedRule: 'Invalid song ID'

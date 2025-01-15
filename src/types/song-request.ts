@@ -57,3 +57,9 @@ export interface YouTubeSearchResult {
   readonly failedRule?: string;
   readonly error?: Error;
 }
+
+export interface AddSongToQueueResult {
+  readonly songAdded: boolean;
+  readonly failedRule?: string;
+  readonly error?: Error;
+}

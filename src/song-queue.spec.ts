@@ -163,19 +163,18 @@ describe('SongQueue', () => {
       };
 
       await songQueue.addSong(songRequest);
+      const addSongResult = await songQueue.addSong({
+        youtubeId: 'youtubeId',
+        title: 'Song title',
+        length: 100,
+        requestedBy: 'a-different-user'
+      });
 
-      expect(
-        async () =>
-          await songQueue.addSong({
-            youtubeId: 'youtubeId',
-            title: 'Song title',
-            length: 100,
-            requestedBy: 'a-different-user'
-          })
-      ).rejects.toThrow('Song is already in the queue');
+      expect(addSongResult.songAdded).toBe(false);
+      expect(addSongResult.failedRule).toBe('Song is already in the queue');
     });
 
-    it('should throw an error if the user already has a song in the queue', async () => {
+    it('should not add the song if the requester already has a song in the queue', async () => {
       mockDynamoDBClient.on(GetItemCommand).resolves({
         Item: undefined
       });
@@ -207,15 +206,17 @@ describe('SongQueue', () => {
 
       await songQueue.addSong(songRequest);
 
-      expect(
-        async () =>
-          await songQueue.addSong({
-            youtubeId: 'youtubeId2',
-            title: 'Song title 2',
-            length: 100,
-            requestedBy: 'user'
-          })
-      ).rejects.toThrow('User already has 1 song(s) in the queue');
+      const addSongResult = await songQueue.addSong({
+        youtubeId: 'youtubeId2',
+        title: 'Song title 2',
+        length: 100,
+        requestedBy: 'user'
+      });
+
+      expect(addSongResult.songAdded).toBe(false);
+      expect(addSongResult.failedRule).toBe(
+        'User already has 1 song(s) in the queue'
+      );
     });
 
     it('should add to the queue if the user already has a song in the queue and the override is set', async () => {
@@ -280,7 +281,7 @@ describe('SongQueue', () => {
       ]);
     });
 
-    it('should throw an error if the song is too long', async () => {
+    it('should not add the song if the song is too long', async () => {
       mockDynamoDBClient.on(GetItemCommand).resolves({
         Item: undefined
       });
@@ -303,15 +304,15 @@ describe('SongQueue', () => {
 
       const songQueue = await SongQueue.loadQueue();
 
-      expect(
-        async () =>
-          await songQueue.addSong({
-            youtubeId: 'youtubeId2',
-            title: 'Song title 2',
-            length: 400,
-            requestedBy: 'user'
-          })
-      ).rejects.toThrow('Song length must be under 6:00');
+      const addSongResult = await songQueue.addSong({
+        youtubeId: 'youtubeId2',
+        title: 'Song title 2',
+        length: 400,
+        requestedBy: 'user'
+      });
+
+      expect(addSongResult.songAdded).toBe(false);
+      expect(addSongResult.failedRule).toBe('Song length must be under 6:00');
     });
   });
 

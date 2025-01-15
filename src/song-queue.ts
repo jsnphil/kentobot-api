@@ -1,6 +1,11 @@
 import { GetParameterCommand, SSMClient } from '@aws-sdk/client-ssm';
 import { SongQueueRepository } from './repositories/song-queue-repository';
-import { SongQueueItem, SongRequest } from './types/song-request';
+import {
+  AddSongToQueueResult,
+  SongQueueItem,
+  SongRequest,
+  SongRequestResult
+} from './types/song-request';
 import { generateStreamDate, secondsToMinutes } from './utils/utilities';
 import { Logger } from '@aws-lambda-powertools/logger';
 
@@ -34,7 +39,7 @@ export class SongQueue {
     this.songs = await this.songRepository.getQueue(this.streamDate);
   }
 
-  async addSong(song: SongRequest) {
+  async addSong(song: SongRequest): Promise<AddSongToQueueResult> {
     const maxDuration = await this.getMaxDuration();
     const maxSongsPerUser = await this.getMaxNumberOfRequests();
 
@@ -64,7 +69,10 @@ export class SongQueue {
     for (const rule of queueRules) {
       const result = await rule.fn(song);
       if (!result) {
-        throw new Error(rule.name);
+        return {
+          songAdded: false,
+          failedRule: rule.name
+        };
       }
     }
 
@@ -81,6 +89,10 @@ export class SongQueue {
     this.logger.info(
       `Song [${song.youtubeId}], requested by [${song.requestedBy}] added to queue`
     );
+
+    return {
+      songAdded: true
+    };
   }
 
   removeSong(youtubeId: string) {

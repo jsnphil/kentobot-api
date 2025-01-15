@@ -12,7 +12,8 @@ import {
   YouTubeSearchResult
 } from '../../../types/song-request';
 import { SongQueue } from '../../../song-queue';
-import { VideoListItem } from '../../../types/youtube';
+import { constants } from 'http2';
+import { Code } from 'better-status-codes';
 
 const logger = new Logger({ serviceName: 'requestSongLambda' });
 const songRepository = new SongRepository();
@@ -33,7 +34,7 @@ export const handler = async (
 
   if (songRequestResult?.songInfo) {
     const songQueue = await SongQueue.loadQueue();
-    await songQueue.addSong({
+    const addQueueResult = await songQueue.addSong({
       youtubeId: songRequestResult.songInfo.youtubeId,
       title: songRequestResult.songInfo.title,
       length: songRequestResult.songInfo.length,
@@ -41,8 +42,24 @@ export const handler = async (
       requestedBy: songRequest.requestedBy
     });
 
-    await songQueue.save();
-    // TODO Push queue to WS clients
+    if (addQueueResult.songAdded) {
+      await songQueue.save();
+      // TODO Push queue to WS clients
+
+      return {
+        statusCode: Code.NO_CONTENT,
+        body: ''
+      };
+    } else if (addQueueResult.failedRule) {
+      return {
+        statusCode: Code.BAD_REQUEST,
+        body: JSON.stringify({
+          code: Code.BAD_REQUEST,
+          message: 'Invalid song request for ID',
+          error: [songRequestResult.failedRule]
+        })
+      };
+    }
   }
 
   return createResponse(songRequestResult);
@@ -50,38 +67,28 @@ export const handler = async (
 
 export const createResponse = (songRequestResult?: SongRequestResult) => {
   let response: APIGatewayProxyResult;
-  if (songRequestResult?.songInfo) {
+  if (songRequestResult?.failedRule) {
     response = {
-      statusCode: 200,
+      statusCode: Code.BAD_REQUEST,
       body: JSON.stringify({
-        title: songRequestResult.songInfo.title,
-        youtubeId: songRequestResult.songInfo.youtubeId,
-        length: songRequestResult.songInfo.length,
-        playCount: songRequestResult.songInfo.playCount
-      })
-    };
-  } else if (songRequestResult?.failedRule) {
-    response = {
-      statusCode: 400,
-      body: JSON.stringify({
-        code: 400,
+        code: Code.BAD_REQUEST,
         message: 'Invalid song request for ID',
         error: [songRequestResult.failedRule]
       })
     };
   } else if (songRequestResult?.error) {
     return {
-      statusCode: 500,
+      statusCode: Code.INTERNAL_SERVER_ERROR,
       body: JSON.stringify({
-        code: 500,
+        code: Code.INTERNAL_SERVER_ERROR,
         message: 'Song request lookup failed'
       })
     };
   } else {
     response = {
-      statusCode: 404,
+      statusCode: Code.NOT_FOUND,
       body: JSON.stringify({
-        code: 404,
+        code: Code.NOT_FOUND,
         message: 'No result found',
         error: ['No request found for ID']
       })

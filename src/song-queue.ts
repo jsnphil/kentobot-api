@@ -2,9 +2,12 @@ import { GetParameterCommand, SSMClient } from '@aws-sdk/client-ssm';
 import { SongQueueRepository } from './repositories/song-queue-repository';
 import {
   AddSongToQueueResult,
+  SongInfo,
   SongQueueItem,
   SongRequest,
-  SongRequestResult
+  SongRequestErrorCode,
+  SongRequestResult,
+  ValidationResult
 } from './types/song-request';
 import { generateStreamDate, secondsToMinutes } from './utils/utilities';
 import { Logger } from '@aws-lambda-powertools/logger';
@@ -39,17 +42,19 @@ export class SongQueue {
     this.songs = await this.songRepository.getQueue(this.streamDate);
   }
 
-  async addSong(song: SongRequest): Promise<AddSongToQueueResult> {
+  async addSong(song: SongRequest): Promise<ValidationResult<SongQueueItem>> {
     const maxDuration = await this.getMaxDuration();
     const maxSongsPerUser = await this.getMaxNumberOfRequests();
 
     const queueRules = [
       {
+        code: SongRequestErrorCode.SONG_ALREADY_REQUESTED,
         name: 'Song is already in the queue',
         fn: (song: SongRequest) =>
           !this.songs.find((s) => s.youtubeId === song.youtubeId)
       },
       {
+        code: SongRequestErrorCode.USER_MAX_REQUESTS,
         name: `User already has ${maxSongsPerUser} song(s) in the queue`,
         fn: (song: SongRequest) => {
           const userSongsCount = this.songs.filter(
@@ -59,6 +64,7 @@ export class SongQueue {
         }
       },
       {
+        code: SongRequestErrorCode.SONG_EXCEEDEDS_MAX_DURATION,
         name: `Song length must be under ${secondsToMinutes(maxDuration)}`,
         fn: async (song: SongRequest) => {
           return song.length <= maxDuration;
@@ -70,8 +76,13 @@ export class SongQueue {
       const result = await rule.fn(song);
       if (!result) {
         return {
-          songAdded: false,
-          failedRule: rule.name
+          success: false,
+          errors: [
+            {
+              code: rule.code,
+              message: rule.name
+            }
+          ]
         };
       }
     }
@@ -91,7 +102,16 @@ export class SongQueue {
     );
 
     return {
-      songAdded: true
+      success: true,
+      data: {
+        youtubeId: song.youtubeId,
+        title: song.title,
+        length: song.length,
+        requestedBy: song.requestedBy,
+        isBumped: false,
+        isShuffled: false,
+        isShuffleEntered: false
+      }
     };
   }
 

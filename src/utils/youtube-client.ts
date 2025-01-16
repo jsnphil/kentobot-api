@@ -1,71 +1,106 @@
-import { RequestInfo, RequestInit } from 'node-fetch';
-import { URL, URLSearchParams } from 'url';
-import { VideoListResponse } from '../types/youtube';
 import { Logger } from '@aws-lambda-powertools/logger';
-import { MetricUnit, Metrics } from '@aws-lambda-powertools/metrics';
 import { GetParameterCommand, SSMClient } from '@aws-sdk/client-ssm';
+import { VideoListItem, VideoListResponse } from '../types/youtube';
+import { Metrics, MetricUnit } from '@aws-lambda-powertools/metrics';
+import { ValidationResult, YouTubeErrorCode } from '../types/song-request';
+import { checkYouTubeRules } from './song-request-rules';
 
-const YOUTUBE_API_URL = 'https://www.googleapis.com/youtube/v3/videos';
+export class YouTubeClient {
+  private static readonly ssmClient = new SSMClient({ region: 'us-east-1' });
+  private readonly logger = new Logger({ serviceName: 'youtube-client' });
+  private readonly apiKey: string;
 
-const logger = new Logger();
+  private readonly YOUTUBE_API_URL =
+    'https://www.googleapis.com/youtube/v3/videos';
 
-const metrics = new Metrics({
-  namespace: 'SongRequests',
-  serviceName: 'YouTubeAPI'
-});
-
-console.log('Initializing SSM Client');
-const ssmClient = new SSMClient({ region: 'us-east-1' });
-
-let apiKey: string;
-
-export const searchForVideo = async (songId: string) => {
-  const fetch = (url: RequestInfo, init?: RequestInit) =>
-    import('node-fetch').then(({ default: fetch }) => fetch(url, init));
-
-  const youtubeUrl = new URL(YOUTUBE_API_URL);
-  youtubeUrl.search = new URLSearchParams({
-    key: await getApiKey(),
-    part: 'contentDetails,snippet,status',
-    id: songId
-  }).toString();
-
-  logger.info(`Calling ${youtubeUrl}`);
-
-  const start = Date.now();
-
-  const response = await fetch(youtubeUrl.toString(), {
-    method: 'GET'
-  });
-
-  const end = Date.now();
-
-  const data = (await response.json()) as VideoListResponse;
-  logger.info(`Response: ${JSON.stringify(data, null, 2)}`);
-  metrics.logMetrics();
-  metrics.addMetric('youtubeApiCalls', MetricUnit.Count, 1);
-  metrics.addMetric(
-    'youtubeApiDurations',
-    MetricUnit.Milliseconds,
-    end - start
-  );
-
-  return data?.items ?? [];
-};
-
-export const getApiKey = async () => {
-  if (apiKey) {
-    return apiKey;
+  private constructor(apiKey: string) {
+    this.logger.info('Initializing YouTubeClient');
+    this.apiKey = apiKey;
   }
 
-  const response = await ssmClient.send(
-    new GetParameterCommand({
-      Name: 'youtube-api-key',
-      WithDecryption: true
-    })
-  );
+  static async initialize() {
+    const response = await this.ssmClient.send(
+      new GetParameterCommand({
+        Name: 'youtube-api-key',
+        WithDecryption: true
+      })
+    );
 
-  apiKey = response.Parameter?.Value!;
+    const apiKey = response.Parameter?.Value!;
 
-  return apiKey;
-};
+    return new YouTubeClient(apiKey);
+  }
+
+  async getVideo(youtubeId: string) {
+    const youtubeResult = await this.searchForVideo(youtubeId);
+
+    return this.validateResult(youtubeResult);
+  }
+
+  async searchForVideo(youtubeId: string) {
+    const youtubeUrl = new URL(this.YOUTUBE_API_URL);
+    youtubeUrl.search = new URLSearchParams({
+      key: this.apiKey,
+      part: 'contentDetails,snippet,status',
+      id: youtubeId
+    }).toString();
+
+    this.logger.info(`Calling ${youtubeUrl}`);
+
+    const start = Date.now();
+
+    const response = await fetch(youtubeUrl.toString(), {
+      method: 'GET'
+    });
+
+    const end = Date.now();
+
+    const data = (await response.json()) as VideoListResponse;
+    this.logger.info(`Response: ${JSON.stringify(data, null, 2)}`);
+
+    const metrics = new Metrics({
+      namespace: 'SongRequests',
+      serviceName: 'YouTubeAPI'
+    });
+
+    metrics.logMetrics();
+    metrics.addMetric('youtubeApiCalls', MetricUnit.Count, 1);
+    metrics.addMetric(
+      'youtubeApiDurations',
+      MetricUnit.Milliseconds,
+      end - start
+    );
+
+    return data?.items ?? [];
+  }
+
+  async validateResult(videos: VideoListItem[]) {
+    let result: ValidationResult<VideoListItem>;
+
+    if (!videos) {
+      result = {
+        success: false,
+        errors: [
+          {
+            code: YouTubeErrorCode.VIDEO_NOT_FOUND,
+            message: 'Video not found'
+          }
+        ]
+      };
+    } else if (videos.length > 1) {
+      result = {
+        success: false,
+        errors: [
+          {
+            code: YouTubeErrorCode.MULTIPLE_RESULTS,
+            message: 'Too many results'
+          }
+        ]
+      };
+    } else {
+      result = await checkYouTubeRules(videos[0]);
+    }
+
+    return result;
+  }
+}

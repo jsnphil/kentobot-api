@@ -1,6 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { SSMClient, GetParameterCommand } from '@aws-sdk/client-ssm';
-import { RequestType } from '../types/song-request';
+import {
+  RequestType,
+  ValidationResult,
+  YouTubeErrorCode
+} from '../types/song-request';
 import {
   ContentDetails,
   RegionRestriction,
@@ -14,26 +18,33 @@ import { parse, toSeconds } from 'iso8601-duration';
 console.log('Initializing SSM Client');
 const client = new SSMClient({ region: 'us-east-1' });
 
-export async function checkRequestRules(video: VideoListItem) {
+export const checkYouTubeRules = async (
+  video: VideoListItem
+): Promise<ValidationResult<VideoListItem>> => {
   const rules = [
     {
+      code: YouTubeErrorCode.VIDEO_NOT_EMBEDDABLE,
       name: 'Video is not embeddable',
       fn: (video: VideoListItem) => isEmbeddable(video.status)
     },
     {
+      code: YouTubeErrorCode.VIDEO_NOT_PUBLIC,
       name: 'Video is not public',
       fn: async (video: VideoListItem) => await isPublicVideo(video.status)
     },
     {
+      code: YouTubeErrorCode.LIVE_STREAM_VIDEO,
       name: 'Video is a live stream',
       fn: (video: VideoListItem) => isLivestream(video.snippet)
     },
     {
+      code: YouTubeErrorCode.VIDEO_UNAVAILABLE,
       name: 'Video is not available in the US',
       fn: (video: VideoListItem) =>
         validRegion(video.contentDetails.regionRestriction)
     },
     {
+      code: YouTubeErrorCode.VIDEO_UNLICENSED,
       name: 'Video is not licensed',
       fn: async (video: VideoListItem) => await isLicensed(video.contentDetails)
     }
@@ -43,16 +54,22 @@ export async function checkRequestRules(video: VideoListItem) {
     const result = await rule.fn(video);
     if (!result) {
       return {
-        allowedVideo: false,
-        failedRule: rule.name
+        success: false,
+        errors: [
+          {
+            code: rule.code,
+            message: rule.name
+          }
+        ]
       };
     }
   }
 
   return {
-    allowedVideo: true
+    success: true,
+    data: video
   };
-}
+};
 
 export function isEmbeddable(status: Status) {
   return status.embeddable;

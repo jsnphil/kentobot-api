@@ -2,17 +2,28 @@ import { APIGatewayEvent } from 'aws-lambda';
 import { createResponse, findRequestedSong, getSongId } from './request-song';
 import { VideoListItem } from '../../../types/youtube';
 import { SongRepository } from '../../../repositories/song-repository';
+import { YouTubeClient } from '../../../utils/youtube-client';
+import { YouTubeErrorCode } from '../../../types/song-request';
+import { GetParameterCommand, SSMClient } from '@aws-sdk/client-ssm';
+import { mockClient } from 'aws-sdk-client-mock';
 
 jest.mock('../../../utils/youtube-client');
-jest.mock('../../../utils/song-request-rules');
 jest.mock('../../../repositories/song-repository');
+const ssmMock = mockClient(SSMClient);
 
 describe('Request Song', () => {
-  beforeEach(() => {
-    jest.resetAllMocks();
-  });
-
   describe('findRequestedSong', () => {
+    beforeEach(() => {
+      jest.resetAllMocks();
+
+      ssmMock
+        .on(GetParameterCommand, {
+          Name: 'youtube-api-key',
+          WithDecryption: true
+        })
+        .resolves({ Parameter: { Value: 'api-key' } });
+    });
+
     it('should return a valid song when found in the database', async () => {
       jest.spyOn(SongRepository.prototype, 'getSongInfo').mockResolvedValue({
         title: 'Existing Song',
@@ -22,7 +33,8 @@ describe('Request Song', () => {
       });
 
       expect(await findRequestedSong('validSongId')).toEqual({
-        songInfo: {
+        success: true,
+        data: {
           title: 'Existing Song',
           youtubeId: 'validSongId',
           length: 210,
@@ -36,17 +48,27 @@ describe('Request Song', () => {
         .spyOn(SongRepository.prototype, 'getSongInfo')
         .mockResolvedValue(undefined);
 
+      ssmMock
+        .on(GetParameterCommand, {
+          Name: 'youtube-api-key',
+          WithDecryption: true
+        })
+        .resolves({ Parameter: { Value: 'api-key' } });
+
       const mockVideo = {
         id: 'validSongId',
         snippet: { title: 'Valid Song' },
         contentDetails: { duration: 'PT3M30S' }
       } as any as VideoListItem;
 
-      mockSearchForVideo.mockResolvedValue([mockVideo]);
-      mockRequestRules.mockResolvedValue({ allowedVideo: true });
+      jest.spyOn(YouTubeClient.prototype, 'getVideo').mockResolvedValue({
+        success: true,
+        data: mockVideo
+      });
 
       expect(await findRequestedSong('validSongId')).toEqual({
-        songInfo: {
+        success: true,
+        data: {
           youtubeId: 'validSongId',
           title: 'Valid Song',
           length: 210,
@@ -60,9 +82,25 @@ describe('Request Song', () => {
         .spyOn(SongRepository.prototype, 'getSongInfo')
         .mockResolvedValue(undefined);
 
-      mockSearchForVideo.mockResolvedValue([]);
+      jest.spyOn(YouTubeClient.prototype, 'getVideo').mockResolvedValue({
+        success: false,
+        errors: [
+          {
+            code: YouTubeErrorCode.VIDEO_NOT_FOUND,
+            message: 'Video not found'
+          }
+        ]
+      });
 
-      expect(await findRequestedSong('invalidSongId')).toBeUndefined();
+      expect(await findRequestedSong('invalidSongId')).toEqual({
+        success: false,
+        errors: [
+          {
+            code: YouTubeErrorCode.VIDEO_NOT_FOUND,
+            message: 'Video not found'
+          }
+        ]
+      });
     });
   });
 
@@ -114,50 +152,6 @@ describe('Request Song', () => {
       } as any;
 
       expect(() => getSongId(event)).toThrow('Invalid song request');
-    });
-  });
-
-  describe('getYouTubeVideo', () => {
-    it('should return a video for a valid ID', async () => {
-      const mockVideo = {
-        id: 'validSongId',
-        snippet: { title: 'Valid Song' },
-        contentDetails: { duration: 'PT3M30S' }
-      } as any as VideoListItem;
-
-      mockSearchForVideo.mockResolvedValue([mockVideo]);
-      mockRequestRules.mockResolvedValue({ allowedVideo: true });
-
-      expect(await getYouTubeVideo('validSongId')).toEqual({
-        video: mockVideo
-      });
-    });
-
-    it('should not return a video for an invalid ID', async () => {
-      mockSearchForVideo.mockResolvedValue([]);
-
-      expect(await getYouTubeVideo('invalidSongId')).toBeUndefined();
-    });
-
-    it('should return a not allowed status for too many results', async () => {
-      const mockVideos = [
-        {
-          id: 'song1',
-          snippet: { title: 'Song 1' },
-          contentDetails: { duration: 'PT3M30S' }
-        },
-        {
-          id: 'song2',
-          snippet: { title: 'Song 2' },
-          contentDetails: { duration: 'PT4M30S' }
-        }
-      ] as any as VideoListItem[];
-
-      mockSearchForVideo.mockResolvedValue(mockVideos);
-
-      expect(await getYouTubeVideo('multipleResultsSongId')).toEqual({
-        failedRule: 'Too many results'
-      });
     });
   });
 

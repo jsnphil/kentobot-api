@@ -28,6 +28,7 @@ export class YouTubeClient {
 
     /* istanbul ignore next */
     const apiKey = response.Parameter?.Value!;
+    console.log(`API Key: ${apiKey}`);
 
     return new YouTubeClient(apiKey);
   }

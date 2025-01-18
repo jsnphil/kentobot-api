@@ -18,16 +18,12 @@ import { YouTubeClient } from '../../../utils/youtube-client';
 const logger = new Logger({ serviceName: 'requestSongLambda' });
 const songRepository = new SongRepository();
 
-let youtubeClient: YouTubeClient;
+// let youtubeClient: YouTubeClient;
 
 export const handler = async (
   event: APIGatewayEvent
 ): Promise<APIGatewayProxyResult> => {
   logger.debug(`Event: ${JSON.stringify(event, null, 2)}`);
-
-  if (!youtubeClient) {
-    youtubeClient = await YouTubeClient.initialize();
-  }
 
   const songRequest = getSongId(event);
   const songRequestResult = await findRequestedSong(songRequest.youtubeId);
@@ -233,6 +229,17 @@ export const findRequestedSong = async (
     }
 
     logger.info(`Getting song request for song ID: ${songId} from YouTube`);
+
+    let youtubeClient: YouTubeClient | undefined = undefined;
+    if (!youtubeClient) {
+      console.log('Initializing YouTube Client');
+      youtubeClient = await YouTubeClient.initialize();
+      console.log('YouTube Client initialized');
+    }
+
+    if (!youtubeClient) {
+      console.log('YouTube Client not initialized');
+    }
     const youtubeResult = await youtubeClient.getVideo(songId);
 
     if (youtubeResult.success && youtubeResult.data) {

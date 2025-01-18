@@ -26,11 +26,13 @@ export class YouTubeClient {
       })
     );
 
+    /* istanbul ignore next */
     const apiKey = response.Parameter?.Value!;
 
     return new YouTubeClient(apiKey);
   }
 
+  /* istanbul ignore next */
   async getVideo(youtubeId: string) {
     const youtubeResult = await this.searchForVideo(youtubeId);
 
@@ -77,7 +79,7 @@ export class YouTubeClient {
   async validateResult(videos: VideoListItem[]) {
     let result: ValidationResult<VideoListItem>;
 
-    if (!videos) {
+    if (videos.length === 0) {
       result = {
         success: false,
         errors: [

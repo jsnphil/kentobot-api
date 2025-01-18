@@ -1,27 +1,11 @@
 import { APIGatewayEvent } from 'aws-lambda';
-import {
-  createResponse,
-  findRequestedSong,
-  getSongId,
-  getYouTubeVideo,
-  handler
-} from './request-song';
-import { searchForVideo } from '../../../utils/youtube-client';
-import { checkRequestRules } from '../../../utils/song-request-rules';
+import { createResponse, findRequestedSong, getSongId } from './request-song';
 import { VideoListItem } from '../../../types/youtube';
 import { SongRepository } from '../../../repositories/song-repository';
 
 jest.mock('../../../utils/youtube-client');
 jest.mock('../../../utils/song-request-rules');
 jest.mock('../../../repositories/song-repository');
-
-const mockSearchForVideo = searchForVideo as jest.MockedFunction<
-  typeof searchForVideo
->;
-
-const mockRequestRules = checkRequestRules as jest.MockedFunction<
-  typeof checkRequestRules
->;
 
 describe('Request Song', () => {
   beforeEach(() => {

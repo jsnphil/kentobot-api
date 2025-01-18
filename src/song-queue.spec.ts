@@ -1,6 +1,6 @@
 import { GetParameterCommand, SSMClient } from '@aws-sdk/client-ssm';
 import { SongQueue } from './song-queue';
-import { SongRequest } from './types/song-request';
+import { SongRequest, SongRequestErrorCode } from './types/song-request';
 import { DynamoDBClient, GetItemCommand } from '@aws-sdk/client-dynamodb';
 import { mockClient } from 'aws-sdk-client-mock';
 
@@ -170,8 +170,14 @@ describe('SongQueue', () => {
         requestedBy: 'a-different-user'
       });
 
-      expect(addSongResult.songAdded).toBe(false);
-      expect(addSongResult.failedRule).toBe('Song is already in the queue');
+      expect(addSongResult.success).toBe(false);
+      expect(addSongResult.errors).toBeDefined();
+
+      const errors = addSongResult.errors;
+      expect(errors).toBeDefined();
+
+      expect(errors![0].code).toBe(SongRequestErrorCode.SONG_ALREADY_REQUESTED);
+      expect(errors![0].message).toBe('Song is already in the queue');
     });
 
     it('should not add the song if the requester already has a song in the queue', async () => {
@@ -213,8 +219,13 @@ describe('SongQueue', () => {
         requestedBy: 'user'
       });
 
-      expect(addSongResult.songAdded).toBe(false);
-      expect(addSongResult.failedRule).toBe(
+      expect(addSongResult.success).toBe(false);
+
+      const errors = addSongResult.errors;
+      expect(errors).toBeDefined();
+
+      expect(errors![0].code).toBe(SongRequestErrorCode.USER_MAX_REQUESTS);
+      expect(errors![0].message).toBe(
         'User already has 1 song(s) in the queue'
       );
     });
@@ -311,8 +322,15 @@ describe('SongQueue', () => {
         requestedBy: 'user'
       });
 
-      expect(addSongResult.songAdded).toBe(false);
-      expect(addSongResult.failedRule).toBe('Song length must be under 6:00');
+      expect(addSongResult.success).toBe(false);
+
+      const errors = addSongResult.errors;
+      expect(errors).toBeDefined();
+
+      expect(errors![0].code).toBe(
+        SongRequestErrorCode.SONG_EXCEEDEDS_MAX_DURATION
+      );
+      expect(errors![0].message).toBe('Song length must be under 6:00');
     });
   });
 

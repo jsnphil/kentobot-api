@@ -11,10 +11,14 @@ import { YouTubeClient } from '../../../utils/youtube-client';
 import { YouTubeErrorCode } from '../../../types/song-request';
 import { GetParameterCommand, SSMClient } from '@aws-sdk/client-ssm';
 import { mockClient } from 'aws-sdk-client-mock';
+import { mockSingleResult } from '../../../mocks/mock-youtube-results';
+import { DynamoDBClient, GetItemCommand } from '@aws-sdk/client-dynamodb';
+import { SongQueueRepository } from '../../../repositories/song-queue-repository';
 
 // jest.mock('../../../utils/youtube-client');
 jest.mock('../../../repositories/song-repository');
 const ssmMock = mockClient(SSMClient);
+const mockDynamoDBClient = mockClient(DynamoDBClient);
 
 describe('Request Song', () => {
   describe('findRequestedSong', () => {
@@ -107,6 +111,16 @@ describe('Request Song', () => {
           }
         ]
       });
+    });
+
+    it('should throw an error if there is a system error', () => {
+      jest
+        .spyOn(SongRepository.prototype, 'getSongInfo')
+        .mockRejectedValue(new Error('System failure'));
+
+      expect(findRequestedSong('validSongId')).rejects.toThrow(
+        'System failure looking up song'
+      );
     });
   });
 
@@ -204,10 +218,14 @@ describe('Request Song', () => {
   });
 
   describe('handler', () => {
-    it('should return an error response for a invalid song request', async () => {
-      const event: APIGatewayEvent = {
-        body: JSON.stringify({ youtubeId: 'songId', requestedBy: 'user' })
-      } as any;
+    beforeEach(() => {
+      jest.resetAllMocks();
+      process.env.MAX_SONGS_PER_USER = 'max-songs';
+      process.env.REQUEST_DURATION_NAME = 'request-duration';
+
+      mockDynamoDBClient.on(GetItemCommand).resolves({
+        Item: undefined
+      });
 
       jest
         .spyOn(SongRepository.prototype, 'getSongInfo')
@@ -219,6 +237,12 @@ describe('Request Song', () => {
           WithDecryption: true
         })
         .resolves({ Parameter: { Value: 'api-key' } });
+    });
+
+    it('should return an error response for a invalid song request', async () => {
+      const event: APIGatewayEvent = {
+        body: JSON.stringify({ youtubeId: 'songId', requestedBy: 'user' })
+      } as any;
 
       jest.spyOn(YouTubeClient.prototype, 'getVideo').mockResolvedValue({
         success: false,
@@ -237,6 +261,155 @@ describe('Request Song', () => {
           message: 'Video not found'
         })
       });
+    });
+
+    it('should return an error for a song that could not be added to the queue', async () => {
+      const event: APIGatewayEvent = {
+        body: JSON.stringify({ youtubeId: 'songId', requestedBy: 'user' })
+      } as any;
+
+      jest
+        .spyOn(SongRepository.prototype, 'getSongInfo')
+        .mockResolvedValue(undefined);
+
+      ssmMock
+        .on(GetParameterCommand, {
+          Name: process.env.MAX_SONGS_PER_USER
+        })
+        .resolves({ Parameter: { Value: '1' } });
+
+      ssmMock
+        .on(GetParameterCommand, {
+          Name: process.env.REQUEST_DURATION_NAME
+        })
+        .resolves({
+          Parameter: {
+            Value: '360'
+          }
+        });
+
+      jest.spyOn(YouTubeClient.prototype, 'getVideo').mockResolvedValue({
+        success: true,
+        data: {
+          id: 'songId',
+          snippet: {
+            title: 'Song Title',
+            publishedAt: '',
+            channelId: '',
+            description: '',
+            thumbnails: {} as any,
+            channelTitle: '',
+            tags: [],
+            categoryId: '',
+            liveBroadcastContent: '',
+            localized: {} as any,
+            defaultAudioLanguage: ''
+          },
+          contentDetails: {
+            duration: 'PT7M30S',
+            dimension: '',
+            definition: '',
+            caption: '',
+            licensedContent: false,
+            regionRestriction: {
+              allowed: ['US ']
+            },
+            contentRating: {} as any,
+            projection: ''
+          },
+          name: undefined,
+          kind: '',
+          etag: '',
+          status: {} as any
+        }
+      });
+
+      expect(await handler(event)).toEqual({
+        statusCode: 400,
+        body: JSON.stringify({
+          code: 400,
+          message: 'Song length must be under 6:00'
+        })
+      });
+    });
+
+    it('should return a successful response for a valid song request', async () => {
+      const event: APIGatewayEvent = {
+        body: JSON.stringify({ youtubeId: 'songId', requestedBy: 'user' })
+      } as any;
+
+      jest
+        .spyOn(SongRepository.prototype, 'getSongInfo')
+        .mockResolvedValue(undefined);
+
+      ssmMock
+        .on(GetParameterCommand, {
+          Name: process.env.MAX_SONGS_PER_USER
+        })
+        .resolves({ Parameter: { Value: '1' } });
+
+      ssmMock
+        .on(GetParameterCommand, {
+          Name: process.env.REQUEST_DURATION_NAME
+        })
+        .resolves({
+          Parameter: {
+            Value: '360'
+          }
+        });
+
+      const saveQueue = jest.spyOn(SongQueueRepository.prototype, 'saveQueue');
+
+      jest.spyOn(YouTubeClient.prototype, 'getVideo').mockResolvedValue({
+        success: true,
+        data: {
+          id: 'songId',
+          snippet: {
+            title: 'Song Title',
+            publishedAt: '',
+            channelId: '',
+            description: '',
+            thumbnails: {} as any,
+            channelTitle: '',
+            tags: [],
+            categoryId: '',
+            liveBroadcastContent: '',
+            localized: {} as any,
+            defaultAudioLanguage: ''
+          },
+          contentDetails: {
+            duration: 'PT2M30S',
+            dimension: '',
+            definition: '',
+            caption: '',
+            licensedContent: false,
+            regionRestriction: {
+              allowed: ['US ']
+            },
+            contentRating: {} as any,
+            projection: ''
+          },
+          name: undefined,
+          kind: '',
+          etag: '',
+          status: {} as any
+        }
+      });
+
+      expect(await handler(event)).toEqual({
+        statusCode: 200,
+        body: JSON.stringify({
+          code: 200,
+          message: 'Song added to queue',
+          song: {
+            youtubeId: 'songId',
+            title: 'Song Title',
+            length: 150,
+            playCount: 0
+          }
+        })
+      });
+      expect(saveQueue).toHaveBeenCalled();
     });
   });
 });

@@ -171,13 +171,11 @@ export class SongQueue {
     return this.songs.length;
   }
 
-  /* istanbul ignore next */
   async clear() {
     this.songs = [];
     await this.songRepository.deleteQueue(this);
   }
 
-  /* istanbul ignore next */
   async save() {
     await this.songRepository.saveQueue(this);
   }

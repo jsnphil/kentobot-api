@@ -25,63 +25,66 @@ export const handler = async (event: APIGatewayProxyWebsocketEventV2) => {
   logger.debug(`Received event: ${JSON.stringify(event, null, 2)}`);
 
   const { routeKey, connectionId } = event.requestContext;
+  const { body } = event;
 
-  if (routeKey === '$connect') {
-    await connectionsRepo.saveConnection(connectionId);
-    return {
-      statusCode: 200,
-      body: 'Welcome to Kentobot'
-    };
-  }
-
-  if (routeKey === '$disconnect') {
-    await connectionsRepo.deleteConnection(connectionId);
-    return {
-      statusCode: 200,
-      body: 'Thanks for visiting Kentobot'
-    };
-  }
-
-  if (routeKey === 'sendmessage') {
-    const body: MessageBody = JSON.parse(event.body!);
-    const { message } = WebSocketMessageSchema.parse(body);
-
-    if (message === 'ping') {
-      const input = {
-        ConnectionId: connectionId,
-        Data: new TextEncoder().encode(JSON.stringify({ message: 'pong' }))
-      } as PostToConnectionCommandInput;
-
-      const command = new PostToConnectionCommand(input);
-      await client.send(command);
-
-      return {
-        statusCode: 200
-      };
-    } else if (message === 'songqueue') {
-      // TODO Get song queue
-      // These should be moved to a separate function
-      // TODO Get all connection IDS
-      // TODO Push to all connections
-      // const connectionIds = await getConnectionIds();
-      // const queue = await getSongQueue();
-      // console.log(queue);
-      // for (const connectionId of connectionIds) {
-      //   console.log(`Sending queue to connectionId: ${connectionId}`);
-      //   const input = {
-      //     ConnectionId: connectionId,
-      //     Data: new TextEncoder().encode(JSON.stringify({ songQueue: queue }))
-      //   } as PostToConnectionCommandInput;
-      //   const command = new PostToConnectionCommand(input);
-      //   const response = await client.send(command);
-      //   console.log('Message sent');
-      //   console.log(JSON.stringify(command, null, 2));
-      // }
-    }
-  }
+  await handleRoute(routeKey, connectionId, body);
 
   return {
     statusCode: 200,
     body: 'Message sent'
   };
+};
+
+export const handleRoute = async (
+  routeKey: string,
+  connectionId: string,
+  body?: string
+) => {
+  if (routeKey === '$connect') {
+    await connectionsRepo.saveConnection(connectionId);
+  }
+
+  if (routeKey === '$disconnect') {
+    await connectionsRepo.deleteConnection(connectionId);
+  }
+
+  if (routeKey === 'sendmessage') {
+    const messageBody: MessageBody = JSON.parse(body!);
+    const { message } = WebSocketMessageSchema.parse(messageBody);
+
+    await sendMessage(connectionId, message);
+  } else {
+    // Default route
+  }
+};
+
+export const sendMessage = async (connectionId: string, message: string) => {
+  if (message === 'ping') {
+    const input = {
+      ConnectionId: connectionId,
+      Data: new TextEncoder().encode(JSON.stringify({ message: 'pong' }))
+    } as PostToConnectionCommandInput;
+
+    const command = new PostToConnectionCommand(input);
+    await client.send(command);
+  } else if (message === 'songqueue') {
+    // TODO Get song queue
+    // These should be moved to a separate function
+    // TODO Get all connection IDS
+    // TODO Push to all connections
+    // const connectionIds = await getConnectionIds();
+    // const queue = await getSongQueue();
+    // console.log(queue);
+    // for (const connectionId of connectionIds) {
+    //   console.log(`Sending queue to connectionId: ${connectionId}`);
+    //   const input = {
+    //     ConnectionId: connectionId,
+    //     Data: new TextEncoder().encode(JSON.stringify({ songQueue: queue }))
+    //   } as PostToConnectionCommandInput;
+    //   const command = new PostToConnectionCommand(input);
+    //   const response = await client.send(command);
+    //   console.log('Message sent');
+    //   console.log(JSON.stringify(command, null, 2));
+    // }
+  }
 };

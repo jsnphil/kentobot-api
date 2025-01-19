@@ -25,6 +25,7 @@ export const handler = async (
 ): Promise<APIGatewayProxyResult> => {
   logger.debug(`Event: ${JSON.stringify(event, null, 2)}`);
 
+  // TODO Move most of this out to make it easier to test
   const songRequest = getSongId(event);
   const songRequestResult = await findRequestedSong(songRequest.youtubeId);
 
@@ -43,8 +44,12 @@ export const handler = async (
       // TODO Push queue to WS clients
 
       return {
-        statusCode: Code.NO_CONTENT,
-        body: ''
+        statusCode: Code.OK,
+        body: JSON.stringify({
+          code: Code.OK,
+          message: 'Song added to queue',
+          song: songRequestResult.data
+        })
       };
     } else {
       return createErrorResponse(addQueueResult);

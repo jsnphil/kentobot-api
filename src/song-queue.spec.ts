@@ -3,6 +3,7 @@ import { SongQueue } from './song-queue';
 import { SongRequest, SongRequestErrorCode } from './types/song-request';
 import { DynamoDBClient, GetItemCommand } from '@aws-sdk/client-dynamodb';
 import { mockClient } from 'aws-sdk-client-mock';
+import { SongQueueRepository } from './repositories/song-queue-repository';
 
 const mockDynamoDBClient = mockClient(DynamoDBClient);
 const mockSSMClient = mockClient(SSMClient);
@@ -1155,6 +1156,53 @@ describe('SongQueue', () => {
       expect(
         async () => await songQueue.moveSong('youtubeId2', 1)
       ).rejects.toThrow('Queue is empty');
+    });
+  });
+
+  describe('clear', () => {
+    it('should clear the queue', async () => {
+      // Arrange
+      mockDynamoDBClient.on(GetItemCommand).resolves({
+        Item: undefined
+      });
+
+      mockSSMClient
+        .on(GetParameterCommand, {
+          Name: 'REQUEST_DURATION_NAME'
+        })
+        .resolves({
+          Parameter: {
+            Value: '360'
+          }
+        });
+
+      mockSSMClient
+        .on(GetParameterCommand, {
+          Name: 'MAX_SONGS_PER_USER'
+        })
+        .resolves({ Parameter: { Value: '1' } });
+      const songQueue = await SongQueue.loadQueue();
+
+      const deleteQueue = jest.spyOn(
+        SongQueueRepository.prototype,
+        'deleteQueue'
+      );
+
+      const songRequest: SongRequest = {
+        youtubeId: 'youtubeId',
+        title: 'Song title',
+        length: 100,
+        requestedBy: 'user'
+      };
+
+      await songQueue.addSong(songRequest);
+
+      // Act
+      await songQueue.clear();
+
+      // Assert
+      expect(songQueue.getLength()).toBe(0);
+      expect(deleteQueue).toHaveBeenCalled();
     });
   });
 });

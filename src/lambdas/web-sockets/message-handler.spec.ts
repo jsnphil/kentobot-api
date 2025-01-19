@@ -4,16 +4,17 @@ import {
   PutItemCommand
 } from '@aws-sdk/client-dynamodb';
 import { WebSocketConnectionsRepository } from '../../repositories/websocket-connections-repository';
-import { handleRoute } from './message-handler';
+import { handleRoute, sendMessage } from './message-handler';
 import {
   ApiGatewayManagementApiClient,
   PostToConnectionCommand,
   PostToConnectionCommandInput
 } from '@aws-sdk/client-apigatewaymanagementapi';
 import { mockClient } from 'aws-sdk-client-mock';
+import { WebSocketService } from '../../services/web-socket-service';
 
 const mockDynamoDBClient = mockClient(DynamoDBClient);
-// const mockApiClient = mockClient(ApiGatewayManagementApiClient);
+const mockApiGatewayClient = mockClient(ApiGatewayManagementApiClient);
 
 describe('message-handler', () => {
   beforeEach(() => {
@@ -62,24 +63,27 @@ describe('message-handler', () => {
     });
   });
 
-  //   describe('sendMessage', () => {
-  //     it('should send a pong for a ping', async () => {
-  //         // Arrange
-  //         const connectionId = '123';
-  //         const message = 'ping';
+  describe('sendMessage', () => {
+    it('should send a pong for a ping', async () => {
+      // Arrange
+      const connectionId = '123';
+      const message = 'ping';
 
-  //         const postToConnection = jest.fn();
+      mockApiGatewayClient.on(PostToConnectionCommand).resolves({});
 
-  //         const mockClient = mockClient(ApiGatewayManagementApiClient);
-  //         mockClient.on(PostToConnectionCommand).resolves({});
+      const sendToConnection = jest.spyOn(
+        WebSocketService.prototype,
+        'sendToConnection'
+      );
 
-  //         // Act
-  //         await sendMessage(connectionId, message);
+      // Act
+      await sendMessage(connectionId, message);
 
-  //         // Assert
-  //         expect(postToConnection).toHaveBeenCalledWith({
-  //             ConnectionId: connectionId,
-  //             Data: JSON.stringify({ action: 'pong' })
-  //     });
-  //   });
+      // Assert
+      expect(sendToConnection).toHaveBeenCalledWith(
+        '123',
+        '{"message":"pong"}'
+      );
+    });
+  });
 });

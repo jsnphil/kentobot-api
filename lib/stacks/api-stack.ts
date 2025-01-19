@@ -10,7 +10,7 @@ import * as iam from 'aws-cdk-lib/aws-iam';
 
 import { Construct } from 'constructs';
 import { createSongRequestParameters } from '../constructs/song-request-parameters';
-import { ARCHITECTURE, NODE_RUNTIME } from '../CDKConstants';
+import { ARCHITECTURE, lambdaEnvironment, NODE_RUNTIME } from '../CDKConstants';
 import path = require('path');
 import {
   errorResponses,
@@ -446,7 +446,8 @@ export class ApiStack extends cdk.Stack {
       publicVideoToggle,
       requestDurationLimit,
       djRequestDurationLimit,
-      licensedContentToggle
+      licensedContentToggle,
+      maxSongRequestsPerUser
     } = createSongRequestParameters(this, props.environmentName);
 
     const requestSongResource = queueManagmentResource.addResource('request');
@@ -474,13 +475,14 @@ export class ApiStack extends cdk.Stack {
       },
       logRetention: logs.RetentionDays.ONE_WEEK,
       environment: {
+        ...lambdaEnvironment,
         ENVIRONMENT: props.environmentName,
         PUBLIC_VIDEO_TOGGLE_NAME: publicVideoToggle.parameterName,
         REQUEST_DURATION_NAME: requestDurationLimit.parameterName,
         DJ_HOUR_REQUEST_DURATION_NAME: djRequestDurationLimit.parameterName,
         LICENSED_VIDEO_TOGGLE_NAME: licensedContentToggle.parameterName,
-        STREAM_DATA_TABLE: database.tableName,
-        POWERTOOLS_LOG_LEVEL: 'DEBUG'
+        MAX_SONGS_PER_USER: maxSongRequestsPerUser.parameterName,
+        STREAM_DATA_TABLE: database.tableName
       },
       timeout: cdk.Duration.minutes(1),
       memorySize: 512,
@@ -492,7 +494,10 @@ export class ApiStack extends cdk.Stack {
     djRequestDurationLimit.grantRead(songRequestLambda);
     licensedContentToggle.grantRead(songRequestLambda);
     youtubeApiKeyParameter.grantRead(songRequestLambda);
+    maxSongRequestsPerUser.grantRead(songRequestLambda);
     database.grantReadData(songRequestLambda);
+
+    database.grantReadWriteData(songRequestLambda);
 
     requestSongResource.addMethod(
       'POST',

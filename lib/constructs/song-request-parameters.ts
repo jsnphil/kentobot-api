@@ -48,10 +48,23 @@ export const createSongRequestParameters = (
     }
   );
 
+  const maxSongRequestsPerUser = new StringParameter(
+    scope,
+    `MaxSongsRequestsPerUser-${environment}`,
+    {
+      stringValue: '1',
+      allowedPattern: '^\\d+$',
+      description:
+        'Maximum number of requests a user can have in the queue at a time',
+      parameterName: `/${environment}/request-rules/user-request-limit`
+    }
+  );
+
   return {
     publicVideoToggle,
     requestDurationLimit,
     djRequestDurationLimit,
-    licensedContentToggle
+    licensedContentToggle,
+    maxSongRequestsPerUser
   };
 };

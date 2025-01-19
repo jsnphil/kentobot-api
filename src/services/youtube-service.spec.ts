@@ -1,13 +1,13 @@
 import { mockClient } from 'aws-sdk-client-mock';
 
 import { GetParameterCommand, SSMClient } from '@aws-sdk/client-ssm';
-import { YouTubeClient } from './youtube-client';
+import { YouTubeService } from './youtube-service';
 import { VideoListItem, VideoListResponse } from '../types/youtube';
 import { YouTubeErrorCode } from '../types/song-request';
-import { checkYouTubeRules } from './song-request-rules';
+import { checkYouTubeRules } from '../utils/song-request-rules';
 import fetch from 'jest-mock-fetch';
 
-jest.mock('./song-request-rules');
+jest.mock('../utils/song-request-rules');
 
 const mockCheckYouTubeRules = checkYouTubeRules as jest.MockedFunction<
   typeof checkYouTubeRules
@@ -15,7 +15,7 @@ const mockCheckYouTubeRules = checkYouTubeRules as jest.MockedFunction<
 
 const ssmMock = mockClient(SSMClient);
 
-describe('YoutubeClient', () => {
+describe('YouTubeService', () => {
   beforeEach(() => {
     jest.resetAllMocks();
     jest.clearAllMocks();
@@ -33,7 +33,7 @@ describe('YoutubeClient', () => {
   });
 
   it('should initialize the client', async () => {
-    const client = await YouTubeClient.initialize();
+    const client = await YouTubeService.initialize();
 
     expect(client).toBeDefined();
   });
@@ -45,7 +45,7 @@ describe('YoutubeClient', () => {
     });
 
     it('should return a failed validation if there is are no videos', async () => {
-      const client = await YouTubeClient.initialize();
+      const client = await YouTubeService.initialize();
 
       const result = await client.validateResult([]);
 
@@ -61,7 +61,7 @@ describe('YoutubeClient', () => {
     });
 
     it('should return a failed validation if there is are multiple videos', async () => {
-      const client = await YouTubeClient.initialize();
+      const client = await YouTubeService.initialize();
 
       const result = await client.validateResult([
         {
@@ -96,7 +96,7 @@ describe('YoutubeClient', () => {
     });
 
     it('should return a successful validation if the video passes rules', async () => {
-      const client = await YouTubeClient.initialize();
+      const client = await YouTubeService.initialize();
       expect(client).toBeDefined();
 
       const video = {
@@ -125,7 +125,7 @@ describe('YoutubeClient', () => {
 
   describe('searchForVideo', () => {
     it('should return a list of videos', async () => {
-      const client = await YouTubeClient.initialize();
+      const client = await YouTubeService.initialize();
 
       const response: VideoListResponse = {
         kind: 'kind',
@@ -151,7 +151,7 @@ describe('YoutubeClient', () => {
     });
 
     it('should return an empty list', async () => {
-      const client = await YouTubeClient.initialize();
+      const client = await YouTubeService.initialize();
 
       const videos = await client.searchForVideo('test2');
 

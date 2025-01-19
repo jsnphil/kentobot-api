@@ -3,7 +3,7 @@ import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { S3Event } from 'aws-lambda';
 import { streamToString } from '../../utils/utilities';
 import { Readable } from 'stream';
-import { searchForVideo } from '../../utils/youtube-client';
+import { searchForVideo } from '../../services/youtube-service';
 import { parse, toSeconds } from 'iso8601-duration';
 import { SendMessageCommand, SQSClient } from '@aws-sdk/client-sqs';
 import { Queue } from 'aws-cdk-lib/aws-sqs';

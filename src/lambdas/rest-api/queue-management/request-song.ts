@@ -6,26 +6,23 @@ import { RequestSongSchema } from '../../../schemas/schema';
 import {
   RequestSongBody,
   SongInfo,
-  SongRequestErrorCode,
-  SongRequestResult,
   YouTubeErrorCode
 } from '../../../types/song-request';
 import { SongQueue } from '../../../song-queue';
 import { Code } from 'better-status-codes';
 import { ValidationResult } from '../../../types/types';
-import { YouTubeClient } from '../../../utils/youtube-client';
+import { YouTubeService } from '../../../services/youtube-service';
 
 const logger = new Logger({ serviceName: 'requestSongLambda' });
 const songRepository = new SongRepository();
 
-let youtubeClient: YouTubeClient;
+let youtubeClient: YouTubeService;
 
 export const handler = async (
   event: APIGatewayEvent
 ): Promise<APIGatewayProxyResult> => {
   logger.debug(`Event: ${JSON.stringify(event, null, 2)}`);
 
-  // TODO Move most of this out to make it easier to test
   const songRequest = getSongId(event);
   const songRequestResult = await findRequestedSong(songRequest.youtubeId);
 
@@ -116,7 +113,7 @@ export const findRequestedSong = async (
     logger.info(`Getting song request for song ID: ${songId} from YouTube`);
 
     if (!youtubeClient) {
-      youtubeClient = await YouTubeClient.initialize();
+      youtubeClient = await YouTubeService.initialize();
     }
 
     const youtubeResult = await youtubeClient.getVideo(songId);

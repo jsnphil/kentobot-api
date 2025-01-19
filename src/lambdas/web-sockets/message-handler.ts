@@ -7,6 +7,7 @@ import { APIGatewayProxyWebsocketEventV2 } from 'aws-lambda';
 import { Logger } from '@aws-lambda-powertools/logger';
 import { WebSocketMessageSchema } from '../../schemas/schema';
 import { WebSocketConnectionsRepository } from '../../repositories/websocket-connections-repository';
+import { WebSocketService } from '../../services/web-socket-service';
 
 interface MessageBody {
   readonly action: string;
@@ -15,10 +16,11 @@ interface MessageBody {
 
 const logger = new Logger({ serviceName: 'message-handler' });
 
-const client = new ApiGatewayManagementApiClient({
-  endpoint: `https://${process.env.WEBSOCKET_API_ID}.execute-api.us-east-1.amazonaws.com/${process.env.WEB_SOCKET_STAGE}`
-});
+// const client = new ApiGatewayManagementApiClient({
+//   endpoint: `https://${process.env.WEBSOCKET_API_ID}.execute-api.us-east-1.amazonaws.com/${process.env.WEB_SOCKET_STAGE}`
+// });
 
+const webSocketService = new WebSocketService();
 const connectionsRepo = new WebSocketConnectionsRepository();
 
 export const handler = async (event: APIGatewayProxyWebsocketEventV2) => {
@@ -60,13 +62,10 @@ export const handleRoute = async (
 
 export const sendMessage = async (connectionId: string, message: string) => {
   if (message === 'ping') {
-    const input = {
-      ConnectionId: connectionId,
-      Data: new TextEncoder().encode(JSON.stringify({ message: 'pong' }))
-    } as PostToConnectionCommandInput;
-
-    const command = new PostToConnectionCommand(input);
-    await client.send(command);
+    await webSocketService.sendToConnection(
+      connectionId,
+      JSON.stringify({ message: 'pong' })
+    );
   } else if (message === 'songqueue') {
     // TODO Get song queue
     // These should be moved to a separate function

@@ -7,13 +7,12 @@ import {
 } from './request-song';
 import { VideoListItem } from '../../../types/youtube';
 import { SongRepository } from '../../../repositories/song-repository';
-import { YouTubeClient } from '../../../utils/youtube-client';
 import { YouTubeErrorCode } from '../../../types/song-request';
 import { GetParameterCommand, SSMClient } from '@aws-sdk/client-ssm';
 import { mockClient } from 'aws-sdk-client-mock';
-import { mockSingleResult } from '../../../mocks/mock-youtube-results';
 import { DynamoDBClient, GetItemCommand } from '@aws-sdk/client-dynamodb';
 import { SongQueueRepository } from '../../../repositories/song-queue-repository';
+import { YouTubeService } from '../../../services/youtube-service';
 
 // jest.mock('../../../utils/youtube-client');
 jest.mock('../../../repositories/song-repository');
@@ -71,7 +70,7 @@ describe('Request Song', () => {
         contentDetails: { duration: 'PT3M30S' }
       } as any as VideoListItem;
 
-      jest.spyOn(YouTubeClient.prototype, 'getVideo').mockResolvedValue({
+      jest.spyOn(YouTubeService.prototype, 'getVideo').mockResolvedValue({
         success: true,
         data: mockVideo
       });
@@ -92,7 +91,7 @@ describe('Request Song', () => {
         .spyOn(SongRepository.prototype, 'getSongInfo')
         .mockResolvedValue(undefined);
 
-      jest.spyOn(YouTubeClient.prototype, 'getVideo').mockResolvedValue({
+      jest.spyOn(YouTubeService.prototype, 'getVideo').mockResolvedValue({
         success: false,
         errors: [
           {
@@ -244,7 +243,7 @@ describe('Request Song', () => {
         body: JSON.stringify({ youtubeId: 'songId', requestedBy: 'user' })
       } as any;
 
-      jest.spyOn(YouTubeClient.prototype, 'getVideo').mockResolvedValue({
+      jest.spyOn(YouTubeService.prototype, 'getVideo').mockResolvedValue({
         success: false,
         errors: [
           {
@@ -288,7 +287,7 @@ describe('Request Song', () => {
           }
         });
 
-      jest.spyOn(YouTubeClient.prototype, 'getVideo').mockResolvedValue({
+      jest.spyOn(YouTubeService.prototype, 'getVideo').mockResolvedValue({
         success: true,
         data: {
           id: 'songId',
@@ -360,7 +359,7 @@ describe('Request Song', () => {
 
       const saveQueue = jest.spyOn(SongQueueRepository.prototype, 'saveQueue');
 
-      jest.spyOn(YouTubeClient.prototype, 'getVideo').mockResolvedValue({
+      jest.spyOn(YouTubeService.prototype, 'getVideo').mockResolvedValue({
         success: true,
         data: {
           id: 'songId',

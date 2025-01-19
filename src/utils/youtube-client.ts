@@ -13,7 +13,7 @@ export class YouTubeClient {
   private readonly YOUTUBE_API_URL =
     'https://www.googleapis.com/youtube/v3/videos';
 
-  private constructor(apiKey: string) {
+  constructor(apiKey: string) {
     this.logger.info('Initializing YouTubeClient');
     this.apiKey = apiKey;
   }

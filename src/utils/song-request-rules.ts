@@ -14,9 +14,10 @@ import {
 } from '../types/youtube';
 import { padTimeDigits } from './utilities';
 import { parse, toSeconds } from 'iso8601-duration';
+import { Logger } from '@aws-lambda-powertools/logger';
 
-console.log('Initializing SSM Client');
 const client = new SSMClient({ region: 'us-east-1' });
+const logger = new Logger({ serviceName: 'song-request-rules' });
 
 export const checkYouTubeRules = async (
   video: VideoListItem
@@ -84,10 +85,10 @@ export async function isPublicVideo(status: Status) {
   const toggleSetting = response.Parameter?.Value;
 
   if (toggleSetting === 'true') {
-    console.log('Public video enforcement toggle is enabled');
+    logger.debug('Public video enforcement toggle is enabled');
     return status.privacyStatus === 'public';
   } else {
-    console.log('Public video enforcement toggle is disabled, ignoring check');
+    logger.debug('Public video enforcement toggle is disabled, ignoring check');
     return true;
   }
 }
@@ -96,24 +97,17 @@ export function isLivestream(snippet: Snippet) {
   return snippet.liveBroadcastContent !== 'live';
 }
 
-/* c8 ignore start */ // Ignoring this function as it is a wrapper around an AWS SDK call
+/* istanbul ignore next */
 async function getValidDuration(type?: RequestType) {
-  let parameterName;
-  if (type == RequestType.DJ_Hour) {
-    parameterName = process.env.DJ_HOUR_REQUEST_DURATION_NAME;
-  } else {
-    parameterName = process.env.REQUEST_DURATION_NAME;
-  }
+  const parameterName = process.env.REQUEST_DURATION_NAME;
 
   const response = await client.send(
     new GetParameterCommand({
       Name: parameterName
     })
   );
-  console.log(response);
   return Number(response.Parameter?.Value);
 }
-/* c8 ignore end */
 
 export async function validDuration(duration: string, type?: RequestType) {
   // Ex. Duration - PT30M13S (30 minutes, 13 seconds)
@@ -121,9 +115,7 @@ export async function validDuration(duration: string, type?: RequestType) {
   const limit = await getValidDuration(type);
   const durationAsSeconds = toSeconds(parse(duration));
 
-  console.log(durationAsSeconds);
-
-  console.log(
+  logger.debug(
     `Song limit: ${limit}, Song duration ${duration}, Song duration (as seconds) ${durationAsSeconds}`
   );
 
@@ -131,10 +123,6 @@ export async function validDuration(duration: string, type?: RequestType) {
 }
 
 export function validRegion(regionRestriction: RegionRestriction) {
-  if (!regionRestriction) {
-    return true;
-  }
-
   if (regionRestriction.allowed.includes('US')) {
     return true;
   }

@@ -18,7 +18,7 @@ import { YouTubeClient } from '../../../utils/youtube-client';
 const logger = new Logger({ serviceName: 'requestSongLambda' });
 const songRepository = new SongRepository();
 
-// let youtubeClient: YouTubeClient;
+let youtubeClient: YouTubeClient;
 
 export const handler = async (
   event: APIGatewayEvent
@@ -47,150 +47,30 @@ export const handler = async (
         body: ''
       };
     } else {
-      return createNewErrorResponse(addQueueResult);
+      return createErrorResponse(addQueueResult);
     }
   } else {
-    return createNewErrorResponse(songRequestResult);
+    return createErrorResponse(songRequestResult);
   }
 };
 
-export const createNewErrorResponse = (result: ValidationResult<any>) => {
-  let response: APIGatewayProxyResult = {
-    statusCode: Code.INTERNAL_SERVER_ERROR,
-    body: JSON.stringify({
-      code: Code.INTERNAL_SERVER_ERROR,
-      message: 'Song request failed'
-    })
-  };
+export const createErrorResponse = (result: ValidationResult<any>) => {
+  const error = result.errors![0];
+  let errorCode: number;
 
-  if (result.errors) {
-    const error = result.errors[0];
-
-    if (error.code === YouTubeErrorCode.VIDEO_NOT_FOUND) {
-      response = {
-        statusCode: Code.NOT_FOUND,
-        body: JSON.stringify({
-          code: Code.NOT_FOUND,
-          message: error.message
-        })
-      };
-    } else if (error.code === YouTubeErrorCode.MULTIPLE_RESULTS) {
-      response = {
-        statusCode: Code.BAD_REQUEST,
-        body: JSON.stringify({
-          code: Code.BAD_REQUEST,
-          message: error.message
-        })
-      };
-    } else if (error.code === YouTubeErrorCode.VIDEO_NOT_EMBEDDABLE) {
-      response = {
-        statusCode: Code.BAD_REQUEST,
-        body: JSON.stringify({
-          code: Code.BAD_REQUEST,
-          message: error.message
-        })
-      };
-    } else if (error.code === YouTubeErrorCode.VIDEO_NOT_PUBLIC) {
-      response = {
-        statusCode: Code.BAD_REQUEST,
-        body: JSON.stringify({
-          code: Code.BAD_REQUEST,
-          message: error.message
-        })
-      };
-    } else if (error.code === YouTubeErrorCode.LIVE_STREAM_VIDEO) {
-      response = {
-        statusCode: Code.BAD_REQUEST,
-        body: JSON.stringify({
-          code: Code.BAD_REQUEST,
-          message: error.message
-        })
-      };
-    } else if (error.code === YouTubeErrorCode.VIDEO_UNAVAILABLE) {
-      response = {
-        statusCode: Code.BAD_REQUEST,
-        body: JSON.stringify({
-          code: Code.BAD_REQUEST,
-          message: error.message
-        })
-      };
-    } else if (error.code === YouTubeErrorCode.VIDEO_UNLICENSED) {
-      response = {
-        statusCode: Code.BAD_REQUEST,
-        body: JSON.stringify({
-          code: Code.BAD_REQUEST,
-          message: error.message
-        })
-      };
-    } else if (error.code === SongRequestErrorCode.SONG_ALREADY_REQUESTED) {
-      response = {
-        statusCode: Code.BAD_REQUEST,
-        body: JSON.stringify({
-          code: Code.BAD_REQUEST,
-          message: error.message
-        })
-      };
-    } else if (error.code === SongRequestErrorCode.USER_MAX_REQUESTS) {
-      response = {
-        statusCode: Code.BAD_REQUEST,
-        body: JSON.stringify({
-          code: Code.BAD_REQUEST,
-          message: error.message
-        })
-      };
-    } else if (
-      error.code === SongRequestErrorCode.SONG_EXCEEDEDS_MAX_DURATION
-    ) {
-      response = {
-        statusCode: Code.BAD_REQUEST,
-        body: JSON.stringify({
-          code: Code.BAD_REQUEST,
-          message: error.message
-        })
-      };
-    }
-  }
-
-  return response;
-};
-
-export const createResponse = (songRequestResult?: SongRequestResult) => {
-  let response: APIGatewayProxyResult = {
-    statusCode: Code.INTERNAL_SERVER_ERROR,
-    body: JSON.stringify({
-      code: Code.INTERNAL_SERVER_ERROR,
-      message: 'Unexpected error'
-    })
-  };
-  if (songRequestResult?.failedRule) {
-    response = {
-      statusCode: Code.BAD_REQUEST,
-      body: JSON.stringify({
-        code: Code.BAD_REQUEST,
-        message: 'Invalid song request for ID',
-        error: [songRequestResult.failedRule]
-      })
-    };
-  } else if (songRequestResult?.error) {
-    return {
-      statusCode: Code.INTERNAL_SERVER_ERROR,
-      body: JSON.stringify({
-        code: Code.INTERNAL_SERVER_ERROR,
-        message: 'Song request lookup failed'
-      })
-    };
+  if (error.code === YouTubeErrorCode.VIDEO_NOT_FOUND) {
+    errorCode = Code.NOT_FOUND;
   } else {
-    response = {
-      statusCode: Code.NOT_FOUND,
-      body: JSON.stringify({
-        code: Code.NOT_FOUND,
-        message: 'No result found',
-        error: ['No request found for ID']
-      })
-    };
+    errorCode = Code.BAD_REQUEST;
   }
 
-  return response;
+  return {
+    statusCode: errorCode,
+    body: JSON.stringify({
+      code: errorCode,
+      message: error.message
+    })
+  };
 };
 
 export const getSongId = (event: APIGatewayEvent) => {
@@ -230,16 +110,10 @@ export const findRequestedSong = async (
 
     logger.info(`Getting song request for song ID: ${songId} from YouTube`);
 
-    let youtubeClient: YouTubeClient | undefined = undefined;
     if (!youtubeClient) {
-      console.log('Initializing YouTube Client');
       youtubeClient = await YouTubeClient.initialize();
-      console.log('YouTube Client initialized');
     }
 
-    if (!youtubeClient) {
-      console.log('YouTube Client not initialized');
-    }
     const youtubeResult = await youtubeClient.getVideo(songId);
 
     if (youtubeResult.success && youtubeResult.data) {

@@ -1,5 +1,10 @@
 import { APIGatewayEvent } from 'aws-lambda';
-import { createResponse, findRequestedSong, getSongId } from './request-song';
+import {
+  createErrorResponse,
+  findRequestedSong,
+  getSongId,
+  handler
+} from './request-song';
 import { VideoListItem } from '../../../types/youtube';
 import { SongRepository } from '../../../repositories/song-repository';
 import { YouTubeClient } from '../../../utils/youtube-client';
@@ -7,7 +12,7 @@ import { YouTubeErrorCode } from '../../../types/song-request';
 import { GetParameterCommand, SSMClient } from '@aws-sdk/client-ssm';
 import { mockClient } from 'aws-sdk-client-mock';
 
-jest.mock('../../../utils/youtube-client');
+// jest.mock('../../../utils/youtube-client');
 jest.mock('../../../repositories/song-repository');
 const ssmMock = mockClient(SSMClient);
 
@@ -15,6 +20,7 @@ describe('Request Song', () => {
   describe('findRequestedSong', () => {
     beforeEach(() => {
       jest.resetAllMocks();
+      jest.resetModules();
 
       ssmMock
         .on(GetParameterCommand, {
@@ -155,44 +161,81 @@ describe('Request Song', () => {
     });
   });
 
-  describe('createResponse', () => {
-    it('should return a 400 response with an error for a failed rule', () => {
-      const songRequestResult = {
-        failedRule: 'Invalid song ID'
+  describe('createErrorResponse', () => {
+    it('should return a 404 error response for a video not found error', () => {
+      const requestSongResult = {
+        success: false,
+        errors: [
+          {
+            code: YouTubeErrorCode.VIDEO_NOT_FOUND,
+            message: 'Video not found'
+          }
+        ]
       };
 
-      const response = createResponse(songRequestResult);
-
-      expect(response.statusCode).toBe(400);
-      expect(JSON.parse(response.body)).toEqual({
-        code: 400,
-        message: 'Invalid song request for ID',
-        error: [songRequestResult.failedRule]
+      expect(createErrorResponse(requestSongResult)).toEqual({
+        statusCode: 404,
+        body: JSON.stringify({
+          code: 404,
+          message: 'Video not found'
+        })
       });
     });
 
-    it('should return a 404 response with an error for an undefined result', () => {
-      const response = createResponse();
-
-      expect(response.statusCode).toBe(404);
-      expect(JSON.parse(response.body)).toEqual({
-        code: 404,
-        message: 'No result found',
-        error: ['No request found for ID']
-      });
-    });
-
-    it('should return a 500 response for an unexpected error', () => {
-      const songRequestResult = {
-        error: new Error('Unexpected error')
+    it('should return a 400 error response for a bad request error', () => {
+      const requestSongResult = {
+        success: false,
+        errors: [
+          {
+            code: YouTubeErrorCode.MULTIPLE_RESULTS,
+            message: 'Too many results'
+          }
+        ]
       };
 
-      const response = createResponse(songRequestResult);
+      expect(createErrorResponse(requestSongResult)).toEqual({
+        statusCode: 400,
+        body: JSON.stringify({
+          code: 400,
+          message: 'Too many results'
+        })
+      });
+    });
+  });
 
-      expect(response.statusCode).toBe(500);
-      expect(JSON.parse(response.body)).toEqual({
-        code: 500,
-        message: 'Song request lookup failed'
+  describe('handler', () => {
+    it('should return an error response for a invalid song request', async () => {
+      const event: APIGatewayEvent = {
+        body: JSON.stringify({ youtubeId: 'songId', requestedBy: 'user' })
+      } as any;
+
+      jest
+        .spyOn(SongRepository.prototype, 'getSongInfo')
+        .mockResolvedValue(undefined);
+
+      ssmMock
+        .on(GetParameterCommand, {
+          Name: 'youtube-api-key',
+          WithDecryption: true
+        })
+        .resolves({ Parameter: { Value: 'api-key' } });
+
+      jest.spyOn(YouTubeClient.prototype, 'getVideo').mockResolvedValue({
+        success: false,
+        errors: [
+          {
+            code: YouTubeErrorCode.VIDEO_NOT_FOUND,
+            message: 'Video not found'
+          }
+        ]
+      });
+
+      expect(await handler(event)).toEqual({
+        statusCode: 404,
+        body: JSON.stringify({
+          code: 404,
+          message: 'Video not found'
+        })
       });
     });
   });

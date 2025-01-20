@@ -1,5 +1,9 @@
 import * as cdk from 'aws-cdk-lib';
+
+// TODO Combine these
 import * as apiGateway from 'aws-cdk-lib/aws-apigateway';
+import * as webSocketGateway from 'aws-cdk-lib/aws-apigatewayv2';
+
 import * as lambda from 'aws-cdk-lib/aws-lambda-nodejs';
 import * as logs from 'aws-cdk-lib/aws-logs';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
@@ -10,7 +14,7 @@ import * as iam from 'aws-cdk-lib/aws-iam';
 
 import { Construct } from 'constructs';
 import { createSongRequestParameters } from '../constructs/song-request-parameters';
-import { ARCHITECTURE, NODE_RUNTIME } from '../CDKConstants';
+import { ARCHITECTURE, lambdaEnvironment, NODE_RUNTIME } from '../CDKConstants';
 import path = require('path');
 import {
   errorResponses,
@@ -48,6 +52,23 @@ export class ApiStack extends cdk.Stack {
       }
     );
 
+    const webSocketApiId = cdk.Fn.importValue(
+      `websocket-api-id-${props.environmentName}`
+    );
+
+    const webSocketApiStage = cdk.Fn.importValue(
+      `websocket-stage-name-${props.environmentName}`
+    );
+
+    const webSocketApi =
+      webSocketGateway.WebSocketApi.fromWebSocketApiAttributes(
+        this,
+        'web-socket-api',
+        {
+          webSocketId: webSocketApiId
+        }
+      );
+
     // ***********************
     // Setup main resources
     // ***********************
@@ -64,70 +85,6 @@ export class ApiStack extends cdk.Stack {
     // ***********************
     const songRequestEndpointResource =
       api.apiGateway.root.addResource('song-requests');
-
-    // ***********************
-    // Request song resource
-    // ***********************
-    const {
-      publicVideoToggle,
-      requestDurationLimit,
-      djRequestDurationLimit,
-      licensedContentToggle
-    } = createSongRequestParameters(this, props.environmentName);
-
-    const requestSongResource = songRequestEndpointResource
-      .addResource('request')
-      .addResource('{songId}');
-
-    const youtubeApiKeyParameter =
-      ssm.StringParameter.fromSecureStringParameterAttributes(
-        this,
-        'ApiKeyParameter',
-        {
-          parameterName: 'youtube-api-key'
-        }
-      );
-
-    const songRequestLambda = new lambda.NodejsFunction(this, 'RequestSong', {
-      runtime: NODE_RUNTIME,
-      handler: 'handler',
-      entry: path.join(
-        __dirname,
-        '../../src/lambdas/rest-api/',
-        'song-request/request-song.ts'
-      ),
-      bundling: {
-        minify: false,
-        externalModules: ['aws-sdk']
-      },
-      logRetention: logs.RetentionDays.ONE_WEEK,
-      environment: {
-        ENVIRONMENT: props.environmentName,
-        PUBLIC_VIDEO_TOGGLE_NAME: publicVideoToggle.parameterName,
-        REQUEST_DURATION_NAME: requestDurationLimit.parameterName,
-        DJ_HOUR_REQUEST_DURATION_NAME: djRequestDurationLimit.parameterName,
-        LICENSED_VIDEO_TOGGLE_NAME: licensedContentToggle.parameterName,
-        STREAM_DATA_TABLE: database.tableName
-      },
-      timeout: cdk.Duration.minutes(1),
-      memorySize: 512,
-      architecture: ARCHITECTURE
-    });
-
-    publicVideoToggle.grantRead(songRequestLambda);
-    requestDurationLimit.grantRead(songRequestLambda);
-    djRequestDurationLimit.grantRead(songRequestLambda);
-    licensedContentToggle.grantRead(songRequestLambda);
-    youtubeApiKeyParameter.grantRead(songRequestLambda);
-    database.grantReadData(songRequestLambda);
-
-    requestSongResource.addMethod(
-      'GET',
-      new apiGateway.LambdaIntegration(songRequestLambda),
-      {
-        apiKeyRequired: true
-      }
-    );
 
     // ***********************
     // Save song data resource
@@ -494,6 +451,92 @@ export class ApiStack extends cdk.Stack {
     songRequestEndpointResource.addMethod(
       'GET',
       new apiGateway.LambdaIntegration(getAllSongRequestsLambda)
+    );
+
+    // ***********************
+    // Queue Management Resources
+    // ***********************
+
+    const queueManagmentResource =
+      api.apiGateway.root.addResource('song-queue');
+
+    // ***********************
+    // Request song resource
+    // ***********************
+    const {
+      publicVideoToggle,
+      requestDurationLimit,
+      djRequestDurationLimit,
+      licensedContentToggle,
+      maxSongRequestsPerUser
+    } = createSongRequestParameters(this, props.environmentName);
+
+    const requestSongResource = queueManagmentResource.addResource('request');
+
+    const youtubeApiKeyParameter =
+      ssm.StringParameter.fromSecureStringParameterAttributes(
+        this,
+        'ApiKeyParameter',
+        {
+          parameterName: 'youtube-api-key'
+        }
+      );
+
+    const songRequestLambda = new lambda.NodejsFunction(this, 'RequestSong', {
+      runtime: NODE_RUNTIME,
+      handler: 'handler',
+      entry: path.join(
+        __dirname,
+        '../../src/lambdas/rest-api/',
+        'queue-management/request-song.ts'
+      ),
+      bundling: {
+        minify: false,
+        externalModules: ['aws-sdk']
+      },
+      logRetention: logs.RetentionDays.ONE_WEEK,
+      environment: {
+        ...lambdaEnvironment,
+        ENVIRONMENT: props.environmentName,
+        PUBLIC_VIDEO_TOGGLE_NAME: publicVideoToggle.parameterName,
+        REQUEST_DURATION_NAME: requestDurationLimit.parameterName,
+        DJ_HOUR_REQUEST_DURATION_NAME: djRequestDurationLimit.parameterName,
+        LICENSED_VIDEO_TOGGLE_NAME: licensedContentToggle.parameterName,
+        MAX_SONGS_PER_USER: maxSongRequestsPerUser.parameterName,
+        STREAM_DATA_TABLE: database.tableName,
+        WEBSOCKET_API_ID: webSocketApi.apiId,
+        WEB_SOCKET_STAGE: webSocketApiStage
+      },
+      timeout: cdk.Duration.minutes(1),
+      memorySize: 512,
+      architecture: ARCHITECTURE
+    });
+
+    publicVideoToggle.grantRead(songRequestLambda);
+    requestDurationLimit.grantRead(songRequestLambda);
+    djRequestDurationLimit.grantRead(songRequestLambda);
+    licensedContentToggle.grantRead(songRequestLambda);
+    youtubeApiKeyParameter.grantRead(songRequestLambda);
+    maxSongRequestsPerUser.grantRead(songRequestLambda);
+    database.grantReadData(songRequestLambda);
+    database.grantReadWriteData(songRequestLambda);
+
+    requestSongResource.addMethod(
+      'POST',
+      new apiGateway.LambdaIntegration(songRequestLambda),
+      {
+        apiKeyRequired: true
+      }
+    );
+
+    songRequestLambda.addToRolePolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        actions: ['execute-api:ManageConnections'],
+        resources: [
+          `arn:aws:execute-api:${props.env?.region}:${props.env?.account}:${webSocketApi.apiId}/*/*/@connections/*`
+        ]
+      })
     );
 
     // ***********************

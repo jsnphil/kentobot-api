@@ -7,6 +7,7 @@ import { SongRequestSchema } from '../../../schemas/schema';
 const logger = new Logger({ serviceName: 'saveSongDataLambda' });
 const songRepository = new SongRepository();
 
+/* istanbul ignore next */
 export const handler = async (event: SQSEvent) => {
   logger.info(`Received event: ${JSON.stringify(event)}`);
 

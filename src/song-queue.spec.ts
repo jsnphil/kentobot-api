@@ -1,8 +1,9 @@
 import { GetParameterCommand, SSMClient } from '@aws-sdk/client-ssm';
 import { SongQueue } from './song-queue';
-import { SongRequest } from './types/song-request';
+import { SongRequest, SongRequestErrorCode } from './types/song-request';
 import { DynamoDBClient, GetItemCommand } from '@aws-sdk/client-dynamodb';
 import { mockClient } from 'aws-sdk-client-mock';
+import { SongQueueRepository } from './repositories/song-queue-repository';
 
 const mockDynamoDBClient = mockClient(DynamoDBClient);
 const mockSSMClient = mockClient(SSMClient);
@@ -163,19 +164,24 @@ describe('SongQueue', () => {
       };
 
       await songQueue.addSong(songRequest);
+      const addSongResult = await songQueue.addSong({
+        youtubeId: 'youtubeId',
+        title: 'Song title',
+        length: 100,
+        requestedBy: 'a-different-user'
+      });
 
-      expect(
-        async () =>
-          await songQueue.addSong({
-            youtubeId: 'youtubeId',
-            title: 'Song title',
-            length: 100,
-            requestedBy: 'a-different-user'
-          })
-      ).rejects.toThrow('Song is already in the queue');
+      expect(addSongResult.success).toBe(false);
+      expect(addSongResult.errors).toBeDefined();
+
+      const errors = addSongResult.errors;
+      expect(errors).toBeDefined();
+
+      expect(errors![0].code).toBe(SongRequestErrorCode.SONG_ALREADY_REQUESTED);
+      expect(errors![0].message).toBe('Song is already in the queue');
     });
 
-    it('should throw an error if the user already has a song in the queue', async () => {
+    it('should not add the song if the requester already has a song in the queue', async () => {
       mockDynamoDBClient.on(GetItemCommand).resolves({
         Item: undefined
       });
@@ -207,15 +213,22 @@ describe('SongQueue', () => {
 
       await songQueue.addSong(songRequest);
 
-      expect(
-        async () =>
-          await songQueue.addSong({
-            youtubeId: 'youtubeId2',
-            title: 'Song title 2',
-            length: 100,
-            requestedBy: 'user'
-          })
-      ).rejects.toThrow('User already has 1 song(s) in the queue');
+      const addSongResult = await songQueue.addSong({
+        youtubeId: 'youtubeId2',
+        title: 'Song title 2',
+        length: 100,
+        requestedBy: 'user'
+      });
+
+      expect(addSongResult.success).toBe(false);
+
+      const errors = addSongResult.errors;
+      expect(errors).toBeDefined();
+
+      expect(errors![0].code).toBe(SongRequestErrorCode.USER_MAX_REQUESTS);
+      expect(errors![0].message).toBe(
+        'User already has 1 song(s) in the queue'
+      );
     });
 
     it('should add to the queue if the user already has a song in the queue and the override is set', async () => {
@@ -280,7 +293,7 @@ describe('SongQueue', () => {
       ]);
     });
 
-    it('should throw an error if the song is too long', async () => {
+    it('should not add the song if the song is too long', async () => {
       mockDynamoDBClient.on(GetItemCommand).resolves({
         Item: undefined
       });
@@ -303,15 +316,22 @@ describe('SongQueue', () => {
 
       const songQueue = await SongQueue.loadQueue();
 
-      expect(
-        async () =>
-          await songQueue.addSong({
-            youtubeId: 'youtubeId2',
-            title: 'Song title 2',
-            length: 400,
-            requestedBy: 'user'
-          })
-      ).rejects.toThrow('Song length must be under 6:00');
+      const addSongResult = await songQueue.addSong({
+        youtubeId: 'youtubeId2',
+        title: 'Song title 2',
+        length: 400,
+        requestedBy: 'user'
+      });
+
+      expect(addSongResult.success).toBe(false);
+
+      const errors = addSongResult.errors;
+      expect(errors).toBeDefined();
+
+      expect(errors![0].code).toBe(
+        SongRequestErrorCode.SONG_EXCEEDEDS_MAX_DURATION
+      );
+      expect(errors![0].message).toBe('Song length must be under 6:00');
     });
   });
 
@@ -1136,6 +1156,53 @@ describe('SongQueue', () => {
       expect(
         async () => await songQueue.moveSong('youtubeId2', 1)
       ).rejects.toThrow('Queue is empty');
+    });
+  });
+
+  describe('clear', () => {
+    it('should clear the queue', async () => {
+      // Arrange
+      mockDynamoDBClient.on(GetItemCommand).resolves({
+        Item: undefined
+      });
+
+      mockSSMClient
+        .on(GetParameterCommand, {
+          Name: 'REQUEST_DURATION_NAME'
+        })
+        .resolves({
+          Parameter: {
+            Value: '360'
+          }
+        });
+
+      mockSSMClient
+        .on(GetParameterCommand, {
+          Name: 'MAX_SONGS_PER_USER'
+        })
+        .resolves({ Parameter: { Value: '1' } });
+      const songQueue = await SongQueue.loadQueue();
+
+      const deleteQueue = jest.spyOn(
+        SongQueueRepository.prototype,
+        'deleteQueue'
+      );
+
+      const songRequest: SongRequest = {
+        youtubeId: 'youtubeId',
+        title: 'Song title',
+        length: 100,
+        requestedBy: 'user'
+      };
+
+      await songQueue.addSong(songRequest);
+
+      // Act
+      await songQueue.clear();
+
+      // Assert
+      expect(songQueue.getLength()).toBe(0);
+      expect(deleteQueue).toHaveBeenCalled();
     });
   });
 });

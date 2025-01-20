@@ -8,7 +8,7 @@ export const mockSingleResult = {
   contentDetails: {
     duration: 'PT1M1S'
   }
-} as any as VideoListItem;
+} as unknown as VideoListItem;
 
 export const mockMultipleResults = [
   {

@@ -28,6 +28,7 @@ export class KentobotStage extends cdk.Stage {
     dataMigration.addDependency(dataStack);
     dataMigration.addDependency(apiStack);
     webSocketStack.addDependency(dataStack);
+    apiStack.addDependency(webSocketStack);
 
     cdk.Tags.of(this).add('environment', props.environmentName);
     cdk.Tags.of(apiStack).add('system', 'api');

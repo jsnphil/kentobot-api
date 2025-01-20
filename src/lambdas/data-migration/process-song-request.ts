@@ -1,5 +1,4 @@
 import { SQSEvent } from 'aws-lambda';
-import { searchForVideo } from '../../utils/youtube-client';
 import { parse, toSeconds } from 'iso8601-duration';
 import { SongRequest } from '../../types/song-request';
 import {
@@ -7,9 +6,12 @@ import {
   PutEventsCommand
 } from '@aws-sdk/client-eventbridge';
 import { Logger } from '@aws-lambda-powertools/logger';
+import { YouTubeService } from '../../services/youtube-service';
 
 const eventBusClient = new EventBridgeClient({ region: 'us-east-1' });
 const logger = new Logger({ serviceName: 'processSongHistoryRequest' });
+
+let youtubeService: YouTubeService;
 
 export const handler = async (event: SQSEvent) => {
   for (const record of event.Records) {
@@ -57,11 +59,15 @@ export const handler = async (event: SQSEvent) => {
 };
 
 const getSongLength = async (youtubeId: string) => {
-  const videos = await searchForVideo(youtubeId);
-
-  if (!videos || videos.length === 0) {
-    return 0;
+  if (!youtubeService) {
+    youtubeService = await YouTubeService.initialize();
   }
 
-  return toSeconds(parse(videos[0].contentDetails.duration));
+  const result = await youtubeService.getVideo(youtubeId);
+
+  if (result.success && result.data) {
+    return toSeconds(parse(result.data.contentDetails.duration));
+  }
+
+  return 0;
 };

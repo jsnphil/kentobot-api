@@ -6,6 +6,7 @@ export interface VideoListResponse {
 }
 
 export interface VideoListItem {
+  name: any;
   kind: string;
   etag: string;
   id: string;

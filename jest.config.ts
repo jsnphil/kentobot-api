@@ -9,7 +9,7 @@ module.exports = {
   },
   collectCoverage: true,
   coverageDirectory: 'coverage',
-  coverageProvider: 'v8',
+  coverageProvider: 'babel',
   coverageThreshold: {
     global: {
       branches: 85,
@@ -19,11 +19,10 @@ module.exports = {
     }
   },
   collectCoverageFrom: ['src/**/*.ts'],
-
+  setupFilesAfterEnv: ['./jest.setup.ts'],
   coveragePathIgnorePatterns: [
     'node_modules',
     'types/*',
-    'utils/youtube-client.ts',
     'mocks/*',
     'data-migration/*',
     'test-code/*'

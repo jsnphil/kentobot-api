@@ -18,3 +18,9 @@ export const WebSocketMessageSchema = z.object({
   action: z.string(),
   message: z.string()
 });
+
+export const RequestSongSchema = z.object({
+  youtubeId: z.string(),
+  requestedBy: z.string(),
+  modOverride: z.boolean().optional()
+});

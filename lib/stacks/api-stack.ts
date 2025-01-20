@@ -518,7 +518,6 @@ export class ApiStack extends cdk.Stack {
     licensedContentToggle.grantRead(songRequestLambda);
     youtubeApiKeyParameter.grantRead(songRequestLambda);
     maxSongRequestsPerUser.grantRead(songRequestLambda);
-    database.grantReadData(songRequestLambda);
     database.grantReadWriteData(songRequestLambda);
 
     requestSongResource.addMethod(
@@ -530,6 +529,59 @@ export class ApiStack extends cdk.Stack {
     );
 
     songRequestLambda.addToRolePolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        actions: ['execute-api:ManageConnections'],
+        resources: [
+          `arn:aws:execute-api:${props.env?.region}:${props.env?.account}:${webSocketApi.apiId}/*/*/@connections/*`
+        ]
+      })
+    );
+
+    // ***********************
+    // Move song resource
+    // ***********************
+
+    const moveSongResource = queueManagmentResource
+      .addResource('move-request')
+      .addResource('{songId}');
+
+    const moveRequestLambda = new lambda.NodejsFunction(this, 'MoveRequest', {
+      runtime: NODE_RUNTIME,
+      handler: 'handler',
+      entry: path.join(
+        __dirname,
+        '../../src/lambdas/rest-api/',
+        'queue-management/move-request.ts'
+      ),
+      bundling: {
+        minify: false,
+        externalModules: ['aws-sdk']
+      },
+      logRetention: logs.RetentionDays.ONE_WEEK,
+      environment: {
+        ...lambdaEnvironment,
+        ENVIRONMENT: props.environmentName,
+        STREAM_DATA_TABLE: database.tableName,
+        WEBSOCKET_API_ID: webSocketApi.apiId,
+        WEB_SOCKET_STAGE: webSocketApiStage
+      },
+      timeout: cdk.Duration.minutes(1),
+      memorySize: 512,
+      architecture: ARCHITECTURE
+    });
+
+    database.grantReadWriteData(moveRequestLambda);
+
+    moveSongResource.addMethod(
+      'POST',
+      new apiGateway.LambdaIntegration(moveRequestLambda),
+      {
+        apiKeyRequired: true
+      }
+    );
+
+    moveRequestLambda.addToRolePolicy(
       new iam.PolicyStatement({
         effect: iam.Effect.ALLOW,
         actions: ['execute-api:ManageConnections'],

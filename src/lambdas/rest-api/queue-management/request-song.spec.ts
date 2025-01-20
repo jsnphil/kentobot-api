@@ -14,10 +14,20 @@ import { DynamoDBClient, GetItemCommand } from '@aws-sdk/client-dynamodb';
 import { SongQueueRepository } from '../../../repositories/song-queue-repository';
 import { YouTubeService } from '../../../services/youtube-service';
 
-// jest.mock('../../../utils/youtube-client');
 jest.mock('../../../repositories/song-repository');
 const ssmMock = mockClient(SSMClient);
 const mockDynamoDBClient = mockClient(DynamoDBClient);
+
+jest.mock('../../../services/web-socket-service', () => {
+  return {
+    WebSocketService: jest.fn().mockImplementation(() => {
+      return {
+        sendToConnection: () => {},
+        broadcast: () => {}
+      };
+    })
+  };
+});
 
 describe('Request Song', () => {
   describe('findRequestedSong', () => {
@@ -358,6 +368,7 @@ describe('Request Song', () => {
         });
 
       const saveQueue = jest.spyOn(SongQueueRepository.prototype, 'saveQueue');
+      // const broadcast = jest.spyOn(WebSocketService.prototype, 'broadcast');
 
       jest.spyOn(YouTubeService.prototype, 'getVideo').mockResolvedValue({
         success: true,
@@ -409,6 +420,7 @@ describe('Request Song', () => {
         })
       });
       expect(saveQueue).toHaveBeenCalled();
+      // expect(broadcast).toHaveBeenCalled();
     });
   });
 });

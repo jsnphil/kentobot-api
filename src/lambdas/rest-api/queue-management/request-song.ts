@@ -12,9 +12,11 @@ import { SongQueue } from '../../../song-queue';
 import { Code } from 'better-status-codes';
 import { ValidationResult } from '../../../types/types';
 import { YouTubeService } from '../../../services/youtube-service';
+import { WebSocketService } from '../../../services/web-socket-service';
 
 const logger = new Logger({ serviceName: 'requestSongLambda' });
 const songRepository = new SongRepository();
+const webSocketService = new WebSocketService();
 
 let youtubeClient: YouTubeService;
 
@@ -38,7 +40,10 @@ export const handler = async (
 
     if (addQueueResult.success) {
       await songQueue.save();
-      // TODO Push queue to WS clients
+
+      await webSocketService.broadcast(
+        JSON.stringify({ songQueue: songQueue.toArray() })
+      );
 
       return {
         statusCode: Code.OK,

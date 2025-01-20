@@ -37,13 +37,17 @@ describe('web-socket-service', () => {
       const connectionId = '123';
       const message = 'Hello, world!';
 
+      const loggerSpy = jest.spyOn(Logger.prototype, 'warn');
+
       mockApiGatewayClient
         .on(PostToConnectionCommand)
         .rejects('Failed to send message');
 
-      expect(() =>
-        service.sendToConnection(connectionId, message)
-      ).rejects.toThrow('Failed to send message');
+      await service.sendToConnection(connectionId, message);
+
+      expect(loggerSpy).toHaveBeenLastCalledWith(
+        'Failed to send message to connection: 123'
+      );
     });
   });
 });

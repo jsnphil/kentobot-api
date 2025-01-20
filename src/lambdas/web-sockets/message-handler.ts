@@ -8,6 +8,7 @@ import { Logger } from '@aws-lambda-powertools/logger';
 import { WebSocketMessageSchema } from '../../schemas/schema';
 import { WebSocketConnectionsRepository } from '../../repositories/websocket-connections-repository';
 import { WebSocketService } from '../../services/web-socket-service';
+import { SongQueue } from '../../song-queue';
 
 interface MessageBody {
   readonly action: string;
@@ -67,23 +68,9 @@ export const sendMessage = async (connectionId: string, message: string) => {
       JSON.stringify({ message: 'pong' })
     );
   } else if (message === 'songqueue') {
-    // TODO Get song queue
-    // These should be moved to a separate function
-    // TODO Get all connection IDS
-    // TODO Push to all connections
-    // const connectionIds = await getConnectionIds();
-    // const queue = await getSongQueue();
-    // console.log(queue);
-    // for (const connectionId of connectionIds) {
-    //   console.log(`Sending queue to connectionId: ${connectionId}`);
-    //   const input = {
-    //     ConnectionId: connectionId,
-    //     Data: new TextEncoder().encode(JSON.stringify({ songQueue: queue }))
-    //   } as PostToConnectionCommandInput;
-    //   const command = new PostToConnectionCommand(input);
-    //   const response = await client.send(command);
-    //   console.log('Message sent');
-    //   console.log(JSON.stringify(command, null, 2));
-    // }
+    const songQueue = await SongQueue.loadQueue();
+    await webSocketService.broadcast(
+      JSON.stringify({ songQueue: songQueue.toArray() })
+    );
   }
 };

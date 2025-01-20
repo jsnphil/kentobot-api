@@ -11,13 +11,15 @@ const logger = new Logger({ serviceName: 'web-socket-connection-repository' });
 
 const dynamoClient = new DynamoDBClient({ region: 'us-east-1' });
 
+const table = process.env.STREAM_DATA_TABLE;
+
 export class WebSocketConnectionsRepository {
   async saveConnection(connectionId: string) {
     try {
       logger.info(`Saving connection: ${connectionId}`);
 
       const putCommand = new PutItemCommand({
-        TableName: process.env.CONNECTIONS_TABLE,
+        TableName: table,
         Item: {
           pk: { S: 'wsConnection' },
           sk: { S: `connectionId#${connectionId}` },
@@ -60,7 +62,7 @@ export class WebSocketConnectionsRepository {
     logger.debug('Getting connectionIds');
 
     const queryCommand = new QueryCommand({
-      TableName: process.env.CONNECTIONS_TABLE,
+      TableName: table,
       KeyConditionExpression: 'pk = :pk AND begins_with(sk, :sk)',
       ExpressionAttributeValues: {
         ':pk': { S: 'wsConnection' },

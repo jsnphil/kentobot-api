@@ -1,5 +1,9 @@
 import * as cdk from 'aws-cdk-lib';
+
+// TODO Combine these
 import * as apiGateway from 'aws-cdk-lib/aws-apigateway';
+import * as webSocketGateway from 'aws-cdk-lib/aws-apigatewayv2';
+
 import * as lambda from 'aws-cdk-lib/aws-lambda-nodejs';
 import * as logs from 'aws-cdk-lib/aws-logs';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
@@ -47,6 +51,23 @@ export class ApiStack extends cdk.Stack {
         tableStreamArn: tableStreamArn
       }
     );
+
+    const webSocketApiId = cdk.Fn.importValue(
+      `websocket-api-id-${props.environmentName}`
+    );
+
+    const webSocketApiStage = cdk.Fn.importValue(
+      `websocket-stage-name-${props.environmentName}`
+    );
+
+    const webSocketApi =
+      webSocketGateway.WebSocketApi.fromWebSocketApiAttributes(
+        this,
+        'web-socket-api',
+        {
+          webSocketId: webSocketApiId
+        }
+      );
 
     // ***********************
     // Setup main resources
@@ -482,7 +503,9 @@ export class ApiStack extends cdk.Stack {
         DJ_HOUR_REQUEST_DURATION_NAME: djRequestDurationLimit.parameterName,
         LICENSED_VIDEO_TOGGLE_NAME: licensedContentToggle.parameterName,
         MAX_SONGS_PER_USER: maxSongRequestsPerUser.parameterName,
-        STREAM_DATA_TABLE: database.tableName
+        STREAM_DATA_TABLE: database.tableName,
+        WEBSOCKET_API_ID: webSocketApi.apiId,
+        WEB_SOCKET_STAGE: webSocketApiStage
       },
       timeout: cdk.Duration.minutes(1),
       memorySize: 512,
@@ -496,7 +519,6 @@ export class ApiStack extends cdk.Stack {
     youtubeApiKeyParameter.grantRead(songRequestLambda);
     maxSongRequestsPerUser.grantRead(songRequestLambda);
     database.grantReadData(songRequestLambda);
-
     database.grantReadWriteData(songRequestLambda);
 
     requestSongResource.addMethod(
@@ -505,6 +527,16 @@ export class ApiStack extends cdk.Stack {
       {
         apiKeyRequired: true
       }
+    );
+
+    songRequestLambda.addToRolePolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        actions: ['execute-api:ManageConnections'],
+        resources: [
+          `arn:aws:execute-api:${props.env?.region}:${props.env?.account}:${webSocketApi.apiId}/*/*/@connections/*`
+        ]
+      })
     );
 
     // ***********************

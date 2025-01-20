@@ -5,7 +5,7 @@ import {
 } from '@aws-sdk/client-apigatewaymanagementapi';
 import { WebSocketConnectionsRepository } from '../repositories/websocket-connections-repository';
 
-const logger = new Logger({ serviceName: 'message-handler' });
+const logger = new Logger({ serviceName: 'web-socket-service' });
 
 const client = new ApiGatewayManagementApiClient({
   endpoint: `https://${process.env.WEBSOCKET_API_ID}.execute-api.us-east-1.amazonaws.com/${process.env.WEB_SOCKET_STAGE}`
@@ -21,11 +21,16 @@ export class WebSocketService {
     };
 
     try {
-      await client.send(new PostToConnectionCommand(params));
+      const response = await client.send(new PostToConnectionCommand(params));
+      logger.debug(JSON.stringify(response));
       logger.debug(`Sent message to connection: ${connectionId}`);
     } catch (error) {
-      logger.error(`Failed to send message to connection: ${connectionId}`);
-      throw new Error('Failed to send message');
+      // TODO Need to figure out how to handle send failures
+
+      if (error instanceof Error) {
+        logger.warn(error.message);
+      }
+      logger.warn(`Failed to send message to connection: ${connectionId}`);
     }
   }
 

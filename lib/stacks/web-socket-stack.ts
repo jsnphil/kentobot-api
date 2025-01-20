@@ -43,7 +43,7 @@ export class WebSocketStack extends cdk.Stack {
       memorySize: 512,
       architecture: ARCHITECTURE,
       environment: {
-        CONNECTIONS_TABLE: database.tableName
+        STREAM_DATA_TABLE: database.tableName
       }
     });
 
@@ -72,10 +72,22 @@ export class WebSocketStack extends cdk.Stack {
       }
     });
 
+    new cdk.CfnOutput(this, `WebSocket-Api-Id-Export`, {
+      value: webSocketApi.apiId,
+      description: 'The ID of the Web Socket API',
+      exportName: `websocket-api-id-${props.environmentName}`
+    });
+
     const stage = new apiGateway.WebSocketStage(this, 'web-socket-stage', {
       webSocketApi,
       stageName: props.environmentName,
       autoDeploy: true
+    });
+
+    new cdk.CfnOutput(this, `WebSocket-Api-Stage-Export`, {
+      value: stage.stageName,
+      description: 'The name of the Web Socket stage',
+      exportName: `websocket-stage-name-${props.environmentName}`
     });
 
     webSocketApi.addRoute('sendmessage', {

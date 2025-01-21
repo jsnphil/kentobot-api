@@ -31,9 +31,7 @@ export const handler = async (
   const songQueue = await SongQueue.loadQueue();
   songQueue.moveSong(songId, moveRequestData.position);
 
-  if (moveRequestData.isBump) {
-    // TODO Handle bump
-  }
+
 
   await songQueue.save()
 

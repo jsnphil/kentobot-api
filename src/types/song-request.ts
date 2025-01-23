@@ -94,5 +94,4 @@ export enum SongRequestErrorCode {
 
 export interface MoveRequestData {
   position: number;
-  isBump: boolean;
 }

@@ -25,7 +25,6 @@ export const RequestSongSchema = z.object({
   modOverride: z.boolean().optional()
 });
 
-export const MoveSongSchema = z.object({
-  position: z.number(),
-  isBump: z.boolean()
+export const MoveSongRequestSchema = z.object({
+  position: z.number()
 });

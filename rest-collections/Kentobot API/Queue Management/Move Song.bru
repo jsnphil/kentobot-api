@@ -1,11 +1,11 @@
 meta {
-  name: Request Song
+  name: Move Song
   type: http
-  seq: 1
+  seq: 2
 }
 
 post {
-  url: https://{{aws.api.id}}.execute-api.us-east-1.amazonaws.com/{{stage}}/song-queue/request
+  url: https://{{aws.api.id}}.execute-api.us-east-1.amazonaws.com/{{stage}}/song-queue/move-request/songId
   body: json
   auth: apikey
 }

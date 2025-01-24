@@ -24,3 +24,7 @@ export const RequestSongSchema = z.object({
   requestedBy: z.string(),
   modOverride: z.boolean().optional()
 });
+
+export const MoveSongRequestSchema = z.object({
+  position: z.number()
+});

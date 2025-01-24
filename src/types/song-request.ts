@@ -91,3 +91,7 @@ export enum SongRequestErrorCode {
   USER_MAX_REQUESTS = 'USER_MAX_REQUESTS',
   SONG_EXCEEDEDS_MAX_DURATION = 'SONG_EXCEEDEDS_MAX_DURATION'
 }
+
+export interface MoveRequestData {
+  position: number;
+}

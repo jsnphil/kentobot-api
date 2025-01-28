@@ -1,4 +1,4 @@
-import { createNewErrorResponse, padTimeDigits } from './utilities';
+import { createNewErrorResponse, getSongId, padTimeDigits } from './utilities';
 
 describe('createNewErrorResponse', () => {
   it('should return an error response with the provided status code and error message', () => {
@@ -23,5 +23,27 @@ describe('padTimeDigits', () => {
   it('should return a string with no leading zero if the number is 10 or greater', () => {
     const result = padTimeDigits(10);
     expect(result).toBe('10');
+  });
+});
+
+describe('getSongId', () => {
+  it('should return a song ID when present', () => {
+    const songId = getSongId({
+      songId: 'songId'
+    });
+
+    expect(songId).toBe('songId');
+  });
+
+  it('should return undefined if there are no path parameters', () => {
+    expect(getSongId(null)).toBeUndefined();
+  });
+
+  it('should return undefined when there are path parameters but no song ID', () => {
+    const songId = getSongId({
+      param: 'value'
+    });
+
+    expect(songId).toBeUndefined();
   });
 });

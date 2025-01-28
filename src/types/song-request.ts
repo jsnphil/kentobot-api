@@ -95,3 +95,9 @@ export enum SongRequestErrorCode {
 export interface MoveRequestData {
   position: number;
 }
+
+export interface BumpRequestData {
+  user: string;
+  modOverride?: boolean;
+  position?: number;
+}

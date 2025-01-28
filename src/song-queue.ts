@@ -163,6 +163,19 @@ export class SongQueue {
     this.songs.splice(position - 1, 0, song);
   }
 
+  bumpSong(youtubeId: string, position?: number, override?: boolean) {
+    if (this.songs.length === 0) {
+      throw new Error('Queue is empty');
+    }
+
+    const index = this.songs.findIndex((song) => song.youtubeId === youtubeId);
+    if (index === -1) {
+      throw new Error('Request not found in queue');
+    }
+
+    // this.songs[index].isBumped = true;
+  }
+
   toArray() {
     return this.songs;
   }

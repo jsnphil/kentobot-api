@@ -28,3 +28,9 @@ export const RequestSongSchema = z.object({
 export const MoveSongRequestSchema = z.object({
   position: z.number()
 });
+
+export const BumpSongRequestSchema = z.object({
+  user: z.string(),
+  modOverride: z.boolean().optional(),
+  position: z.number().optional()
+});

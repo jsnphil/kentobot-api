@@ -11,12 +11,14 @@ import {
 } from './types/song-request';
 import { generateStreamDate, secondsToMinutes } from './utils/utilities';
 import { Logger } from '@aws-lambda-powertools/logger';
+import { BumpService } from './services/bump-service';
 
 export class SongQueue {
   private songs: SongQueueItem[] = [];
   private songRepository = new SongQueueRepository();
   private streamDate: string;
   private logger = new Logger({ serviceName: 'song-queue' });
+  private bumpService = new BumpService();
 
   private ssmClient;
 
@@ -163,17 +165,33 @@ export class SongQueue {
     this.songs.splice(position - 1, 0, song);
   }
 
-  bumpSong(youtubeId: string, position?: number, override?: boolean) {
+  async bumpSong(youtubeId: string, position?: number, override?: boolean) {
     if (this.songs.length === 0) {
       throw new Error('Queue is empty');
     }
 
-    const index = this.songs.findIndex((song) => song.youtubeId === youtubeId);
-    if (index === -1) {
+    const songToBump = this.findSongById(youtubeId);
+    if (!songToBump) {
+      // TODO Change this from an error
       throw new Error('Request not found in queue');
     }
 
-    // this.songs[index].isBumped = true;
+    const bumpAllowed = await this.bumpService.isBumpAllowed(
+      songToBump?.requestedBy
+    );
+    if (!bumpAllowed.success && !override) {
+      // TODO Return a result
+      throw new Error('User is not eligible for a bump');
+    }
+
+    const newPosition = position
+      ? position
+      : this.bumpService.getBumpPosition(this);
+
+    this.moveSong(youtubeId, newPosition);
+    songToBump.isBumped = true;
+
+    this.bumpService.updateBumpData(songToBump.requestedBy);
   }
 
   toArray() {

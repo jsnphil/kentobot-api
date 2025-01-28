@@ -35,9 +35,9 @@ export interface SongQueueItem {
   readonly title: string;
   readonly length: number;
   readonly requestedBy: string;
-  readonly isBumped: boolean;
-  readonly isShuffled: boolean;
-  readonly isShuffleEntered: boolean;
+  isBumped: boolean;
+  isShuffled: boolean;
+  isShuffleEntered: boolean;
 }
 
 export interface RequestSongBody {

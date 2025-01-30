@@ -54,14 +54,16 @@ export class BumpService {
     let i = 0;
     for (let i = 0; i < queueArray.length; i++) {
       if (!queueArray[i].isBumped) {
-        return i;
+        return i + 1;
       }
     }
 
-    return 0;
+    return 1;
   }
 
-  async updateBumpData(user: string): Promise<void> {
-    // await this.bumpRepository.updateBumpData(user);
+  async updateBumpData(user: string) {
+    const now = new Date();
+    const bumpTTL = new Date(now.setDate(now.getDate() + 6)).getTime();
+    await this.bumpRepository.updateBumpData(user, bumpTTL);
   }
 }

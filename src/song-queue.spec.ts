@@ -4,6 +4,7 @@ import { SongRequest, SongRequestErrorCode } from './types/song-request';
 import { DynamoDBClient, GetItemCommand } from '@aws-sdk/client-dynamodb';
 import { mockClient } from 'aws-sdk-client-mock';
 import { SongQueueRepository } from './repositories/song-queue-repository';
+import { BumpService } from './services/bump-service';
 
 const mockDynamoDBClient = mockClient(DynamoDBClient);
 const mockSSMClient = mockClient(SSMClient);
@@ -12,32 +13,34 @@ const mockSSMClient = mockClient(SSMClient);
 
 describe('SongQueue', () => {
   beforeEach(() => {
+    jest.resetAllMocks();
     process.env.REQUEST_DURATION_NAME = 'REQUEST_DURATION_NAME';
     process.env.MAX_SONGS_PER_USER = 'MAX_SONGS_PER_USER';
+
+    mockDynamoDBClient.on(GetItemCommand).resolves({
+      Item: undefined
+    });
+
+    mockSSMClient
+      .on(GetParameterCommand, {
+        Name: 'REQUEST_DURATION_NAME'
+      })
+      .resolves({
+        Parameter: {
+          Value: '360'
+        }
+      });
+
+    mockSSMClient
+      .on(GetParameterCommand, {
+        Name: 'MAX_SONGS_PER_USER'
+      })
+      .resolves({ Parameter: { Value: '1' } });
   });
 
   describe('addSong', () => {
     it('Should add a song to the queue', async () => {
       // Arrange
-      mockDynamoDBClient.on(GetItemCommand).resolves({
-        Item: undefined
-      });
-
-      mockSSMClient
-        .on(GetParameterCommand, {
-          Name: 'REQUEST_DURATION_NAME'
-        })
-        .resolves({
-          Parameter: {
-            Value: '360'
-          }
-        });
-
-      mockSSMClient
-        .on(GetParameterCommand, {
-          Name: 'MAX_SONGS_PER_USER'
-        })
-        .resolves({ Parameter: { Value: '1' } });
 
       const songQueue = await SongQueue.loadQueue();
 
@@ -1203,6 +1206,146 @@ describe('SongQueue', () => {
       // Assert
       expect(songQueue.getLength()).toBe(0);
       expect(deleteQueue).toHaveBeenCalled();
+    });
+  });
+
+  describe('bumpSong', () => {
+    beforeEach(() => {
+      jest.resetAllMocks();
+      // Arrange
+      mockDynamoDBClient.on(GetItemCommand).resolves({
+        Item: undefined
+      });
+
+      mockSSMClient
+        .on(GetParameterCommand, {
+          Name: 'REQUEST_DURATION_NAME'
+        })
+        .resolves({
+          Parameter: { Value: '360' }
+        });
+
+      mockSSMClient
+        .on(GetParameterCommand, {
+          Name: 'MAX_SONGS_PER_USER'
+        })
+        .resolves({ Parameter: { Value: '1' } });
+    });
+
+    afterEach(() => {
+      jest.restoreAllMocks();
+    });
+
+    it('should bump a song to the top of the queue', async () => {
+      jest
+        .spyOn(BumpService.prototype, 'isBumpAllowed')
+        .mockResolvedValue({ success: true });
+
+      const updateBumpData = jest.spyOn(
+        BumpService.prototype,
+        'updateBumpData'
+      );
+
+      const songQueue = await SongQueue.loadQueue();
+
+      const songRequest1: SongRequest = {
+        youtubeId: 'youtubeId1',
+        title: 'Song title',
+        length: 100,
+        requestedBy: 'user1'
+      };
+
+      const songRequest2: SongRequest = {
+        youtubeId: 'youtubeId2',
+        title: 'Song title',
+        length: 100,
+        requestedBy: 'user2'
+      };
+
+      const songRequest3: SongRequest = {
+        youtubeId: 'youtubeId3',
+        title: 'Song title',
+        length: 100,
+        requestedBy: 'user3'
+      };
+
+      const songRequest4: SongRequest = {
+        youtubeId: 'youtubeId4',
+        title: 'Song title',
+        length: 100,
+        requestedBy: 'user4'
+      };
+
+      const songRequest5: SongRequest = {
+        youtubeId: 'youtubeId5',
+        title: 'Song title',
+        length: 100,
+        requestedBy: 'user5'
+      };
+
+      await songQueue.addSong(songRequest1);
+      await songQueue.addSong(songRequest2);
+      await songQueue.addSong(songRequest3);
+      await songQueue.addSong(songRequest4);
+      await songQueue.addSong(songRequest5);
+
+      // Act
+      await songQueue.bumpSong('youtubeId5');
+
+      const bumpedSong = songQueue.toArray()[0];
+
+      // Assert
+      expect(bumpedSong.youtubeId).toEqual('youtubeId5');
+      expect(bumpedSong.isBumped).toBe(true);
+      expect(updateBumpData).toHaveBeenCalled();
+    });
+
+    it('Should throw an error if the queue is empty', async () => {
+      mockDynamoDBClient.on(GetItemCommand).resolves({
+        Item: undefined
+      });
+      const songQueue = await SongQueue.loadQueue();
+
+      expect(
+        async () => await songQueue.bumpSong('youtubeId2')
+      ).rejects.toThrow('Queue is empty');
+    });
+
+    it('Should throw an error if the song is not in the queue', async () => {
+      mockDynamoDBClient.on(GetItemCommand).resolves({
+        Item: undefined
+      });
+
+      mockSSMClient
+        .on(GetParameterCommand, {
+          Name: 'REQUEST_DURATION_NAME'
+        })
+        .resolves({
+          Parameter: {
+            Value: '360'
+          }
+        });
+
+      mockSSMClient
+        .on(GetParameterCommand, {
+          Name: 'MAX_SONGS_PER_USER'
+        })
+        .resolves({ Parameter: { Value: '1' } });
+
+      const songQueue = await SongQueue.loadQueue();
+
+      const songRequest: SongRequest = {
+        youtubeId: 'youtubeId',
+        title: 'Song title',
+        length: 100,
+        requestedBy: 'user'
+      };
+
+      await songQueue.addSong(songRequest);
+
+      expect(
+        async () => await songQueue.bumpSong('youtubeId2')
+      ).rejects.toThrow('Request not found in queue');
     });
   });
 });

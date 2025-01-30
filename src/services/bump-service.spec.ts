@@ -79,7 +79,7 @@ describe('BumpService', () => {
       ]);
 
       const position = bumpService.getBumpPosition(songQueue);
-      expect(position).toBe(2);
+      expect(position).toBe(3);
     });
 
     it('should return the top of the queue if there are no bumps in the queue', async () => {
@@ -104,7 +104,7 @@ describe('BumpService', () => {
       ]);
 
       const position = bumpService.getBumpPosition(songQueue);
-      expect(position).toBe(0);
+      expect(position).toBe(1);
     });
   });
 });

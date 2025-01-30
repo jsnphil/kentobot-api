@@ -151,6 +151,7 @@ export class SongQueue {
   }
 
   moveSong(youtubeId: string, position: number) {
+    console.log('Moving song to position: ', position);
     if (this.songs.length === 0) {
       throw new Error('Queue is empty');
     }
@@ -181,6 +182,7 @@ export class SongQueue {
     );
     if (!bumpAllowed.success && !override) {
       // TODO Return a result
+      // TODO Need to differentiate between user not eligible and no bumps available
       throw new Error('User is not eligible for a bump');
     }
 
@@ -188,10 +190,12 @@ export class SongQueue {
       ? position
       : this.bumpService.getBumpPosition(this);
 
+    console.log('New position: ', newPosition);
+
     this.moveSong(youtubeId, newPosition);
     songToBump.isBumped = true;
 
-    this.bumpService.updateBumpData(songToBump.requestedBy);
+    const result = this.bumpService.updateBumpData(songToBump.requestedBy);
   }
 
   toArray() {

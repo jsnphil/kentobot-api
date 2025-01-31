@@ -2,6 +2,7 @@ import { GetParameterCommand, SSMClient } from '@aws-sdk/client-ssm';
 import { SongQueueRepository } from './repositories/song-queue-repository';
 import {
   AddSongToQueueResult,
+  QueueManagementErrorCode,
   SongInfo,
   SongQueueItem,
   SongRequest,
@@ -166,24 +167,42 @@ export class SongQueue {
     this.songs.splice(position - 1, 0, song);
   }
 
-  async bumpSong(youtubeId: string, position?: number, override?: boolean) {
+  async bumpSong(
+    youtubeId: string,
+    position?: number,
+    override?: boolean
+  ): Promise<ValidationResult<any>> {
     if (this.songs.length === 0) {
-      throw new Error('Queue is empty');
+      return {
+        success: false,
+        errors: [
+          {
+            code: QueueManagementErrorCode.QUEUE_EMPTY,
+            message: QueueManagementErrorCode.QUEUE_EMPTY.toString()
+          }
+        ]
+      };
     }
 
     const songToBump = this.findSongById(youtubeId);
     if (!songToBump) {
-      // TODO Change this from an error
-      throw new Error('Request not found in queue');
+      return {
+        success: false,
+        errors: [
+          {
+            code: QueueManagementErrorCode.REQUEST_NOT_FOUND,
+            message: QueueManagementErrorCode.REQUEST_NOT_FOUND.toString()
+          }
+        ]
+      };
     }
 
     const bumpAllowed = await this.bumpService.isBumpAllowed(
       songToBump?.requestedBy
     );
+
     if (!bumpAllowed.success && !override) {
-      // TODO Return a result
-      // TODO Need to differentiate between user not eligible and no bumps available
-      throw new Error('User is not eligible for a bump');
+      return bumpAllowed;
     }
 
     const newPosition = position
@@ -196,6 +215,10 @@ export class SongQueue {
     songToBump.isBumped = true;
 
     const result = this.bumpService.updateBumpData(songToBump.requestedBy);
+
+    return {
+      success: true
+    };
   }
 
   toArray() {

@@ -16,14 +16,15 @@ export class SongBumpRepository {
   async getBumpData(): Promise<BumpData> {
     logger.info('Getting bump data');
 
-    // TOOD Add a filter to ignore items with a TTL that has expired
     const { Items } = await dynamoDBClient.send(
       new QueryCommand({
         TableName: table,
         KeyConditionExpression: 'pk = :pk AND begins_with(sk, :sk)',
+        FilterExpression: 'ttl > :now',
         ExpressionAttributeValues: {
           ':pk': { S: 'bumpData' },
-          ':sk': { S: 'bumpData' }
+          ':sk': { S: 'bumpData' },
+          ':now': { N: Math.floor(Date.now() / 1000).toString() }
         }
       })
     );

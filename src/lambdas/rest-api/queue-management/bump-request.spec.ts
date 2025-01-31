@@ -1,8 +1,9 @@
-import { APIGatewayEvent } from 'aws-lambda';
+import { APIGatewayEvent, APIGatewayProxyEvent } from 'aws-lambda';
 import { handler, getBumpSongRequestData } from './bump-request';
 import { SongQueue } from '../../../song-queue';
 import { WebSocketService } from '../../../services/web-socket-service';
 import { Code } from 'better-status-codes';
+import { BumpRequestData } from '../../../types/song-request';
 
 jest.mock('../../../song-queue');
 jest.mock('../../../services/web-socket-service');
@@ -71,55 +72,32 @@ describe('bump-request', () => {
       });
     });
   });
+
+  describe('handler', () => {
+    it('should return a bad request if there is not a song ID', async () => {
+      const result = await handler({} as unknown as APIGatewayProxyEvent);
+
+      expect(result).toEqual({
+        statusCode: 400,
+        body: JSON.stringify({
+          code: 400,
+          message: 'No song Id found'
+        })
+      });
+    });
+
+    it('should return a bad request if there is not bump data', async () => {
+      const result = await handler({
+        pathParameters: { songId: 'songId' }
+      } as unknown as APIGatewayProxyEvent);
+
+      expect(result).toEqual({
+        statusCode: 400,
+        body: JSON.stringify({
+          code: 400,
+          message: 'No bump data found'
+        })
+      });
+    });
+  });
 });
-// describe('bump-request handler', () => {
-//   let mockEvent: APIGatewayEvent;
-
-//   beforeEach(() => {
-//     mockEvent = {
-//       body: JSON.stringify({ songId: '123' }),
-//       pathParameters: { songId: '123' }
-//     } as any;
-//   });
-
-//   it('should return 400 if no songId is found', async () => {
-//     mockEvent.pathParameters = null;
-
-//     const result = await handler(mockEvent);
-
-//     expect(result.statusCode).toBe(Code.BAD_REQUEST);
-//     expect(JSON.parse(result.body).message).toBe('No song Id found');
-//   });
-
-//   it('should return 400 if request body is invalid', async () => {
-//     mockEvent.body = '';
-
-//     const result = await handler(mockEvent);
-
-//     expect(result.statusCode).toBe(Code.BAD_REQUEST);
-//     expect(JSON.parse(result.body).message).toBe('No move data found');
-//   });
-
-//   it('should bump the song and return 200', async () => {
-//     const mockSongQueue = {
-//       bumpSong: jest.fn(),
-//       save: jest.fn(),
-//       toArray: jest.fn().mockReturnValue([])
-//     };
-//     (SongQueue.loadQueue as jest.Mock).mockResolvedValue(mockSongQueue);
-//     const mockWebSocketService = {
-//       broadcast: jest.fn()
-//     };
-//     (WebSocketService as jest.Mock).mockReturnValue(mockWebSocketService);
-
-//     const result = await handler(mockEvent);
-
-//     expect(result.statusCode).toBe(Code.OK);
-//     expect(JSON.parse(result.body).message).toBe('Song bumped');
-//     expect(mockSongQueue.bumpSong).toHaveBeenCalledWith('123');
-//     expect(mockSongQueue.save).toHaveBeenCalled();
-//     expect(mockWebSocketService.broadcast).toHaveBeenCalledWith(
-//       JSON.stringify({ songQueue: [] })
-//     );
-//   });
-// });

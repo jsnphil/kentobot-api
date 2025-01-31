@@ -58,7 +58,8 @@ export class BumpService {
       }
     }
 
-    return 1;
+    /* istanbul ignore next */
+    return 1; // This can never happen in a real scenario, the queue will never be all bumps
   }
 
   async updateBumpData(user: string) {

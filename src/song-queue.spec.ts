@@ -1,6 +1,10 @@
 import { GetParameterCommand, SSMClient } from '@aws-sdk/client-ssm';
 import { SongQueue } from './song-queue';
-import { SongRequest, SongRequestErrorCode } from './types/song-request';
+import {
+  QueueManagementErrorCode,
+  SongRequest,
+  SongRequestErrorCode
+} from './types/song-request';
 import { DynamoDBClient, GetItemCommand } from '@aws-sdk/client-dynamodb';
 import { mockClient } from 'aws-sdk-client-mock';
 import { SongQueueRepository } from './repositories/song-queue-repository';
@@ -1300,15 +1304,20 @@ describe('SongQueue', () => {
       expect(updateBumpData).toHaveBeenCalled();
     });
 
-    it('Should throw an error if the queue is empty', async () => {
+    it('Should return an error if the queue is empty', async () => {
       mockDynamoDBClient.on(GetItemCommand).resolves({
         Item: undefined
       });
       const songQueue = await SongQueue.loadQueue();
 
-      expect(
-        async () => await songQueue.bumpSong('youtubeId2')
-      ).rejects.toThrow('Queue is empty');
+      const result = await songQueue.bumpSong('youtubeId2');
+      expect(result.success).toBe(false);
+
+      const error = result.errors?.[0];
+
+      expect(error).toBeDefined();
+      expect(error?.code).toBe(QueueManagementErrorCode.QUEUE_EMPTY);
+      expect(error?.message).toBe('Queue is empty');
     });
 
     it('Should throw an error if the song is not in the queue', async () => {
@@ -1342,10 +1351,279 @@ describe('SongQueue', () => {
       };
 
       await songQueue.addSong(songRequest);
+      const result = await songQueue.bumpSong('youtubeId2');
 
-      expect(
-        async () => await songQueue.bumpSong('youtubeId2')
-      ).rejects.toThrow('Request not found in queue');
+      expect(result.success).toBe(false);
+
+      const error = result.errors?.[0];
+
+      expect(error).toBeDefined();
+      expect(error?.code).toBe(QueueManagementErrorCode.REQUEST_NOT_FOUND);
+      expect(error?.message).toBe('Request not found');
+    });
+
+    it('Should throw an error if there are no bumps available', async () => {
+      mockDynamoDBClient.on(GetItemCommand).resolves({
+        Item: undefined
+      });
+
+      mockSSMClient
+        .on(GetParameterCommand, {
+          Name: 'REQUEST_DURATION_NAME'
+        })
+        .resolves({
+          Parameter: {
+            Value: '360'
+          }
+        });
+
+      mockSSMClient
+        .on(GetParameterCommand, {
+          Name: 'MAX_SONGS_PER_USER'
+        })
+        .resolves({ Parameter: { Value: '1' } });
+
+      const songQueue = await SongQueue.loadQueue();
+
+      const songRequest: SongRequest = {
+        youtubeId: 'youtubeId',
+        title: 'Song title',
+        length: 100,
+        requestedBy: 'user'
+      };
+
+      await songQueue.addSong(songRequest);
+
+      jest.spyOn(BumpService.prototype, 'isBumpAllowed').mockResolvedValue({
+        success: false,
+        errors: [
+          {
+            code: QueueManagementErrorCode.BUMPS_NOT_AVAILABLE,
+            message: 'No bumps available'
+          }
+        ]
+      });
+
+      const songRequest1: SongRequest = {
+        youtubeId: 'youtubeId1',
+        title: 'Song title',
+        length: 100,
+        requestedBy: 'user1'
+      };
+      await songQueue.addSong(songRequest1);
+
+      const result = await songQueue.bumpSong('youtubeId1');
+
+      expect(result.success).toBe(false);
+
+      const error = result.errors?.[0];
+
+      expect(error).toBeDefined();
+      expect(error?.code).toBe(QueueManagementErrorCode.BUMPS_NOT_AVAILABLE);
+      expect(error?.message).toBe('No bumps available');
+    });
+
+    it('Should throw an error if the user is not eligible', async () => {
+      mockDynamoDBClient.on(GetItemCommand).resolves({
+        Item: undefined
+      });
+
+      mockSSMClient
+        .on(GetParameterCommand, {
+          Name: 'REQUEST_DURATION_NAME'
+        })
+        .resolves({
+          Parameter: {
+            Value: '360'
+          }
+        });
+
+      mockSSMClient
+        .on(GetParameterCommand, {
+          Name: 'MAX_SONGS_PER_USER'
+        })
+        .resolves({ Parameter: { Value: '1' } });
+
+      const songQueue = await SongQueue.loadQueue();
+
+      const songRequest: SongRequest = {
+        youtubeId: 'youtubeId',
+        title: 'Song title',
+        length: 100,
+        requestedBy: 'user'
+      };
+
+      await songQueue.addSong(songRequest);
+
+      jest.spyOn(BumpService.prototype, 'isBumpAllowed').mockResolvedValue({
+        success: false,
+        errors: [
+          {
+            code: QueueManagementErrorCode.USER_NOT_ELIGIBLE,
+            message: 'User is not eligible',
+            context: 'User will be eligible on 01-01-2025'
+          }
+        ]
+      });
+
+      const songRequest1: SongRequest = {
+        youtubeId: 'youtubeId1',
+        title: 'Song title',
+        length: 100,
+        requestedBy: 'user1'
+      };
+      await songQueue.addSong(songRequest1);
+
+      const result = await songQueue.bumpSong('youtubeId1');
+
+      expect(result.success).toBe(false);
+
+      const error = result.errors?.[0];
+
+      expect(error).toBeDefined();
+      expect(error?.code).toBe(QueueManagementErrorCode.USER_NOT_ELIGIBLE);
+      expect(error?.message).toBe('User is not eligible');
+    });
+
+    it('should bump a song to the top of the queue if the user is not eligible but override is set', async () => {
+      const updateBumpData = jest.spyOn(
+        BumpService.prototype,
+        'updateBumpData'
+      );
+
+      const songQueue = await SongQueue.loadQueue();
+
+      const songRequest1: SongRequest = {
+        youtubeId: 'youtubeId1',
+        title: 'Song title',
+        length: 100,
+        requestedBy: 'user1'
+      };
+
+      const songRequest2: SongRequest = {
+        youtubeId: 'youtubeId2',
+        title: 'Song title',
+        length: 100,
+        requestedBy: 'user2'
+      };
+
+      const songRequest3: SongRequest = {
+        youtubeId: 'youtubeId3',
+        title: 'Song title',
+        length: 100,
+        requestedBy: 'user3'
+      };
+
+      const songRequest4: SongRequest = {
+        youtubeId: 'youtubeId4',
+        title: 'Song title',
+        length: 100,
+        requestedBy: 'user4'
+      };
+
+      const songRequest5: SongRequest = {
+        youtubeId: 'youtubeId5',
+        title: 'Song title',
+        length: 100,
+        requestedBy: 'user5'
+      };
+
+      await songQueue.addSong(songRequest1);
+      await songQueue.addSong(songRequest2);
+      await songQueue.addSong(songRequest3);
+      await songQueue.addSong(songRequest4);
+      await songQueue.addSong(songRequest5);
+
+      jest.spyOn(BumpService.prototype, 'isBumpAllowed').mockResolvedValue({
+        success: false,
+        errors: [
+          {
+            code: QueueManagementErrorCode.USER_NOT_ELIGIBLE,
+            message: 'User is not eligible',
+            context: 'User will be eligible on 01-01-2025'
+          }
+        ]
+      });
+
+      // Act
+      await songQueue.bumpSong('youtubeId5', undefined, true);
+
+      const bumpedSong = songQueue.toArray()[0];
+
+      // Assert
+      expect(bumpedSong.youtubeId).toEqual('youtubeId5');
+      expect(bumpedSong.isBumped).toBe(true);
+      expect(updateBumpData).toHaveBeenCalled();
+    });
+
+    it('should bump a song to the middle of the queue when there is a position', async () => {
+      const updateBumpData = jest.spyOn(
+        BumpService.prototype,
+        'updateBumpData'
+      );
+
+      const songQueue = await SongQueue.loadQueue();
+
+      const songRequest1: SongRequest = {
+        youtubeId: 'youtubeId1',
+        title: 'Song title',
+        length: 100,
+        requestedBy: 'user1'
+      };
+
+      const songRequest2: SongRequest = {
+        youtubeId: 'youtubeId2',
+        title: 'Song title',
+        length: 100,
+        requestedBy: 'user2'
+      };
+
+      const songRequest3: SongRequest = {
+        youtubeId: 'youtubeId3',
+        title: 'Song title',
+        length: 100,
+        requestedBy: 'user3'
+      };
+
+      const songRequest4: SongRequest = {
+        youtubeId: 'youtubeId4',
+        title: 'Song title',
+        length: 100,
+        requestedBy: 'user4'
+      };
+
+      const songRequest5: SongRequest = {
+        youtubeId: 'youtubeId5',
+        title: 'Song title',
+        length: 100,
+        requestedBy: 'user5'
+      };
+
+      await songQueue.addSong(songRequest1);
+      await songQueue.addSong(songRequest2);
+      await songQueue.addSong(songRequest3);
+      await songQueue.addSong(songRequest4);
+      await songQueue.addSong(songRequest5);
+
+      jest.spyOn(BumpService.prototype, 'isBumpAllowed').mockResolvedValue({
+        success: true
+      });
+
+      const getBumpPosition = jest.spyOn(
+        BumpService.prototype,
+        'getBumpPosition'
+      );
+
+      // Act
+      await songQueue.bumpSong('youtubeId5', 3);
+
+      const bumpedSong = songQueue.toArray()[2];
+
+      // Assert
+      expect(getBumpPosition).toHaveBeenCalledTimes(0);
+      expect(bumpedSong.youtubeId).toEqual('youtubeId5');
+      expect(bumpedSong.isBumped).toBe(true);
+      expect(updateBumpData).toHaveBeenCalled();
     });
   });
 });

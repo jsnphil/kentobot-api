@@ -92,6 +92,13 @@ export enum SongRequestErrorCode {
   SONG_EXCEEDEDS_MAX_DURATION = 'SONG_EXCEEDEDS_MAX_DURATION'
 }
 
+export enum QueueManagementErrorCode {
+  QUEUE_EMPTY = 'Queue is empty',
+  BUMPS_NOT_AVAILABLE = 'BUMPS_NOT_AVAILABLE',
+  USER_NOT_ELIGIBLE = 'USER_NOT_ELIGIBLE',
+  REQUEST_NOT_FOUND = 'Request not found'
+}
+
 export interface MoveRequestData {
   position: number;
 }

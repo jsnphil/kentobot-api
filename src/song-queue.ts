@@ -2,6 +2,7 @@ import { GetParameterCommand, SSMClient } from '@aws-sdk/client-ssm';
 import { SongQueueRepository } from './repositories/song-queue-repository';
 import {
   AddSongToQueueResult,
+  QueueManagementErrorCode,
   SongInfo,
   SongQueueItem,
   SongRequest,
@@ -11,12 +12,14 @@ import {
 } from './types/song-request';
 import { generateStreamDate, secondsToMinutes } from './utils/utilities';
 import { Logger } from '@aws-lambda-powertools/logger';
+import { BumpService } from './services/bump-service';
 
 export class SongQueue {
   private songs: SongQueueItem[] = [];
   private songRepository = new SongQueueRepository();
   private streamDate: string;
   private logger = new Logger({ serviceName: 'song-queue' });
+  private bumpService = new BumpService();
 
   private ssmClient;
 
@@ -149,6 +152,7 @@ export class SongQueue {
   }
 
   moveSong(youtubeId: string, position: number) {
+    console.log('Moving song to position: ', position);
     if (this.songs.length === 0) {
       throw new Error('Queue is empty');
     }
@@ -161,6 +165,63 @@ export class SongQueue {
     const song = this.songs[index];
     this.songs.splice(index, 1);
     this.songs.splice(position - 1, 0, song);
+  }
+
+  async bumpSong(
+    youtubeId: string,
+    position?: number,
+    override?: boolean
+  ): Promise<ValidationResult<any>> {
+    if (this.songs.length === 0) {
+      return {
+        success: false,
+        errors: [
+          {
+            code: QueueManagementErrorCode.QUEUE_EMPTY,
+            message: QueueManagementErrorCode.QUEUE_EMPTY.toString()
+          }
+        ]
+      };
+    }
+
+    const songToBump = this.findSongById(youtubeId);
+    if (!songToBump) {
+      return {
+        success: false,
+        errors: [
+          {
+            code: QueueManagementErrorCode.REQUEST_NOT_FOUND,
+            message: QueueManagementErrorCode.REQUEST_NOT_FOUND.toString()
+          }
+        ]
+      };
+    }
+
+    const bumpAllowed = await this.bumpService.isBumpAllowed(
+      songToBump?.requestedBy
+    );
+
+    this.logger.debug(`Bump allowed: ${JSON.stringify(bumpAllowed)}`);
+    this.logger.debug(`Override: ${override}`);
+
+    if (!bumpAllowed.success && !override) {
+      return bumpAllowed;
+    }
+
+    const newPosition = position
+      ? position
+      : this.bumpService.getBumpPosition(this);
+
+    console.log('New position: ', newPosition);
+
+    this.moveSong(youtubeId, newPosition);
+    songToBump.isBumped = true;
+
+    const result = this.bumpService.redeemBump(songToBump.requestedBy);
+
+    return {
+      success: true
+    };
   }
 
   toArray() {

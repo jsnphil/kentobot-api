@@ -1,3 +1,4 @@
+import { APIGatewayProxyEventPathParameters } from 'aws-lambda';
 import { Readable } from 'stream';
 
 export const createNewErrorResponse = (
@@ -53,4 +54,14 @@ export const secondsToMinutes = (seconds: number) => {
   const remainingSeconds = seconds % 60;
 
   return `${minutes}:${padTimeDigits(remainingSeconds)}`;
+};
+
+export const getSongId = (
+  pathParameters: APIGatewayProxyEventPathParameters | null
+) => {
+  if (pathParameters == null || !pathParameters) {
+    return undefined;
+  } else {
+    return pathParameters!.songId;
+  }
 };

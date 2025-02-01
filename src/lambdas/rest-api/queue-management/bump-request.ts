@@ -1,18 +1,14 @@
 import { Logger } from '@aws-lambda-powertools/logger';
-import {
-  APIGatewayEvent,
-  APIGatewayProxyEventPathParameters,
-  APIGatewayProxyResult
-} from 'aws-lambda';
+import { APIGatewayEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { Code } from 'better-status-codes';
-import { MoveSongRequestSchema } from '../../../schemas/schema';
-import { MoveRequestData, ValidationResult } from '../../../types/song-request';
-import { SongQueue } from '../../../song-queue';
 import { WebSocketService } from '../../../services/web-socket-service';
-import { request } from 'http';
-import { getSongId } from '../../../utils/utilities';
+import { SongQueue } from '../../../song-queue';
 
-const logger = new Logger({ serviceName: 'requestSongLambda' });
+import { BumpRequestData, ValidationResult } from '../../../types/song-request';
+import { getSongId } from '../../../utils/utilities';
+import { BumpSongRequestSchema } from '../../../schemas/schema';
+
+const logger = new Logger({ serviceName: 'bump-request' });
 const webSocketService = new WebSocketService();
 
 export const handler = async (
@@ -31,59 +27,74 @@ export const handler = async (
     };
   }
 
-  const moveRequestData = getMoveSongRequestData(event.body);
+  const bumpRequestData = getBumpSongRequestData(event.body);
 
-  if (moveRequestData.success) {
-    const position = moveRequestData.data!.position;
+  // TODO Clean this up, this is too many if statements
+  if (bumpRequestData.success) {
     const songQueue = await SongQueue.loadQueue();
-    songQueue.moveSong(songId, position);
 
-    await songQueue.save();
-
-    await webSocketService.broadcast(
-      JSON.stringify({ songQueue: songQueue.toArray() })
+    const bumpResult = await songQueue.bumpSong(
+      songId,
+      bumpRequestData.data?.position,
+      bumpRequestData.data?.modOverride
     );
 
-    return {
-      statusCode: Code.OK,
-      body: JSON.stringify({
-        message: `Song moved to position [${position}]`
-      })
-    };
+    if (bumpResult.success) {
+      await songQueue.save();
+
+      await webSocketService.broadcast(
+        JSON.stringify({ songQueue: songQueue.toArray() })
+      );
+
+      return {
+        statusCode: Code.OK,
+        body: JSON.stringify({
+          message: `Song bumped`
+        })
+      };
+    } else {
+      return {
+        statusCode: Code.BAD_REQUEST,
+        body: JSON.stringify({
+          code: Code.BAD_REQUEST,
+          message: bumpResult.errors![0].message
+        })
+      };
+    }
   } else {
     return {
       statusCode: Code.BAD_REQUEST,
       body: JSON.stringify({
         code: Code.BAD_REQUEST,
-        message: moveRequestData.errors![0].message
+        message: bumpRequestData.errors![0].message
       })
     };
   }
 };
 
-export const getMoveSongRequestData = (
+export const getBumpSongRequestData = (
   requestBody: string | null
-): ValidationResult<MoveRequestData> => {
+): ValidationResult<BumpRequestData> => {
   if (!requestBody) {
     return {
       success: false,
       errors: [
         {
           code: '400', // TODO Need a better/different error code
-          message: 'No move data found'
+          message: 'No bump data found'
         }
       ]
     };
   }
 
   try {
-    const moveRequestData: MoveRequestData = MoveSongRequestSchema.parse(
+    const bumpRequestData: BumpRequestData = BumpSongRequestSchema.parse(
       JSON.parse(requestBody)
     );
 
     return {
       success: true,
-      data: moveRequestData
+      data: bumpRequestData
     };
   } catch (error) {
     if (error instanceof Error) {

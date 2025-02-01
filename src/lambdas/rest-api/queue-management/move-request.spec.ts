@@ -1,29 +1,7 @@
 import { APIGatewayProxyEvent } from 'aws-lambda';
-import { getMoveSongRequestData, getSongId, handler } from './move-request';
+import { getMoveSongRequestData, handler } from './move-request';
 
 describe('move-request', () => {
-  describe('getSongId', () => {
-    it('should return a song ID when present', () => {
-      const songId = getSongId({
-        songId: 'songId'
-      });
-
-      expect(songId).toBe('songId');
-    });
-
-    it('should return undefined if there are no path parameters', () => {
-      expect(getSongId(null)).toBeUndefined();
-    });
-
-    it('should return undefined when there are path parameters but no song ID', () => {
-      const songId = getSongId({
-        param: 'value'
-      });
-
-      expect(songId).toBeUndefined();
-    });
-  });
-
   describe('handler', () => {
     it('should return a bad request if there is not a song ID', async () => {
       const result = await handler({} as unknown as APIGatewayProxyEvent);

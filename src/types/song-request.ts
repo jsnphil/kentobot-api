@@ -35,9 +35,9 @@ export interface SongQueueItem {
   readonly title: string;
   readonly length: number;
   readonly requestedBy: string;
-  readonly isBumped: boolean;
-  readonly isShuffled: boolean;
-  readonly isShuffleEntered: boolean;
+  isBumped: boolean;
+  isShuffled: boolean;
+  isShuffleEntered: boolean;
 }
 
 export interface RequestSongBody {
@@ -92,6 +92,19 @@ export enum SongRequestErrorCode {
   SONG_EXCEEDEDS_MAX_DURATION = 'SONG_EXCEEDEDS_MAX_DURATION'
 }
 
+export enum QueueManagementErrorCode {
+  QUEUE_EMPTY = 'Queue is empty',
+  BUMPS_NOT_AVAILABLE = 'BUMPS_NOT_AVAILABLE',
+  USER_NOT_ELIGIBLE = 'USER_NOT_ELIGIBLE',
+  REQUEST_NOT_FOUND = 'Request not found'
+}
+
 export interface MoveRequestData {
   position: number;
+}
+
+export interface BumpRequestData {
+  user: string;
+  modOverride?: boolean;
+  position?: number;
 }

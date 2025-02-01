@@ -29,22 +29,38 @@ export const handler = async (
 
   const bumpRequestData = getBumpSongRequestData(event.body);
 
+  // TODO Clean this up, this is too many if statements
   if (bumpRequestData.success) {
     const songQueue = await SongQueue.loadQueue();
-    songQueue.bumpSong(songId);
 
-    await songQueue.save();
-
-    await webSocketService.broadcast(
-      JSON.stringify({ songQueue: songQueue.toArray() })
+    const bumpResult = await songQueue.bumpSong(
+      songId,
+      bumpRequestData.data?.position,
+      bumpRequestData.data?.modOverride
     );
 
-    return {
-      statusCode: Code.OK,
-      body: JSON.stringify({
-        message: `Song bumped`
-      })
-    };
+    if (bumpResult.success) {
+      await songQueue.save();
+
+      await webSocketService.broadcast(
+        JSON.stringify({ songQueue: songQueue.toArray() })
+      );
+
+      return {
+        statusCode: Code.OK,
+        body: JSON.stringify({
+          message: `Song bumped`
+        })
+      };
+    } else {
+      return {
+        statusCode: Code.BAD_REQUEST,
+        body: JSON.stringify({
+          code: Code.BAD_REQUEST,
+          message: bumpResult.errors![0].message
+        })
+      };
+    }
   } else {
     return {
       statusCode: Code.BAD_REQUEST,

@@ -24,6 +24,7 @@ const logger = new Logger({ serviceName: 'message-handler' });
 const webSocketService = new WebSocketService();
 const connectionsRepo = new WebSocketConnectionsRepository();
 
+/* istanbul ignore next */
 export const handler = async (event: APIGatewayProxyWebsocketEventV2) => {
   logger.debug(`Received event: ${JSON.stringify(event, null, 2)}`);
 

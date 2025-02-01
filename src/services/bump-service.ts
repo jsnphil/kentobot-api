@@ -1,5 +1,4 @@
 import { Logger } from '@aws-lambda-powertools/logger';
-import { SSMClient } from '@aws-sdk/client-ssm';
 import { SongBumpRepository } from '../repositories/song-bump-repository';
 import { ValidationResult } from '../types/song-request';
 import { SongQueue } from '../song-queue';
@@ -13,7 +12,10 @@ export class BumpService {
   }
 
   async isBumpAllowed(user: string): Promise<ValidationResult<any>> {
+    this.logger.debug('Checking if bump is allowed');
     const bumpData = await this.bumpRepository.getBumpData();
+
+    console.log(JSON.stringify(bumpData, null, 2));
 
     const bumpChecks = [
       {
@@ -62,9 +64,14 @@ export class BumpService {
     return 1; // This can never happen in a real scenario, the queue will never be all bumps
   }
 
-  async updateBumpData(user: string) {
+  async redeemBump(user: string) {
     const now = new Date();
     const bumpTTL = new Date(now.setDate(now.getDate() + 6)).getTime();
-    await this.bumpRepository.updateBumpData(user, bumpTTL);
+    await this.bumpRepository.updateRedeemedBumpData(user, bumpTTL);
+  }
+
+  /* istanbul ignore next */
+  async resetBumpCounts() {
+    await this.bumpRepository.resetBumpCounts('3'); // Future enhancement - get this from parameter store
   }
 }

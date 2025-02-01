@@ -645,6 +645,45 @@ export class ApiStack extends cdk.Stack {
     );
 
     // ***********************
+    // Reset bump resource
+    // ***********************
+
+    const resetBumpsResource =
+      queueManagmentResource.addResource('reset-bumps');
+
+    const resetBumpsLambda = new lambda.NodejsFunction(this, 'ResetBumps', {
+      runtime: NODE_RUNTIME,
+      handler: 'handler',
+      entry: path.join(
+        __dirname,
+        '../../src/lambdas/rest-api/',
+        'queue-management/reset-bumps.ts'
+      ),
+      bundling: {
+        minify: false,
+        externalModules: ['aws-sdk']
+      },
+      logRetention: logs.RetentionDays.ONE_WEEK,
+      environment: {
+        ...lambdaEnvironment,
+        ENVIRONMENT: props.environmentName,
+        STREAM_DATA_TABLE: database.tableName
+      },
+      timeout: cdk.Duration.seconds(15),
+      architecture: ARCHITECTURE
+    });
+
+    database.grantReadWriteData(resetBumpsLambda);
+
+    resetBumpsResource.addMethod(
+      'POST',
+      new apiGateway.LambdaIntegration(resetBumpsLambda),
+      {
+        apiKeyRequired: true
+      }
+    );
+
+    // ***********************
     // TEst code for song queue
     // ***********************
     const queueTestLambda = new lambda.NodejsFunction(this, 'queueTest', {

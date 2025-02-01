@@ -1,0 +1,11 @@
+meta {
+  name: Reset Bump Counts
+  type: http
+  seq: 4
+}
+
+get {
+  url: https://{{aws.api.id}}.execute-api.us-east-1.amazonaws.com/{{stage}}/song-queue/reset-bumps
+  body: none
+  auth: none
+}

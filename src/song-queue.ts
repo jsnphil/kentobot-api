@@ -201,6 +201,9 @@ export class SongQueue {
       songToBump?.requestedBy
     );
 
+    this.logger.debug(`Bump allowed: ${JSON.stringify(bumpAllowed)}`);
+    this.logger.debug(`Override: ${override}`);
+
     if (!bumpAllowed.success && !override) {
       return bumpAllowed;
     }
@@ -214,7 +217,7 @@ export class SongQueue {
     this.moveSong(youtubeId, newPosition);
     songToBump.isBumped = true;
 
-    const result = this.bumpService.updateBumpData(songToBump.requestedBy);
+    const result = this.bumpService.redeemBump(songToBump.requestedBy);
 
     return {
       success: true

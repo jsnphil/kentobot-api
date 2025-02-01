@@ -19,6 +19,7 @@ export const handler = async (
       })
     };
   } catch (error) {
+    /* istanbul ignore next */
     if (error instanceof Error) {
       logger.error('Error getting all songs', { error: error.message });
     }

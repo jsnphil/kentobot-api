@@ -3,15 +3,14 @@ import {
   DynamoDBClient,
   PutItemCommand
 } from '@aws-sdk/client-dynamodb';
-import { WebSocketConnectionsRepository } from '../../repositories/websocket-connections-repository';
+import { WebSocketConnectionsRepository } from '@repositories/websocket-connections-repository';
 import { handleRoute, sendMessage } from './message-handler';
 import {
   ApiGatewayManagementApiClient,
-  PostToConnectionCommand,
-  PostToConnectionCommandInput
+  PostToConnectionCommand
 } from '@aws-sdk/client-apigatewaymanagementapi';
 import { mockClient } from 'aws-sdk-client-mock';
-import { WebSocketService } from '../../services/web-socket-service';
+import { WebSocketService } from '@services/web-socket-service';
 
 const mockDynamoDBClient = mockClient(DynamoDBClient);
 const mockApiGatewayClient = mockClient(ApiGatewayManagementApiClient);

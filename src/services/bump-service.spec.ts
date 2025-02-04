@@ -1,6 +1,6 @@
-import { SongBumpRepository } from '../repositories/song-bump-repository';
-import { SongQueueRepository } from '../repositories/song-queue-repository';
-import { SongQueue } from '../song-queue';
+import { SongBumpRepository } from '@repositories/song-bump-repository';
+import { SongQueueRepository } from '@repositories/song-queue-repository';
+import { SongQueue } from '@song-queue';
 import { BumpService } from './bump-service';
 
 let bumpService: BumpService;

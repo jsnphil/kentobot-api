@@ -1,5 +1,5 @@
 import { APIGatewayEvent, Context } from 'aws-lambda';
-import { SongRepository } from '../../../repositories/song-repository';
+import { SongRepository } from '@repositories/song-repository';
 import { Logger } from '@aws-lambda-powertools/logger';
 import { handler } from './get-all-song-requests';
 

@@ -1,14 +1,9 @@
-import {
-  ApiGatewayManagementApiClient,
-  PostToConnectionCommand,
-  PostToConnectionCommandInput
-} from '@aws-sdk/client-apigatewaymanagementapi';
 import { APIGatewayProxyWebsocketEventV2 } from 'aws-lambda';
 import { Logger } from '@aws-lambda-powertools/logger';
-import { WebSocketMessageSchema } from '../../schemas/schema';
-import { WebSocketConnectionsRepository } from '../../repositories/websocket-connections-repository';
-import { WebSocketService } from '../../services/web-socket-service';
-import { SongQueue } from '../../song-queue';
+import { WebSocketMessageSchema } from '@schemas/schema';
+import { WebSocketConnectionsRepository } from '@repositories/websocket-connections-repository';
+import { WebSocketService } from '@services/web-socket-service';
+import { SongQueue } from '@song-queue';
 
 interface MessageBody {
   readonly action: string;

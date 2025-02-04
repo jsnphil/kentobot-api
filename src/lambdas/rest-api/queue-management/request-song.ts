@@ -1,18 +1,18 @@
 import { APIGatewayEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { Logger } from '@aws-lambda-powertools/logger';
 import { parse, toSeconds } from 'iso8601-duration';
-import { SongRepository } from '../../../repositories/song-repository';
-import { RequestSongSchema } from '../../../schemas/schema';
+import { SongRepository } from '@repositories/song-repository';
+import { RequestSongSchema } from '@schemas/schema';
 import {
   RequestSongBody,
   SongInfo,
   YouTubeErrorCode
 } from '../../../types/song-request';
-import { SongQueue } from '../../../song-queue';
+import { SongQueue } from '@song-queue';
 import { Code } from 'better-status-codes';
 import { ValidationResult } from '../../../types/types';
-import { YouTubeService } from '../../../services/youtube-service';
-import { WebSocketService } from '../../../services/web-socket-service';
+import { YouTubeService } from '@services/youtube-service';
+import { WebSocketService } from '@services/web-socket-service';
 
 const logger = new Logger({ serviceName: 'requestSongLambda' });
 const songRepository = new SongRepository();

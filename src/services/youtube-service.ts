@@ -3,7 +3,7 @@ import { GetParameterCommand, SSMClient } from '@aws-sdk/client-ssm';
 import { VideoListItem, VideoListResponse } from '../types/youtube';
 import { Metrics, MetricUnit } from '@aws-lambda-powertools/metrics';
 import { ValidationResult, YouTubeErrorCode } from '../types/song-request';
-import { checkYouTubeRules } from '../utils/song-request-rules';
+import { checkYouTubeRules } from '@utils/song-request-rules';
 
 export class YouTubeService {
   private static readonly ssmClient = new SSMClient({ region: 'us-east-1' });

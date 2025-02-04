@@ -1,18 +1,15 @@
 import { GetParameterCommand, SSMClient } from '@aws-sdk/client-ssm';
-import { SongQueueRepository } from './repositories/song-queue-repository';
+import { SongQueueRepository } from '@repositories/song-queue-repository';
 import {
-  AddSongToQueueResult,
   QueueManagementErrorCode,
-  SongInfo,
   SongQueueItem,
   SongRequest,
   SongRequestErrorCode,
-  SongRequestResult,
   ValidationResult
 } from './types/song-request';
-import { generateStreamDate, secondsToMinutes } from './utils/utilities';
+import { generateStreamDate, secondsToMinutes } from '@utils/utilities';
 import { Logger } from '@aws-lambda-powertools/logger';
-import { BumpService } from './services/bump-service';
+import { BumpService } from '@services/bump-service';
 
 export class SongQueue {
   private songs: SongQueueItem[] = [];

@@ -1,12 +1,12 @@
 import { Logger } from '@aws-lambda-powertools/logger';
 import { APIGatewayEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { Code } from 'better-status-codes';
-import { WebSocketService } from '../../../services/web-socket-service';
-import { SongQueue } from '../../../song-queue';
+import { WebSocketService } from '@services/web-socket-service';
+import { SongQueue } from '@song-queue';
 
 import { BumpRequestData, ValidationResult } from '../../../types/song-request';
-import { getSongId } from '../../../utils/utilities';
-import { BumpSongRequestSchema } from '../../../schemas/schema';
+import { getSongId } from '@utils/utilities';
+import { BumpSongRequestSchema } from '@schemas/schema';
 
 const logger = new Logger({ serviceName: 'bump-request' });
 const webSocketService = new WebSocketService();

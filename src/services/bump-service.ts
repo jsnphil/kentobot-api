@@ -1,7 +1,7 @@
 import { Logger } from '@aws-lambda-powertools/logger';
-import { SongBumpRepository } from '../repositories/song-bump-repository';
+import { SongBumpRepository } from '@repositories/song-bump-repository';
 import { ValidationResult } from '../types/song-request';
-import { SongQueue } from '../song-queue';
+import { SongQueue } from '@song-queue';
 
 export class BumpService {
   private readonly logger = new Logger({ serviceName: 'song-bump-service' });

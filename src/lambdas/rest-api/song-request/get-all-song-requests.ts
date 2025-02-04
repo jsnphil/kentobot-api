@@ -1,5 +1,5 @@
 import { APIGatewayEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { SongRepository } from '../../../repositories/song-repository';
+import { SongRepository } from '@repositories/song-repository';
 import { Logger } from '@aws-lambda-powertools/logger';
 
 const logger = new Logger({ serviceName: 'get-all-songs' });

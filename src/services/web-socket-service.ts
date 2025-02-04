@@ -3,7 +3,7 @@ import {
   ApiGatewayManagementApiClient,
   PostToConnectionCommand
 } from '@aws-sdk/client-apigatewaymanagementapi';
-import { WebSocketConnectionsRepository } from '../repositories/websocket-connections-repository';
+import { WebSocketConnectionsRepository } from '@repositories/websocket-connections-repository';
 
 const logger = new Logger({ serviceName: 'web-socket-service' });
 

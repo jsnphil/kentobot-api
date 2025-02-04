@@ -1,8 +1,4 @@
-import {
-  DynamoDBClient,
-  GetItemCommand,
-  QueryCommand
-} from '@aws-sdk/client-dynamodb';
+import { DynamoDBClient, QueryCommand } from '@aws-sdk/client-dynamodb';
 import { SongBumpRepository } from './song-bump-repository';
 import { mockClient } from 'aws-sdk-client-mock';
 

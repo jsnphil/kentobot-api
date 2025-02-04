@@ -1,9 +1,5 @@
-import { APIGatewayEvent, APIGatewayProxyEvent } from 'aws-lambda';
+import { APIGatewayProxyEvent } from 'aws-lambda';
 import { handler, getBumpSongRequestData } from './bump-request';
-import { SongQueue } from '../../../song-queue';
-import { WebSocketService } from '../../../services/web-socket-service';
-import { Code } from 'better-status-codes';
-import { BumpRequestData } from '../../../types/song-request';
 
 jest.mock('../../../song-queue');
 jest.mock('../../../services/web-socket-service');

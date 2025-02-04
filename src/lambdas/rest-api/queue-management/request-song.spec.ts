@@ -6,19 +6,19 @@ import {
   handler
 } from './request-song';
 import { VideoListItem } from '../../../types/youtube';
-import { SongRepository } from '../../../repositories/song-repository';
+import { SongRepository } from '@repositories/song-repository';
 import { YouTubeErrorCode } from '../../../types/song-request';
 import { GetParameterCommand, SSMClient } from '@aws-sdk/client-ssm';
 import { mockClient } from 'aws-sdk-client-mock';
 import { DynamoDBClient, GetItemCommand } from '@aws-sdk/client-dynamodb';
-import { SongQueueRepository } from '../../../repositories/song-queue-repository';
-import { YouTubeService } from '../../../services/youtube-service';
+import { SongQueueRepository } from '@repositories/song-queue-repository';
+import { YouTubeService } from '@services/youtube-service';
 
-jest.mock('../../../repositories/song-repository');
+jest.mock('@repositories/song-repository');
 const ssmMock = mockClient(SSMClient);
 const mockDynamoDBClient = mockClient(DynamoDBClient);
 
-jest.mock('../../../services/web-socket-service', () => {
+jest.mock('@services/web-socket-service', () => {
   return {
     WebSocketService: jest.fn().mockImplementation(() => {
       return {

@@ -1,5 +1,5 @@
 import { APIGatewayEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { BumpService } from '../../../services/bump-service';
+import { BumpService } from '@services/bump-service';
 
 let bumpService: BumpService;
 

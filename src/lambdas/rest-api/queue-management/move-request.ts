@@ -1,16 +1,11 @@
 import { Logger } from '@aws-lambda-powertools/logger';
-import {
-  APIGatewayEvent,
-  APIGatewayProxyEventPathParameters,
-  APIGatewayProxyResult
-} from 'aws-lambda';
+import { APIGatewayEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { Code } from 'better-status-codes';
-import { MoveSongRequestSchema } from '../../../schemas/schema';
+import { MoveSongRequestSchema } from '@schemas/schema';
 import { MoveRequestData, ValidationResult } from '../../../types/song-request';
-import { SongQueue } from '../../../song-queue';
-import { WebSocketService } from '../../../services/web-socket-service';
-import { request } from 'http';
-import { getSongId } from '../../../utils/utilities';
+import { SongQueue } from '@song-queue';
+import { WebSocketService } from '@services/web-socket-service';
+import { getSongId } from '@utils/utilities';
 
 const logger = new Logger({ serviceName: 'requestSongLambda' });
 const webSocketService = new WebSocketService();

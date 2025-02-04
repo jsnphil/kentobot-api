@@ -4,7 +4,7 @@ import { GetParameterCommand, SSMClient } from '@aws-sdk/client-ssm';
 import { YouTubeService } from './youtube-service';
 import { VideoListItem, VideoListResponse } from '../types/youtube';
 import { YouTubeErrorCode } from '../types/song-request';
-import { checkYouTubeRules } from '../utils/song-request-rules';
+import { checkYouTubeRules } from '@utils/song-request-rules';
 import fetch from 'jest-mock-fetch';
 
 jest.mock('../utils/song-request-rules');

@@ -14,11 +14,11 @@ import { DynamoDBClient, GetItemCommand } from '@aws-sdk/client-dynamodb';
 import { SongQueueRepository } from '@repositories/song-queue-repository';
 import { YouTubeService } from '@services/youtube-service';
 
-jest.mock('@repositories/song-repository');
+jest.mock('../../../repositories/song-repository');
 const ssmMock = mockClient(SSMClient);
 const mockDynamoDBClient = mockClient(DynamoDBClient);
 
-jest.mock('@services/web-socket-service', () => {
+jest.mock('../../../services/web-socket-service', () => {
   return {
     WebSocketService: jest.fn().mockImplementation(() => {
       return {

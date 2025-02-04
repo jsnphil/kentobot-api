@@ -645,6 +645,61 @@ export class ApiStack extends cdk.Stack {
     );
 
     // ***********************
+    // Delete request resource
+    // ***********************
+
+    const removeSongResource = queueManagmentResource.addResource('{songId}');
+
+    const removeRequestLambda = new lambda.NodejsFunction(
+      this,
+      'RemoveRequest',
+      {
+        runtime: NODE_RUNTIME,
+        handler: 'handler',
+        entry: path.join(
+          __dirname,
+          '../../src/lambdas/rest-api/',
+          'queue-management/remove-request.ts'
+        ),
+        bundling: {
+          minify: false,
+          externalModules: ['aws-sdk']
+        },
+        logRetention: logs.RetentionDays.ONE_WEEK,
+        environment: {
+          ...lambdaEnvironment,
+          ENVIRONMENT: props.environmentName,
+          STREAM_DATA_TABLE: database.tableName,
+          WEBSOCKET_API_ID: webSocketApi.apiId,
+          WEB_SOCKET_STAGE: webSocketApiStage
+        },
+        timeout: cdk.Duration.minutes(1),
+        memorySize: 512,
+        architecture: ARCHITECTURE
+      }
+    );
+
+    database.grantReadWriteData(removeRequestLambda);
+
+    removeSongResource.addMethod(
+      'DELETE',
+      new apiGateway.LambdaIntegration(removeRequestLambda),
+      {
+        apiKeyRequired: true
+      }
+    );
+
+    removeRequestLambda.addToRolePolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        actions: ['execute-api:ManageConnections'],
+        resources: [
+          `arn:aws:execute-api:${props.env?.region}:${props.env?.account}:${webSocketApi.apiId}/*/*/@connections/*`
+        ]
+      })
+    );
+
+    // ***********************
     // Reset bump resource
     // ***********************
 

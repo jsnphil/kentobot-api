@@ -7,8 +7,7 @@ import { WebSocketConnectionsRepository } from '../../repositories/websocket-con
 import { handleRoute, sendMessage } from './message-handler';
 import {
   ApiGatewayManagementApiClient,
-  PostToConnectionCommand,
-  PostToConnectionCommandInput
+  PostToConnectionCommand
 } from '@aws-sdk/client-apigatewaymanagementapi';
 import { mockClient } from 'aws-sdk-client-mock';
 import { WebSocketService } from '../../services/web-socket-service';

@@ -1,14 +1,9 @@
-import {
-  ApiGatewayManagementApiClient,
-  PostToConnectionCommand,
-  PostToConnectionCommandInput
-} from '@aws-sdk/client-apigatewaymanagementapi';
 import { APIGatewayProxyWebsocketEventV2 } from 'aws-lambda';
 import { Logger } from '@aws-lambda-powertools/logger';
 import { WebSocketMessageSchema } from '../../schemas/schema';
-import { WebSocketConnectionsRepository } from '../../repositories/websocket-connections-repository';
 import { WebSocketService } from '../../services/web-socket-service';
 import { SongQueue } from '../../song-queue';
+import { SongRequestService } from '../../services/song-request-service';
 
 interface MessageBody {
   readonly action: string;
@@ -16,13 +11,13 @@ interface MessageBody {
 }
 
 const logger = new Logger({ serviceName: 'message-handler' });
+const songQueueService = new SongRequestService();
 
 // const client = new ApiGatewayManagementApiClient({
 //   endpoint: `https://${process.env.WEBSOCKET_API_ID}.execute-api.us-east-1.amazonaws.com/${process.env.WEB_SOCKET_STAGE}`
 // });
 
 const webSocketService = new WebSocketService();
-const connectionsRepo = new WebSocketConnectionsRepository();
 
 /* istanbul ignore next */
 export const handler = async (event: APIGatewayProxyWebsocketEventV2) => {
@@ -45,11 +40,11 @@ export const handleRoute = async (
   body?: string
 ) => {
   if (routeKey === '$connect') {
-    await connectionsRepo.saveConnection(connectionId);
+    await webSocketService.saveConnection(connectionId);
   }
 
   if (routeKey === '$disconnect') {
-    await connectionsRepo.deleteConnection(connectionId);
+    await webSocketService.deleteConnection(connectionId);
   }
 
   if (routeKey === 'sendmessage') {
@@ -73,5 +68,8 @@ export const sendMessage = async (connectionId: string, message: string) => {
     await webSocketService.broadcast(
       JSON.stringify({ songQueue: songQueue.toArray() })
     );
+  } else if (message === 'songqueue:next') {
+    // TODO Will need something here to make sure only the songplayer can call this
+    await songQueueService.sendNextSong(connectionId);
   }
 };

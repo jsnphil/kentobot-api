@@ -14,6 +14,14 @@ const client = new ApiGatewayManagementApiClient({
 const connectionsRepo = new WebSocketConnectionsRepository();
 
 export class WebSocketService {
+  async saveConnection(connectionId: string) {
+    await connectionsRepo.saveConnection(connectionId);
+  }
+
+  async deleteConnection(connectionId: string) {
+    await connectionsRepo.deleteConnection(connectionId);
+  }
+
   async sendToConnection(connectionId: string, message: string) {
     const params = {
       ConnectionId: connectionId,

@@ -1617,4 +1617,88 @@ describe('SongQueue', () => {
       expect(updateBumpData).toHaveBeenCalled();
     });
   });
+
+  describe('getNextSong', () => {
+    beforeEach(() => {
+      jest.resetAllMocks();
+      // Arrange
+      mockDynamoDBClient.on(GetItemCommand).resolves({
+        Item: undefined
+      });
+
+      mockSSMClient
+        .on(GetParameterCommand, {
+          Name: 'REQUEST_DURATION_NAME'
+        })
+        .resolves({
+          Parameter: { Value: '360' }
+        });
+
+      mockSSMClient
+        .on(GetParameterCommand, {
+          Name: 'MAX_SONGS_PER_USER'
+        })
+        .resolves({ Parameter: { Value: '1' } });
+    });
+
+    afterEach(() => {
+      jest.restoreAllMocks();
+    });
+
+    it('Should return the next song in the queue', async () => {
+      const songQueue = await SongQueue.loadQueue();
+
+      const songRequest1: SongRequest = {
+        youtubeId: 'youtubeId1',
+        title: 'Song title',
+        length: 100,
+        requestedBy: 'user1'
+      };
+
+      const songRequest2: SongRequest = {
+        youtubeId: 'youtubeId2',
+        title: 'Song title',
+        length: 100,
+        requestedBy: 'user2'
+      };
+
+      const songRequest3: SongRequest = {
+        youtubeId: 'youtubeId3',
+        title: 'Song title',
+        length: 100,
+        requestedBy: 'user3'
+      };
+
+      const songRequest4: SongRequest = {
+        youtubeId: 'youtubeId4',
+        title: 'Song title',
+        length: 100,
+        requestedBy: 'user4'
+      };
+
+      const songRequest5: SongRequest = {
+        youtubeId: 'youtubeId5',
+        title: 'Song title',
+        length: 100,
+        requestedBy: 'user5'
+      };
+
+      await songQueue.addSong(songRequest1);
+      await songQueue.addSong(songRequest2);
+      await songQueue.addSong(songRequest3);
+      await songQueue.addSong(songRequest4);
+      await songQueue.addSong(songRequest5);
+
+      const nextSong = songQueue.getNextSong();
+      expect(nextSong?.youtubeId).toEqual('youtubeId1');
+      expect(songQueue.getLength()).toBe(4);
+    });
+
+    it('Should return undefined if the queue is empty', async () => {
+      const songQueue = await SongQueue.loadQueue();
+
+      const nextSong = songQueue.getNextSong();
+      expect(nextSong).toBeUndefined();
+    });
+  });
 });

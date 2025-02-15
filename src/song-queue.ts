@@ -263,4 +263,8 @@ export class SongQueue {
     );
     return Number(response.Parameter?.Value);
   }
+
+  getNextSong(): SongQueueItem | undefined {
+    return this.songs.shift();
+  }
 }

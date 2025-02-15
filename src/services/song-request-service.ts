@@ -39,31 +39,23 @@ export class SongRequestService {
       songQueue.save();
 
       // Send the next song to the song player connection
-      await webSocketService.sendToConnection(
-        connectionId,
+      await webSocketService.broadcast(
         JSON.stringify({
-          songRequest: {
+          songData: {
+            currentSong: {
+              youtubeId: nextSong.youtubeId,
+              title: nextSong.title,
+              requestedBy: nextSong.requestedBy,
+              length: nextSong.length
+            },
+            songQueue: songQueue.toArray()
+          },
+          requests: {
             youtubeId: nextSong.youtubeId,
             title: nextSong.title,
             requestedBy: nextSong.requestedBy
           }
         })
-      );
-
-      // Send the new current song to all connections
-      await webSocketService.broadcast(
-        JSON.stringify({
-          currentSong: {
-            youtubeId: nextSong.youtubeId,
-            title: nextSong.title,
-            requestedBy: nextSong.requestedBy
-          }
-        })
-      );
-
-      // Send the updated queue to all connections
-      await webSocketService.broadcast(
-        JSON.stringify({ songQueue: songQueue.toArray() })
       );
     }
   };

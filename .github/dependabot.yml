@@ -13,3 +13,6 @@ updates:
       aws-sdk:
         patterns:
           - "@aws-sdk/*"
+      aws-lambda-powertools:
+        patterns:
+          - "@aws-lambda-powertools/"

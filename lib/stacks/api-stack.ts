@@ -706,6 +706,7 @@ export class ApiStack extends cdk.Stack {
     const resetBumpsResource =
       queueManagmentResource.addResource('reset-bumps');
 
+    // TODO Combine with the other lambda
     const resetBumpsLambda = new lambda.NodejsFunction(this, 'ResetBumps', {
       runtime: NODE_RUNTIME,
       handler: 'handler',
@@ -733,6 +734,48 @@ export class ApiStack extends cdk.Stack {
     resetBumpsResource.addMethod(
       'POST',
       new apiGateway.LambdaIntegration(resetBumpsLambda),
+      {
+        apiKeyRequired: true
+      }
+    );
+
+    // ***********************
+    // Toggle song requests resource
+    // ***********************
+    const toggleSongRequestsResource =
+      queueManagmentResource.addResource('toggle-requests');
+
+    const songRequestControlsLambda = new lambda.NodejsFunction(
+      this,
+      'SongRequestControls',
+      {
+        runtime: NODE_RUNTIME,
+        handler: 'handler',
+        entry: path.join(
+          __dirname,
+          '../../src/lambdas/rest-api/',
+          'queue-management/song-request-controls.ts'
+        ),
+        bundling: {
+          minify: false,
+          externalModules: ['aws-sdk']
+        },
+        logRetention: logs.RetentionDays.ONE_WEEK,
+        environment: {
+          ...lambdaEnvironment,
+          ENVIRONMENT: props.environmentName,
+          STREAM_DATA_TABLE: database.tableName
+        },
+        timeout: cdk.Duration.seconds(15),
+        architecture: ARCHITECTURE
+      }
+    );
+
+    database.grantReadWriteData(songRequestControlsLambda);
+
+    toggleSongRequestsResource.addMethod(
+      'POST',
+      new apiGateway.LambdaIntegration(songRequestControlsLambda),
       {
         apiKeyRequired: true
       }

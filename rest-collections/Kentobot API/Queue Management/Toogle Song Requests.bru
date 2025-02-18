@@ -1,0 +1,17 @@
+meta {
+  name: Toogle Song Requests
+  type: http
+  seq: 6
+}
+
+post {
+  url: https://{{aws.api.id}}.execute-api.us-east-1.amazonaws.com/{{stage}}/song-queue/toggle-requests
+  body: none
+  auth: apikey
+}
+
+auth:apikey {
+  key: X-API-Key
+  value: {{kentobot.api.key}}
+  placement: header
+}

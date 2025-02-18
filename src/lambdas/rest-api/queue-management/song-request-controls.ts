@@ -6,6 +6,10 @@ let songRequestService: SongRequestService;
 export const handler = async (
   event: APIGatewayEvent
 ): Promise<APIGatewayProxyResult> => {
+
+    // TODO Add query string parameters for status: requests
+
+
   if (!songRequestService) {
     songRequestService = new SongRequestService();
   }

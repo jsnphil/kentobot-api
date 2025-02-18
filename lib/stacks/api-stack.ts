@@ -742,8 +742,11 @@ export class ApiStack extends cdk.Stack {
     // ***********************
     // Toggle song requests resource
     // ***********************
-    const toggleSongRequestsResource =
-      queueManagmentResource.addResource('toggle-requests');
+    const openSongRequestsResource =
+      queueManagmentResource.addResource('open-requests');
+
+    const closeSongRequestsResource =
+      queueManagmentResource.addResource('close-requests');
 
     const songRequestControlsLambda = new lambda.NodejsFunction(
       this,
@@ -773,7 +776,15 @@ export class ApiStack extends cdk.Stack {
 
     database.grantReadWriteData(songRequestControlsLambda);
 
-    toggleSongRequestsResource.addMethod(
+    openSongRequestsResource.addMethod(
+      'POST',
+      new apiGateway.LambdaIntegration(songRequestControlsLambda),
+      {
+        apiKeyRequired: true
+      }
+    );
+
+    closeSongRequestsResource.addMethod(
       'POST',
       new apiGateway.LambdaIntegration(songRequestControlsLambda),
       {

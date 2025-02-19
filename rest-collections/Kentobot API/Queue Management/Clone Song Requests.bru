@@ -1,11 +1,11 @@
 meta {
-  name: Toogle Song Requests
+  name: Clone Song Requests
   type: http
-  seq: 6
+  seq: 7
 }
 
 post {
-  url: https://{{aws.api.id}}.execute-api.us-east-1.amazonaws.com/{{stage}}/song-queue/toggle-requests
+  url: https://{{aws.api.id}}.execute-api.us-east-1.amazonaws.com/{{stage}}/song-queue/close-requests
   body: none
   auth: apikey
 }

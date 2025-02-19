@@ -767,7 +767,9 @@ export class ApiStack extends cdk.Stack {
         environment: {
           ...lambdaEnvironment,
           ENVIRONMENT: props.environmentName,
-          STREAM_DATA_TABLE: database.tableName
+          STREAM_DATA_TABLE: database.tableName,
+          WEBSOCKET_API_ID: webSocketApi.apiId,
+          WEB_SOCKET_STAGE: webSocketApiStage
         },
         timeout: cdk.Duration.seconds(15),
         architecture: ARCHITECTURE
@@ -790,6 +792,16 @@ export class ApiStack extends cdk.Stack {
       {
         apiKeyRequired: true
       }
+    );
+
+    songRequestControlsLambda.addToRolePolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        actions: ['execute-api:ManageConnections'],
+        resources: [
+          `arn:aws:execute-api:${props.env?.region}:${props.env?.account}:${webSocketApi.apiId}/*/*/@connections/*`
+        ]
+      })
     );
 
     // ***********************

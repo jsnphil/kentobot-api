@@ -6,16 +6,18 @@ let songRequestService: SongRequestService;
 export const handler = async (
   event: APIGatewayEvent
 ): Promise<APIGatewayProxyResult> => {
+  // TODO Add query string parameters for status: requests
 
-    // TODO Add query string parameters for status: requests
+  const path = event.path;
 
+  const queueStatus = path.endsWith('open-requests') ? 'open' : 'closed';
 
   if (!songRequestService) {
     songRequestService = new SongRequestService();
   }
 
   try {
-    await songRequestService.toggleSongRequests();
+    await songRequestService.toggleSongRequests(queueStatus);
 
     return {
       statusCode: Code.NO_CONTENT,

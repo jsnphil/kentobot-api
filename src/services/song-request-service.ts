@@ -1,7 +1,9 @@
+import { StreamControlsRepository } from '../repositories/stream-controls-repository';
 import { SongQueue } from '../song-queue';
 import { WebSocketService } from './web-socket-service';
 
 const webSocketService = new WebSocketService();
+const streamControlsRepository = new StreamControlsRepository();
 
 export class SongRequestService {
   constructor() {}
@@ -58,5 +60,18 @@ export class SongRequestService {
         })
       );
     }
+  };
+
+  toggleSongRequests = async (queueStatus: 'open' | 'closed') => {
+    await streamControlsRepository.toggleSongRequests(queueStatus);
+    await webSocketService.broadcast(
+      JSON.stringify({
+        queueStatus: queueStatus
+      })
+    );
+  };
+
+  getQueueStatus = async () => {
+    return await streamControlsRepository.getQueueStatus();
   };
 }

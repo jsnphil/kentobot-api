@@ -13,6 +13,7 @@ import {
 import { generateStreamDate, secondsToMinutes } from './utils/utilities';
 import { Logger } from '@aws-lambda-powertools/logger';
 import { BumpService } from './services/bump-service';
+import { SongRequestService } from './services/song-request-service';
 
 export class SongQueue {
   private songs: SongQueueItem[] = [];
@@ -20,6 +21,7 @@ export class SongQueue {
   private streamDate: string;
   private logger = new Logger({ serviceName: 'song-queue' });
   private bumpService = new BumpService();
+  private songRequestService = new SongRequestService();
 
   private ssmClient;
 
@@ -48,6 +50,19 @@ export class SongQueue {
   async addSong(song: SongRequest): Promise<ValidationResult<SongQueueItem>> {
     const maxDuration = await this.getMaxDuration();
     const maxSongsPerUser = await this.getMaxNumberOfRequests();
+    const queueStatus = await this.songRequestService.getQueueStatus();
+
+    if (queueStatus === 'closed') {
+      return {
+        success: false,
+        errors: [
+          {
+            code: SongRequestErrorCode.QUEUE_CLOSED,
+            message: SongRequestErrorCode.QUEUE_CLOSED.toString()
+          }
+        ]
+      };
+    }
 
     const queueRules = [
       {

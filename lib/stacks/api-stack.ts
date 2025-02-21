@@ -706,6 +706,7 @@ export class ApiStack extends cdk.Stack {
     const resetBumpsResource =
       queueManagmentResource.addResource('reset-bumps');
 
+    // TODO Combine with the other lambda
     const resetBumpsLambda = new lambda.NodejsFunction(this, 'ResetBumps', {
       runtime: NODE_RUNTIME,
       handler: 'handler',
@@ -736,6 +737,71 @@ export class ApiStack extends cdk.Stack {
       {
         apiKeyRequired: true
       }
+    );
+
+    // ***********************
+    // Toggle song requests resource
+    // ***********************
+    const openSongRequestsResource =
+      queueManagmentResource.addResource('open-requests');
+
+    const closeSongRequestsResource =
+      queueManagmentResource.addResource('close-requests');
+
+    const songRequestControlsLambda = new lambda.NodejsFunction(
+      this,
+      'SongRequestControls',
+      {
+        runtime: NODE_RUNTIME,
+        handler: 'handler',
+        entry: path.join(
+          __dirname,
+          '../../src/lambdas/rest-api/',
+          'queue-management/song-request-controls.ts'
+        ),
+        bundling: {
+          minify: false,
+          externalModules: ['aws-sdk']
+        },
+        logRetention: logs.RetentionDays.ONE_WEEK,
+        environment: {
+          ...lambdaEnvironment,
+          ENVIRONMENT: props.environmentName,
+          STREAM_DATA_TABLE: database.tableName,
+          WEBSOCKET_API_ID: webSocketApi.apiId,
+          WEB_SOCKET_STAGE: webSocketApiStage
+        },
+        timeout: cdk.Duration.seconds(15),
+        architecture: ARCHITECTURE
+      }
+    );
+
+    database.grantReadWriteData(songRequestControlsLambda);
+
+    openSongRequestsResource.addMethod(
+      'POST',
+      new apiGateway.LambdaIntegration(songRequestControlsLambda),
+      {
+        apiKeyRequired: true
+      }
+    );
+
+    closeSongRequestsResource.addMethod(
+      'POST',
+      new apiGateway.LambdaIntegration(songRequestControlsLambda),
+      {
+        apiKeyRequired: true
+      }
+    );
+
+    songRequestControlsLambda.addToRolePolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        actions: ['execute-api:ManageConnections'],
+        resources: [
+          `arn:aws:execute-api:${props.env?.region}:${props.env?.account}:${webSocketApi.apiId}/*/*/@connections/*`
+        ]
+      })
     );
 
     // ***********************

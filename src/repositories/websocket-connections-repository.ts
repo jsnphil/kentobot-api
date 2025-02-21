@@ -43,7 +43,7 @@ export class WebSocketConnectionsRepository {
       logger.info(`Deleting connection: ${connectionId}`);
 
       const deleteCommand = new DeleteItemCommand({
-        TableName: process.env.CONNECTIONS_TABLE,
+        TableName: process.env.STREAM_DATA_TABLE,
         Key: {
           pk: { S: 'wsConnection' },
           sk: { S: `connectionId#${connectionId}` }

@@ -71,5 +71,9 @@ export const sendMessage = async (connectionId: string, message: string) => {
   } else if (message === 'songqueue:next') {
     // TODO Will need something here to make sure only the songplayer can call this
     await songQueueService.sendNextSong(connectionId);
+  } else if (message === 'songqueue:open') {
+    await songQueueService.toggleSongRequests('open');
+  } else if (message === 'songqueue:close') {
+    await songQueueService.toggleSongRequests('closed');
   }
 };

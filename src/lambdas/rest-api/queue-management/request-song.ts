@@ -6,6 +6,7 @@ import { RequestSongSchema } from '../../../schemas/schema';
 import {
   RequestSongBody,
   SongInfo,
+  SongRequestErrorCode,
   YouTubeErrorCode
 } from '../../../types/song-request';
 import { SongQueue } from '../../../song-queue';
@@ -67,6 +68,8 @@ export const createErrorResponse = (result: ValidationResult<any>) => {
 
   if (error.code === YouTubeErrorCode.VIDEO_NOT_FOUND) {
     errorCode = Code.NOT_FOUND;
+  } else if (error.code === SongRequestErrorCode.QUEUE_CLOSED) {
+    errorCode = Code.FORBIDDEN;
   } else {
     errorCode = Code.BAD_REQUEST;
   }

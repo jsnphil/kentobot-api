@@ -13,7 +13,7 @@ import {
 import { generateStreamDate, secondsToMinutes } from './utils/utilities';
 import { Logger } from '@aws-lambda-powertools/logger';
 import { BumpService } from './services/bump-service';
-import { SongRequestService } from '@services/song-request-service';
+import { SongRequestService } from './services/song-request-service';
 
 export class SongQueue {
   private songs: SongQueueItem[] = [];

@@ -98,10 +98,7 @@ export class WSSBroadcastRestEndpoint extends Construct {
       new iam.PolicyStatement({
         effect: iam.Effect.ALLOW,
         actions: ['dynamodb:Query', 'dynamodb:Scan', 'dynamodb:GetItem'],
-        resources: [
-          // `arn:aws:dynamodb:${props.env.region}:${props.env.account}:table/${databaseName}`
-          ddbArn
-        ]
+        resources: [ddbArn]
       })
     );
 
@@ -110,10 +107,7 @@ export class WSSBroadcastRestEndpoint extends Construct {
         new iam.PolicyStatement({
           effect: iam.Effect.ALLOW,
           actions: ['dynamodb:PutItem'],
-          resources: [
-            // `arn:aws:dynamodb:${props.env.region}:${props.env.account}:table/${databaseName}`
-            ddbArn
-          ]
+          resources: [ddbArn]
         })
       );
     }
@@ -129,7 +123,7 @@ export class WSSBroadcastRestEndpoint extends Construct {
         actions: ['execute-api:ManageConnections'],
         resources: [
           //   `arn:aws:execute-api:${props.env?.region}:${props.env?.account}:${webSocketApiId}/*/*/@connections/*`
-          webSocketApiArn
+          `${webSocketApiArn}/*/*/@connections/*`
         ]
       })
     );

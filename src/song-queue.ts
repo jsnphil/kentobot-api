@@ -289,6 +289,9 @@ export class SongQueue {
 
     this.songs.map((song) => {
       if (song.requestedBy === user) {
+        if (song.isShuffleEntered) {
+          throw new Error('User has already entered the shuffle');
+        }
         song.isShuffleEntered = true;
         songFound = true;
       }

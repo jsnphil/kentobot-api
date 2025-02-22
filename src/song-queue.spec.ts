@@ -11,6 +11,7 @@ import { SongQueueRepository } from './repositories/song-queue-repository';
 import { BumpService } from './services/bump-service';
 import { mockSongQueue } from './mocks/mock-song-queue';
 import { SongRequestService } from './services/song-request-service';
+import { mock } from 'node:test';
 
 const mockDynamoDBClient = mockClient(DynamoDBClient);
 const mockSSMClient = mockClient(SSMClient);
@@ -1516,96 +1517,45 @@ describe('SongQueue', () => {
     it('should mark the song as entered in the shuffle', async () => {
       const songQueue = await SongQueue.loadQueue();
 
-      const songRequest1: SongRequest = {
-        youtubeId: 'youtubeId1',
-        title: 'Song title',
-        length: 100,
-        requestedBy: 'user1'
-      };
+      await songQueue.addSong(mockSongQueue[0]);
+      await songQueue.addSong(mockSongQueue[1]);
+      await songQueue.addSong(mockSongQueue[2]);
+      await songQueue.addSong(mockSongQueue[3]);
+      await songQueue.addSong(mockSongQueue[4]);
 
-      const songRequest2: SongRequest = {
-        youtubeId: 'youtubeId2',
-        title: 'Song title',
-        length: 100,
-        requestedBy: 'user2'
-      };
+      songQueue.enterShuffle(mockSongQueue[2].requestedBy);
 
-      const songRequest3: SongRequest = {
-        youtubeId: 'youtubeId3',
-        title: 'Song title',
-        length: 100,
-        requestedBy: 'user3'
-      };
-
-      const songRequest4: SongRequest = {
-        youtubeId: 'youtubeId4',
-        title: 'Song title',
-        length: 100,
-        requestedBy: 'user4'
-      };
-
-      const songRequest5: SongRequest = {
-        youtubeId: 'youtubeId5',
-        title: 'Song title',
-        length: 100,
-        requestedBy: 'user5'
-      };
-
-      await songQueue.addSong(songRequest1);
-      await songQueue.addSong(songRequest2);
-      await songQueue.addSong(songRequest3);
-      await songQueue.addSong(songRequest4);
-      await songQueue.addSong(songRequest5);
-
-      await songQueue.enterShuffle('user3');
-
-      const song = songQueue.findSongById('youtubeId3');
+      const song = songQueue.findSongById(mockSongQueue[2].youtubeId);
       expect(song?.isShuffleEntered).toBe(true);
+    });
+
+    it('should throw an error if the user has already entered the shuffle', async () => {
+      const songQueue = await SongQueue.loadQueue();
+
+      await songQueue.addSong(mockSongQueue[0]);
+      await songQueue.addSong(mockSongQueue[1]);
+      await songQueue.addSong(mockSongQueue[2]);
+      await songQueue.addSong(mockSongQueue[3]);
+      await songQueue.addSong(mockSongQueue[4]);
+
+      songQueue.enterShuffle(mockSongQueue[2].requestedBy);
+
+      const song = songQueue.findSongById(mockSongQueue[2].youtubeId);
+      expect(song?.isShuffleEntered).toBe(true);
+
+      expect(() =>
+        songQueue.enterShuffle(mockSongQueue[2].requestedBy)
+      ).toThrow('User has already entered the shuffle');
     });
 
     it('should should throw an error if the user does not have a song in the queue', async () => {
       const songQueue = await SongQueue.loadQueue();
 
-      const songRequest1: SongRequest = {
-        youtubeId: 'youtubeId1',
-        title: 'Song title',
-        length: 100,
-        requestedBy: 'user1'
-      };
-
-      const songRequest2: SongRequest = {
-        youtubeId: 'youtubeId2',
-        title: 'Song title',
-        length: 100,
-        requestedBy: 'user2'
-      };
-
-      const songRequest3: SongRequest = {
-        youtubeId: 'youtubeId3',
-        title: 'Song title',
-        length: 100,
-        requestedBy: 'user3'
-      };
-
-      const songRequest4: SongRequest = {
-        youtubeId: 'youtubeId4',
-        title: 'Song title',
-        length: 100,
-        requestedBy: 'user4'
-      };
-
-      const songRequest5: SongRequest = {
-        youtubeId: 'youtubeId5',
-        title: 'Song title',
-        length: 100,
-        requestedBy: 'user5'
-      };
-
-      await songQueue.addSong(songRequest1);
-      await songQueue.addSong(songRequest2);
-      await songQueue.addSong(songRequest3);
-      await songQueue.addSong(songRequest4);
-      await songQueue.addSong(songRequest5);
+      await songQueue.addSong(mockSongQueue[0]);
+      await songQueue.addSong(mockSongQueue[1]);
+      await songQueue.addSong(mockSongQueue[2]);
+      await songQueue.addSong(mockSongQueue[3]);
+      await songQueue.addSong(mockSongQueue[4]);
 
       expect(() => songQueue.enterShuffle('user6')).toThrow(
         'User does not have a song in the queue'

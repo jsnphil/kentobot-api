@@ -182,6 +182,7 @@ export class SongQueue {
     this.songs.splice(position - 1, 0, song);
   }
 
+  // TODO Most of this logic needs to be in bump-service
   async bumpSong(
     youtubeId: string,
     position?: number,
@@ -281,5 +282,23 @@ export class SongQueue {
 
   getNextSong(): SongQueueItem | undefined {
     return this.songs.shift();
+  }
+
+  enterShuffle(user: string) {
+    let songFound = false;
+
+    this.songs.map((song) => {
+      if (song.requestedBy === user) {
+        if (song.isShuffleEntered) {
+          throw new Error('User has already entered the shuffle');
+        }
+        song.isShuffleEntered = true;
+        songFound = true;
+      }
+    });
+
+    if (!songFound) {
+      throw new Error('User does not have a song in the queue');
+    }
   }
 }

@@ -71,7 +71,24 @@ export class SongRequestService {
     );
   };
 
-  getQueueStatus = async () => {
+  async getQueueStatus() {
     return await streamControlsRepository.getQueueStatus();
+  }
+
+  enterShuffle = async (user: string) => {
+    const songQueue = await SongQueue.loadQueue();
+    songQueue.enterShuffle(user);
+
+    await songQueue.save();
+    await this.broadcastQueue();
+  };
+
+  broadcastQueue = async () => {
+    const songQueue = await SongQueue.loadQueue();
+    await webSocketService.broadcast(
+      JSON.stringify({
+        songQueue: songQueue.toArray()
+      })
+    );
   };
 }

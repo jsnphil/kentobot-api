@@ -1,0 +1,21 @@
+meta {
+  name: Enter Shuffle
+  type: http
+  seq: 8
+}
+
+post {
+  url: https://{{aws.api.id}}.execute-api.us-east-1.amazonaws.com/{{stage}}/song-queue/enter-shuffle?user=kaladin
+  body: json
+  auth: apikey
+}
+
+params:query {
+  user: kaladin
+}
+
+auth:apikey {
+  key: X-API-Key
+  value: {{kentobot.api.key}}
+  placement: header
+}

@@ -9,6 +9,9 @@ import { DynamoDBClient, GetItemCommand } from '@aws-sdk/client-dynamodb';
 import { mockClient } from 'aws-sdk-client-mock';
 import { SongQueueRepository } from './repositories/song-queue-repository';
 import { BumpService } from './services/bump-service';
+import { mockSongQueue } from './mocks/mock-song-queue';
+import { SongRequestService } from './services/song-request-service';
+import { mock } from 'node:test';
 
 const mockDynamoDBClient = mockClient(DynamoDBClient);
 const mockSSMClient = mockClient(SSMClient);
@@ -339,6 +342,49 @@ describe('SongQueue', () => {
         SongRequestErrorCode.SONG_EXCEEDEDS_MAX_DURATION
       );
       expect(errors![0].message).toBe('Song length must be under 6:00');
+    });
+
+    it('should not add the song if the queue is closed', async () => {
+      mockDynamoDBClient.on(GetItemCommand).resolves({
+        Item: undefined
+      });
+
+      mockSSMClient
+        .on(GetParameterCommand, {
+          Name: 'REQUEST_DURATION_NAME'
+        })
+        .resolves({
+          Parameter: {
+            Value: '360'
+          }
+        });
+
+      mockSSMClient
+        .on(GetParameterCommand, {
+          Name: 'MAX_SONGS_PER_USER'
+        })
+        .resolves({ Parameter: { Value: '1' } });
+
+      jest
+        .spyOn(SongRequestService.prototype, 'getQueueStatus')
+        .mockResolvedValue('closed');
+
+      const songQueue = await SongQueue.loadQueue();
+
+      const addSongResult = await songQueue.addSong({
+        youtubeId: 'youtubeId2',
+        title: 'Song title 2',
+        length: 100,
+        requestedBy: 'user'
+      });
+
+      expect(addSongResult.success).toBe(false);
+
+      const errors = addSongResult.errors;
+      expect(errors).toBeDefined();
+
+      expect(errors![0].code).toBe(SongRequestErrorCode.QUEUE_CLOSED);
+      expect(errors![0].message).toBe(SongRequestErrorCode.QUEUE_CLOSED);
     });
   });
 
@@ -812,36 +858,15 @@ describe('SongQueue', () => {
 
       const songQueue = await SongQueue.loadQueue();
 
-      const songRequest1: SongRequest = {
-        youtubeId: 'youtubeId1',
-        title: 'Song title',
-        length: 100,
-        requestedBy: 'user1'
-      };
-
-      const songRequest2: SongRequest = {
-        youtubeId: 'youtubeId2',
-        title: 'Song title',
-        length: 100,
-        requestedBy: 'user2'
-      };
-
-      const songRequest3: SongRequest = {
-        youtubeId: 'youtubeId3',
-        title: 'Song title',
-        length: 100,
-        requestedBy: 'user3'
-      };
-
-      await songQueue.addSong(songRequest1);
-      await songQueue.addSong(songRequest2);
-      await songQueue.addSong(songRequest3);
+      await songQueue.addSong(mockSongQueue[0]);
+      await songQueue.addSong(mockSongQueue[1]);
+      await songQueue.addSong(mockSongQueue[2]);
 
       // Act
-      const result = songQueue.findSongByUser('user2');
+      const result = songQueue.findSongByUser(mockSongQueue[1].requestedBy);
 
       // Assert
-      expect(result?.youtubeId).toEqual('youtubeId2');
+      expect(result?.youtubeId).toEqual(mockSongQueue[1].youtubeId);
     });
 
     it('Should return undefined if the user does not have a song in the queue', async () => {
@@ -909,56 +934,31 @@ describe('SongQueue', () => {
 
       const songQueue = await SongQueue.loadQueue();
 
-      const songRequest1: SongRequest = {
-        youtubeId: 'youtubeId1',
-        title: 'Song title',
-        length: 100,
-        requestedBy: 'user1'
-      };
-
-      const songRequest2: SongRequest = {
-        youtubeId: 'youtubeId2',
-        title: 'Song title',
-        length: 100,
-        requestedBy: 'user2'
-      };
-
-      const songRequest3: SongRequest = {
-        youtubeId: 'youtubeId3',
-        title: 'Song title',
-        length: 100,
-        requestedBy: 'user3'
-      };
-
-      const songRequest4: SongRequest = {
-        youtubeId: 'youtubeId4',
-        title: 'Song title',
-        length: 100,
-        requestedBy: 'user4'
-      };
-
-      const songRequest5: SongRequest = {
-        youtubeId: 'youtubeId5',
-        title: 'Song title',
-        length: 100,
-        requestedBy: 'user5'
-      };
-
-      await songQueue.addSong(songRequest1);
-      await songQueue.addSong(songRequest2);
-      await songQueue.addSong(songRequest3);
-      await songQueue.addSong(songRequest4);
-      await songQueue.addSong(songRequest5);
+      await songQueue.addSong(mockSongQueue[0]);
+      await songQueue.addSong(mockSongQueue[1]);
+      await songQueue.addSong(mockSongQueue[2]);
+      await songQueue.addSong(mockSongQueue[3]);
+      await songQueue.addSong(mockSongQueue[4]);
 
       // Act
-      songQueue.moveSong('youtubeId5', 1);
+      songQueue.moveSong(mockSongQueue[4].youtubeId, 1);
 
       // Assert
-      expect(songQueue.toArray()[0].youtubeId).toEqual('youtubeId5');
-      expect(songQueue.toArray()[1].youtubeId).toEqual('youtubeId1');
-      expect(songQueue.toArray()[2].youtubeId).toEqual('youtubeId2');
-      expect(songQueue.toArray()[3].youtubeId).toEqual('youtubeId3');
-      expect(songQueue.toArray()[4].youtubeId).toEqual('youtubeId4');
+      expect(songQueue.toArray()[0].youtubeId).toEqual(
+        mockSongQueue[4].youtubeId
+      );
+      expect(songQueue.toArray()[1].youtubeId).toEqual(
+        mockSongQueue[0].youtubeId
+      );
+      expect(songQueue.toArray()[2].youtubeId).toEqual(
+        mockSongQueue[1].youtubeId
+      );
+      expect(songQueue.toArray()[3].youtubeId).toEqual(
+        mockSongQueue[2].youtubeId
+      );
+      expect(songQueue.toArray()[4].youtubeId).toEqual(
+        mockSongQueue[3].youtubeId
+      );
     });
 
     it('Should move a song to the bottom of the queue', async () => {
@@ -985,56 +985,31 @@ describe('SongQueue', () => {
 
       const songQueue = await SongQueue.loadQueue();
 
-      const songRequest1: SongRequest = {
-        youtubeId: 'youtubeId1',
-        title: 'Song title',
-        length: 100,
-        requestedBy: 'user1'
-      };
-
-      const songRequest2: SongRequest = {
-        youtubeId: 'youtubeId2',
-        title: 'Song title',
-        length: 100,
-        requestedBy: 'user2'
-      };
-
-      const songRequest3: SongRequest = {
-        youtubeId: 'youtubeId3',
-        title: 'Song title',
-        length: 100,
-        requestedBy: 'user3'
-      };
-
-      const songRequest4: SongRequest = {
-        youtubeId: 'youtubeId4',
-        title: 'Song title',
-        length: 100,
-        requestedBy: 'user4'
-      };
-
-      const songRequest5: SongRequest = {
-        youtubeId: 'youtubeId5',
-        title: 'Song title',
-        length: 100,
-        requestedBy: 'user5'
-      };
-
-      await songQueue.addSong(songRequest1);
-      await songQueue.addSong(songRequest2);
-      await songQueue.addSong(songRequest3);
-      await songQueue.addSong(songRequest4);
-      await songQueue.addSong(songRequest5);
+      await songQueue.addSong(mockSongQueue[0]);
+      await songQueue.addSong(mockSongQueue[1]);
+      await songQueue.addSong(mockSongQueue[2]);
+      await songQueue.addSong(mockSongQueue[3]);
+      await songQueue.addSong(mockSongQueue[4]);
 
       // Act
-      songQueue.moveSong('youtubeId1', 5);
+      songQueue.moveSong(mockSongQueue[0].youtubeId, 5);
 
       // Assert
-      expect(songQueue.toArray()[0].youtubeId).toEqual('youtubeId2');
-      expect(songQueue.toArray()[1].youtubeId).toEqual('youtubeId3');
-      expect(songQueue.toArray()[2].youtubeId).toEqual('youtubeId4');
-      expect(songQueue.toArray()[3].youtubeId).toEqual('youtubeId5');
-      expect(songQueue.toArray()[4].youtubeId).toEqual('youtubeId1');
+      expect(songQueue.toArray()[0].youtubeId).toEqual(
+        mockSongQueue[1].youtubeId
+      );
+      expect(songQueue.toArray()[1].youtubeId).toEqual(
+        mockSongQueue[2].youtubeId
+      );
+      expect(songQueue.toArray()[2].youtubeId).toEqual(
+        mockSongQueue[3].youtubeId
+      );
+      expect(songQueue.toArray()[3].youtubeId).toEqual(
+        mockSongQueue[4].youtubeId
+      );
+      expect(songQueue.toArray()[4].youtubeId).toEqual(
+        mockSongQueue[0].youtubeId
+      );
     });
 
     it('Should move a song in the middle of the queue', async () => {
@@ -1061,56 +1036,31 @@ describe('SongQueue', () => {
 
       const songQueue = await SongQueue.loadQueue();
 
-      const songRequest1: SongRequest = {
-        youtubeId: 'youtubeId1',
-        title: 'Song title',
-        length: 100,
-        requestedBy: 'user1'
-      };
-
-      const songRequest2: SongRequest = {
-        youtubeId: 'youtubeId2',
-        title: 'Song title',
-        length: 100,
-        requestedBy: 'user2'
-      };
-
-      const songRequest3: SongRequest = {
-        youtubeId: 'youtubeId3',
-        title: 'Song title',
-        length: 100,
-        requestedBy: 'user3'
-      };
-
-      const songRequest4: SongRequest = {
-        youtubeId: 'youtubeId4',
-        title: 'Song title',
-        length: 100,
-        requestedBy: 'user4'
-      };
-
-      const songRequest5: SongRequest = {
-        youtubeId: 'youtubeId5',
-        title: 'Song title',
-        length: 100,
-        requestedBy: 'user5'
-      };
-
-      await songQueue.addSong(songRequest1);
-      await songQueue.addSong(songRequest2);
-      await songQueue.addSong(songRequest3);
-      await songQueue.addSong(songRequest4);
-      await songQueue.addSong(songRequest5);
+      await songQueue.addSong(mockSongQueue[0]);
+      await songQueue.addSong(mockSongQueue[1]);
+      await songQueue.addSong(mockSongQueue[2]);
+      await songQueue.addSong(mockSongQueue[3]);
+      await songQueue.addSong(mockSongQueue[4]);
 
       // Act
-      songQueue.moveSong('youtubeId4', 2);
+      songQueue.moveSong(mockSongQueue[3].youtubeId, 2);
 
       // Assert
-      expect(songQueue.toArray()[0].youtubeId).toEqual('youtubeId1');
-      expect(songQueue.toArray()[1].youtubeId).toEqual('youtubeId4');
-      expect(songQueue.toArray()[2].youtubeId).toEqual('youtubeId2');
-      expect(songQueue.toArray()[3].youtubeId).toEqual('youtubeId3');
-      expect(songQueue.toArray()[4].youtubeId).toEqual('youtubeId5');
+      expect(songQueue.toArray()[0].youtubeId).toEqual(
+        mockSongQueue[0].youtubeId
+      );
+      expect(songQueue.toArray()[1].youtubeId).toEqual(
+        mockSongQueue[3].youtubeId
+      );
+      expect(songQueue.toArray()[2].youtubeId).toEqual(
+        mockSongQueue[1].youtubeId
+      );
+      expect(songQueue.toArray()[3].youtubeId).toEqual(
+        mockSongQueue[2].youtubeId
+      );
+      expect(songQueue.toArray()[4].youtubeId).toEqual(
+        mockSongQueue[4].youtubeId
+      );
     });
 
     it('Should throw an error if the song is not in the queue', async () => {
@@ -1249,54 +1199,19 @@ describe('SongQueue', () => {
 
       const songQueue = await SongQueue.loadQueue();
 
-      const songRequest1: SongRequest = {
-        youtubeId: 'youtubeId1',
-        title: 'Song title',
-        length: 100,
-        requestedBy: 'user1'
-      };
-
-      const songRequest2: SongRequest = {
-        youtubeId: 'youtubeId2',
-        title: 'Song title',
-        length: 100,
-        requestedBy: 'user2'
-      };
-
-      const songRequest3: SongRequest = {
-        youtubeId: 'youtubeId3',
-        title: 'Song title',
-        length: 100,
-        requestedBy: 'user3'
-      };
-
-      const songRequest4: SongRequest = {
-        youtubeId: 'youtubeId4',
-        title: 'Song title',
-        length: 100,
-        requestedBy: 'user4'
-      };
-
-      const songRequest5: SongRequest = {
-        youtubeId: 'youtubeId5',
-        title: 'Song title',
-        length: 100,
-        requestedBy: 'user5'
-      };
-
-      await songQueue.addSong(songRequest1);
-      await songQueue.addSong(songRequest2);
-      await songQueue.addSong(songRequest3);
-      await songQueue.addSong(songRequest4);
-      await songQueue.addSong(songRequest5);
+      await songQueue.addSong(mockSongQueue[0]);
+      await songQueue.addSong(mockSongQueue[1]);
+      await songQueue.addSong(mockSongQueue[2]);
+      await songQueue.addSong(mockSongQueue[3]);
+      await songQueue.addSong(mockSongQueue[4]);
 
       // Act
-      await songQueue.bumpSong('youtubeId5');
+      await songQueue.bumpSong(mockSongQueue[4].youtubeId);
 
       const bumpedSong = songQueue.toArray()[0];
 
       // Assert
-      expect(bumpedSong.youtubeId).toEqual('youtubeId5');
+      expect(bumpedSong.youtubeId).toEqual(mockSongQueue[4].youtubeId);
       expect(bumpedSong.isBumped).toBe(true);
       expect(redeemBump).toHaveBeenCalled();
     });
@@ -1487,46 +1402,11 @@ describe('SongQueue', () => {
 
       const songQueue = await SongQueue.loadQueue();
 
-      const songRequest1: SongRequest = {
-        youtubeId: 'youtubeId1',
-        title: 'Song title',
-        length: 100,
-        requestedBy: 'user1'
-      };
-
-      const songRequest2: SongRequest = {
-        youtubeId: 'youtubeId2',
-        title: 'Song title',
-        length: 100,
-        requestedBy: 'user2'
-      };
-
-      const songRequest3: SongRequest = {
-        youtubeId: 'youtubeId3',
-        title: 'Song title',
-        length: 100,
-        requestedBy: 'user3'
-      };
-
-      const songRequest4: SongRequest = {
-        youtubeId: 'youtubeId4',
-        title: 'Song title',
-        length: 100,
-        requestedBy: 'user4'
-      };
-
-      const songRequest5: SongRequest = {
-        youtubeId: 'youtubeId5',
-        title: 'Song title',
-        length: 100,
-        requestedBy: 'user5'
-      };
-
-      await songQueue.addSong(songRequest1);
-      await songQueue.addSong(songRequest2);
-      await songQueue.addSong(songRequest3);
-      await songQueue.addSong(songRequest4);
-      await songQueue.addSong(songRequest5);
+      await songQueue.addSong(mockSongQueue[0]);
+      await songQueue.addSong(mockSongQueue[1]);
+      await songQueue.addSong(mockSongQueue[2]);
+      await songQueue.addSong(mockSongQueue[3]);
+      await songQueue.addSong(mockSongQueue[4]);
 
       jest.spyOn(BumpService.prototype, 'isBumpAllowed').mockResolvedValue({
         success: false,
@@ -1540,61 +1420,25 @@ describe('SongQueue', () => {
       });
 
       // Act
-      await songQueue.bumpSong('youtubeId5', undefined, true);
+      await songQueue.bumpSong(mockSongQueue[4].youtubeId, undefined, true);
 
       const bumpedSong = songQueue.toArray()[0];
 
       // Assert
-      expect(bumpedSong.youtubeId).toEqual('youtubeId5');
+      expect(bumpedSong.youtubeId).toEqual(mockSongQueue[4].youtubeId);
       expect(bumpedSong.isBumped).toBe(true);
       expect(updateBumpData).toHaveBeenCalled();
     });
 
     it('should bump a song to the middle of the queue when there is a position', async () => {
       const updateBumpData = jest.spyOn(BumpService.prototype, 'redeemBump');
-
       const songQueue = await SongQueue.loadQueue();
 
-      const songRequest1: SongRequest = {
-        youtubeId: 'youtubeId1',
-        title: 'Song title',
-        length: 100,
-        requestedBy: 'user1'
-      };
-
-      const songRequest2: SongRequest = {
-        youtubeId: 'youtubeId2',
-        title: 'Song title',
-        length: 100,
-        requestedBy: 'user2'
-      };
-
-      const songRequest3: SongRequest = {
-        youtubeId: 'youtubeId3',
-        title: 'Song title',
-        length: 100,
-        requestedBy: 'user3'
-      };
-
-      const songRequest4: SongRequest = {
-        youtubeId: 'youtubeId4',
-        title: 'Song title',
-        length: 100,
-        requestedBy: 'user4'
-      };
-
-      const songRequest5: SongRequest = {
-        youtubeId: 'youtubeId5',
-        title: 'Song title',
-        length: 100,
-        requestedBy: 'user5'
-      };
-
-      await songQueue.addSong(songRequest1);
-      await songQueue.addSong(songRequest2);
-      await songQueue.addSong(songRequest3);
-      await songQueue.addSong(songRequest4);
-      await songQueue.addSong(songRequest5);
+      await songQueue.addSong(mockSongQueue[0]);
+      await songQueue.addSong(mockSongQueue[1]);
+      await songQueue.addSong(mockSongQueue[2]);
+      await songQueue.addSong(mockSongQueue[3]);
+      await songQueue.addSong(mockSongQueue[4]);
 
       jest.spyOn(BumpService.prototype, 'isBumpAllowed').mockResolvedValue({
         success: true
@@ -1606,13 +1450,13 @@ describe('SongQueue', () => {
       );
 
       // Act
-      await songQueue.bumpSong('youtubeId5', 3);
+      await songQueue.bumpSong(mockSongQueue[4].youtubeId, 3);
 
       const bumpedSong = songQueue.toArray()[2];
 
       // Assert
       expect(getBumpPosition).toHaveBeenCalledTimes(0);
-      expect(bumpedSong.youtubeId).toEqual('youtubeId5');
+      expect(bumpedSong.youtubeId).toEqual(mockSongQueue[4].youtubeId);
       expect(bumpedSong.isBumped).toBe(true);
       expect(updateBumpData).toHaveBeenCalled();
     });
@@ -1648,49 +1492,14 @@ describe('SongQueue', () => {
     it('Should return the next song in the queue', async () => {
       const songQueue = await SongQueue.loadQueue();
 
-      const songRequest1: SongRequest = {
-        youtubeId: 'youtubeId1',
-        title: 'Song title',
-        length: 100,
-        requestedBy: 'user1'
-      };
-
-      const songRequest2: SongRequest = {
-        youtubeId: 'youtubeId2',
-        title: 'Song title',
-        length: 100,
-        requestedBy: 'user2'
-      };
-
-      const songRequest3: SongRequest = {
-        youtubeId: 'youtubeId3',
-        title: 'Song title',
-        length: 100,
-        requestedBy: 'user3'
-      };
-
-      const songRequest4: SongRequest = {
-        youtubeId: 'youtubeId4',
-        title: 'Song title',
-        length: 100,
-        requestedBy: 'user4'
-      };
-
-      const songRequest5: SongRequest = {
-        youtubeId: 'youtubeId5',
-        title: 'Song title',
-        length: 100,
-        requestedBy: 'user5'
-      };
-
-      await songQueue.addSong(songRequest1);
-      await songQueue.addSong(songRequest2);
-      await songQueue.addSong(songRequest3);
-      await songQueue.addSong(songRequest4);
-      await songQueue.addSong(songRequest5);
+      await songQueue.addSong(mockSongQueue[0]);
+      await songQueue.addSong(mockSongQueue[1]);
+      await songQueue.addSong(mockSongQueue[2]);
+      await songQueue.addSong(mockSongQueue[3]);
+      await songQueue.addSong(mockSongQueue[4]);
 
       const nextSong = songQueue.getNextSong();
-      expect(nextSong?.youtubeId).toEqual('youtubeId1');
+      expect(nextSong?.youtubeId).toEqual(mockSongQueue[0].youtubeId);
       expect(songQueue.getLength()).toBe(4);
     });
 
@@ -1699,6 +1508,58 @@ describe('SongQueue', () => {
 
       const nextSong = songQueue.getNextSong();
       expect(nextSong).toBeUndefined();
+    });
+  });
+
+  describe('enterShuffle', () => {
+    let songQueue: SongQueue;
+
+    it('should mark the song as entered in the shuffle', async () => {
+      const songQueue = await SongQueue.loadQueue();
+
+      await songQueue.addSong(mockSongQueue[0]);
+      await songQueue.addSong(mockSongQueue[1]);
+      await songQueue.addSong(mockSongQueue[2]);
+      await songQueue.addSong(mockSongQueue[3]);
+      await songQueue.addSong(mockSongQueue[4]);
+
+      songQueue.enterShuffle(mockSongQueue[2].requestedBy);
+
+      const song = songQueue.findSongById(mockSongQueue[2].youtubeId);
+      expect(song?.isShuffleEntered).toBe(true);
+    });
+
+    it('should throw an error if the user has already entered the shuffle', async () => {
+      const songQueue = await SongQueue.loadQueue();
+
+      await songQueue.addSong(mockSongQueue[0]);
+      await songQueue.addSong(mockSongQueue[1]);
+      await songQueue.addSong(mockSongQueue[2]);
+      await songQueue.addSong(mockSongQueue[3]);
+      await songQueue.addSong(mockSongQueue[4]);
+
+      songQueue.enterShuffle(mockSongQueue[2].requestedBy);
+
+      const song = songQueue.findSongById(mockSongQueue[2].youtubeId);
+      expect(song?.isShuffleEntered).toBe(true);
+
+      expect(() =>
+        songQueue.enterShuffle(mockSongQueue[2].requestedBy)
+      ).toThrow('User has already entered the shuffle');
+    });
+
+    it('should should throw an error if the user does not have a song in the queue', async () => {
+      const songQueue = await SongQueue.loadQueue();
+
+      await songQueue.addSong(mockSongQueue[0]);
+      await songQueue.addSong(mockSongQueue[1]);
+      await songQueue.addSong(mockSongQueue[2]);
+      await songQueue.addSong(mockSongQueue[3]);
+      await songQueue.addSong(mockSongQueue[4]);
+
+      expect(() => songQueue.enterShuffle('user6')).toThrow(
+        'User does not have a song in the queue'
+      );
     });
   });
 });

@@ -74,7 +74,7 @@ describe('enter-shuffle', () => {
       });
     });
 
-    it('should return a bad request error the user is not specified in the queue string', async () => {
+    it('should return a bad request error if the user is not specified in the query string', async () => {
       const result = await handler({
         queryStringParameters: {}
       } as unknown as APIGatewayProxyEvent);

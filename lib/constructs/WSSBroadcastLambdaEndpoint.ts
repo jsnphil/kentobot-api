@@ -21,7 +21,7 @@ interface WSSBroadcastRestEndpointProps {
   };
   readonly lambdaProps: {
     readonly source: string;
-    readonly environmentVaribles?: { [key: string]: string };
+    readonly environmentVariables?: { [key: string]: string };
     readonly timeout?: cdk.Duration;
     readonly memorySize?: number;
     readonly databaseName: string;
@@ -50,7 +50,7 @@ export class WSSBroadcastRestEndpoint extends Construct {
       props.apiProps;
     const {
       source,
-      environmentVaribles,
+      environmentVariables,
       timeout,
       memorySize,
       databaseName,
@@ -71,7 +71,7 @@ export class WSSBroadcastRestEndpoint extends Construct {
       logRetention: logs.RetentionDays.ONE_WEEK,
       environment: {
         ...lambdaEnvironment,
-        ...environmentVaribles,
+        ...environmentVariables,
         ENVIRONMENT: props.environmentName,
         STREAM_DATA_TABLE: databaseName,
         WEBSOCKET_API_ID: webSocketApiId,

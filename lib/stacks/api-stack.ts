@@ -25,6 +25,7 @@ import {
 } from '../constructs/api-models';
 import { EventBus } from '../constructs/event-bus';
 import { Api } from '../constructs/api';
+import { WSSBroadcastRestEndpoint } from '../constructs/WSSBroadcastLambdaEndpoint';
 
 export interface ApiStackProps extends cdk.StackProps {
   environmentName: string;
@@ -802,6 +803,37 @@ export class ApiStack extends cdk.Stack {
           `arn:aws:execute-api:${props.env?.region}:${props.env?.account}:${webSocketApi.apiId}/*/*/@connections/*`
         ]
       })
+    );
+
+    // ***********************
+    // Shuffle resource
+    // ***********************
+
+    const enterShuffleEndpoint = new WSSBroadcastRestEndpoint(
+      this,
+      'QueueShuffle',
+      {
+        id: 'enter-shuffle',
+
+        environmentName: props.environmentName,
+        apiProps: {
+          parentResource: queueManagmentResource,
+          resourcePath: 'enter-shuffle',
+          resourceMethod: 'POST',
+          requireApiKey: true
+        },
+        lambdaProps: {
+          source: 'queue-management/enter-shuffle.ts',
+          timeout: cdk.Duration.seconds(15),
+          memorySize: 256,
+          databaseName: database.tableName,
+          allowDatabaseWrite: true
+        },
+        webSocketProps: {
+          webSocketApiId: webSocketApiId,
+          webSocketApiStage: webSocketApiStage
+        }
+      }
     );
 
     // ***********************

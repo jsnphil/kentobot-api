@@ -11,7 +11,6 @@ const mockDynamoDBClient = mockClient(DynamoDBClient);
 describe('enter-shuffle', () => {
   beforeEach(() => {
     jest.resetAllMocks();
-    process.env.STREAM_DATA_TABLE = 'table-name';
   });
 
   describe('handler', () => {

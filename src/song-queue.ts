@@ -2,6 +2,7 @@ import { GetParameterCommand, SSMClient } from '@aws-sdk/client-ssm';
 import { SongQueueRepository } from './repositories/song-queue-repository';
 import {
   AddSongToQueueResult,
+  BumpType,
   QueueManagementErrorCode,
   SongInfo,
   SongQueueItem,
@@ -14,6 +15,7 @@ import { generateStreamDate, secondsToMinutes } from './utils/utilities';
 import { Logger } from '@aws-lambda-powertools/logger';
 import { BumpService } from './services/bump-service';
 import { SongRequestService } from './services/song-request-service';
+import { BumpRequest } from '@schemas/bump-schema';
 
 export class SongQueue {
   private songs: SongQueueItem[] = [];
@@ -30,15 +32,10 @@ export class SongQueue {
   }
 
   static async loadQueue() {
-    console.log('Creating new queue');
     const queue = new SongQueue();
 
     queue.streamDate = generateStreamDate();
-    console.log(`Trying to load queue for stream date: ${queue.streamDate}`);
     await queue.load();
-
-    console.log(`Queue loaded with ${queue.getLength()} songs`);
-    console.log(`Queue: ${JSON.stringify(queue.toArray(), null, 2)}`);
 
     return queue;
   }
@@ -167,7 +164,7 @@ export class SongQueue {
   }
 
   moveSong(youtubeId: string, position: number) {
-    console.log('Moving song to position: ', position);
+    this.logger.debug(`Moving song to position: ${position}`);
     if (this.songs.length === 0) {
       throw new Error('Queue is empty');
     }
@@ -185,8 +182,9 @@ export class SongQueue {
   // TODO Most of this logic needs to be in bump-service
   async bumpSong(
     youtubeId: string,
+    bumpType: BumpType,
     position?: number,
-    override?: boolean
+    modAllowed?: boolean
   ): Promise<ValidationResult<any>> {
     if (this.songs.length === 0) {
       return {
@@ -214,13 +212,15 @@ export class SongQueue {
     }
 
     const bumpAllowed = await this.bumpService.isBumpAllowed(
-      songToBump?.requestedBy
+      songToBump?.requestedBy,
+      bumpType,
+      modAllowed
     );
 
     this.logger.debug(`Bump allowed: ${JSON.stringify(bumpAllowed)}`);
-    this.logger.debug(`Override: ${override}`);
+    this.logger.debug(`Override: ${modAllowed}`);
 
-    if (!bumpAllowed.success && !override) {
+    if (!bumpAllowed.success && !modAllowed) {
       return bumpAllowed;
     }
 
@@ -228,12 +228,15 @@ export class SongQueue {
       ? position
       : this.bumpService.getBumpPosition(this);
 
-    console.log('New position: ', newPosition);
+    this.logger.debug(`New position: ${newPosition}`);
 
     this.moveSong(youtubeId, newPosition);
     songToBump.isBumped = true;
 
-    const result = this.bumpService.redeemBump(songToBump.requestedBy);
+    const result = this.bumpService.redeemBump(
+      songToBump.requestedBy,
+      bumpType
+    );
 
     return {
       success: true

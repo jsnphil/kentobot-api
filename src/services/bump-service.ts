@@ -1,6 +1,6 @@
 import { Logger } from '@aws-lambda-powertools/logger';
 import { SongBumpRepository } from '../repositories/song-bump-repository';
-import { ValidationResult } from '../types/song-request';
+import { BumpType, ValidationResult } from '../types/song-request';
 import { SongQueue } from '../song-queue';
 
 export class BumpService {
@@ -11,42 +11,72 @@ export class BumpService {
     this.logger.info('Initializing bump service');
   }
 
-  async isBumpAllowed(user: string): Promise<ValidationResult<any>> {
-    this.logger.debug('Checking if bump is allowed');
-    const bumpData = await this.bumpRepository.getBumpData();
-
-    console.log(JSON.stringify(bumpData, null, 2));
+  async isBumpAllowed(
+    user: string,
+    bumpType: BumpType,
+    modAllowed?: boolean
+  ): Promise<ValidationResult<any>> {
+    this.logger.debug(`Checking if ${bumpType} bump is allowed for ${user}`);
+    const { bumpedUsers, beanBumpsAvailable, channelPointBumpsAvailable } =
+      await this.bumpRepository.getBumpData();
 
     const bumpChecks = [
       {
         code: 'NO_BUMPS_AVAILABLE',
         name: 'No bumps available',
-        fn: () => bumpData.bumpsAvailable > 0
+        fn: () => {
+          if (bumpType === BumpType.Bean) {
+            return beanBumpsAvailable > 0;
+          } else if (bumpType === BumpType.ChannelPoints) {
+            return channelPointBumpsAvailable > 0;
+          } else {
+            return true;
+          }
+        }
       },
       {
         code: 'USER_NOT_ELIGIBLE',
         name: 'User is not eligible for a bump',
-        fn: () => !bumpData.bumpedUsers.includes(user)
+        fn: () => {
+          if (
+            bumpType === BumpType.Bean ||
+            bumpType === BumpType.ChannelPoints
+          ) {
+            return (
+              bumpedUsers.filter(
+                (bumpedUser) =>
+                  bumpedUser.user === user && bumpedUser.type === bumpType
+              ).length === 0
+            );
+          } else {
+            return true;
+          }
+        }
       }
     ];
 
+    let errors: { code: string; message: string }[] = [];
+
     for (const check of bumpChecks) {
       if (!check.fn()) {
-        return {
-          success: false,
-          errors: [
-            {
-              code: check.code,
-              message: check.name
-            }
-          ]
-        };
+        console.log('Check failed: ', check);
+        errors.push({
+          code: check.code,
+          message: check.name
+        });
       }
     }
 
-    return {
-      success: true
-    };
+    if (errors.length == 0 || modAllowed) {
+      return {
+        success: true
+      };
+    } else {
+      return {
+        success: false,
+        errors
+      };
+    }
   }
 
   getBumpPosition(songQueue: SongQueue): number {
@@ -64,10 +94,20 @@ export class BumpService {
     return 1; // This can never happen in a real scenario, the queue will never be all bumps
   }
 
-  async redeemBump(user: string) {
+  // TODO Rename to setBumpExpiration
+  async redeemBump(user: string, type: BumpType) {
     const now = new Date();
-    const bumpTTL = new Date(now.setDate(now.getDate() + 6)).getTime();
-    await this.bumpRepository.updateRedeemedBumpData(user, bumpTTL);
+
+    if (type === BumpType.Bean) {
+      const bumpTTL = new Date(now.setDate(now.getDate() + 6)).getTime();
+      await this.bumpRepository.updateRedeemedBeanBumpData(user, bumpTTL);
+    } else {
+      const bumpTTL = new Date(now.setDate(now.getDate() + 1)).getTime();
+      await this.bumpRepository.updateRedeemedChannelPointsBumpData(
+        user,
+        bumpTTL
+      );
+    }
   }
 
   /* istanbul ignore next */

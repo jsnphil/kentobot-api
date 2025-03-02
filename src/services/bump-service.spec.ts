@@ -1,6 +1,7 @@
 import { SongBumpRepository } from '../repositories/song-bump-repository';
 import { SongQueueRepository } from '../repositories/song-queue-repository';
 import { SongQueue } from '../song-queue';
+import { BumpType } from '../types/song-request';
 import { BumpService } from './bump-service';
 
 let bumpService: BumpService;
@@ -11,16 +12,20 @@ describe('BumpService', () => {
     jest.resetAllMocks();
   });
 
-  describe('isBumpAllowed', () => {
-    it('should return success if user is eligible for a bump', async () => {
+  describe('isBumpAllowed - BeanBump', () => {
+    it('should return success if user is eligible for a bean bump', async () => {
       const getBumpDataSpy = jest
         .spyOn(SongBumpRepository.prototype, 'getBumpData')
         .mockResolvedValue({
-          bumpsAvailable: 1,
+          beanBumpsAvailable: 1,
+          channelPointBumpsAvailable: 1,
           bumpedUsers: []
         });
 
-      const result = await bumpService.isBumpAllowed('user1');
+      const result = await bumpService.isBumpAllowed(
+        'KaladinStormblessed',
+        BumpType.Bean
+      );
 
       expect(result.success).toBe(true);
     });
@@ -29,32 +34,57 @@ describe('BumpService', () => {
       const getBumpDataSpy = jest
         .spyOn(SongBumpRepository.prototype, 'getBumpData')
         .mockResolvedValue({
-          bumpsAvailable: 1,
-          bumpedUsers: ['user1']
+          beanBumpsAvailable: 1,
+          channelPointBumpsAvailable: 1,
+          bumpedUsers: [
+            {
+              user: 'KaladinStormblessed',
+              expiration: Date.now() + 1000 * 60 * 60, // 1 hour from now
+              type: BumpType.Bean
+            }
+          ]
         });
 
-      const result = await bumpService.isBumpAllowed('user1');
+      const result = await bumpService.isBumpAllowed(
+        'KaladinStormblessed',
+        BumpType.Bean
+      );
 
       expect(result.success).toBe(false);
       expect(result.errors).toHaveLength(1);
       expect(result.errors![0].code).toBe('USER_NOT_ELIGIBLE');
     });
 
-    it('should return error if no bumps are available', async () => {
+    it('should return false if no bean bumps are available', async () => {
       const getBumpDataSpy = jest
         .spyOn(SongBumpRepository.prototype, 'getBumpData')
         .mockResolvedValue({
-          bumpsAvailable: 0,
+          beanBumpsAvailable: 0,
+          channelPointBumpsAvailable: 0,
           bumpedUsers: []
         });
 
-      const result = await bumpService.isBumpAllowed('user1');
+      const result = await bumpService.isBumpAllowed('user1', BumpType.Bean);
 
       expect(result.success).toBe(false);
       expect(result.errors).toHaveLength(1);
       expect(result.errors![0].code).toBe('NO_BUMPS_AVAILABLE');
     });
   });
+
+  describe('isBumpAllowed - ChannelPointBump', () => {
+    it('should return success if user is eligible for a channel point bump', async () => {});
+
+    it('should return false if user is not eligible for a channel point bump', async () => {});
+
+    it('should return error if no channel point bumps are available', async () => {});
+
+    it('should return false if no channel point bumps are available', async () => {});
+
+    it('should return false the user has already used a free bump', async () => {});
+  });
+
+  // TODO Add tests for subs, raids, gifts subs, and bits
 
   describe('getBumpPosition', () => {
     it('should return the correct bump position if there are bumps in the queue', async () => {

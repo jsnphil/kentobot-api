@@ -1,12 +1,12 @@
 import { Logger } from '@aws-lambda-powertools/logger';
-import { APIGatewayEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { Code } from 'better-status-codes';
-import { WebSocketService } from '../../../services/web-socket-service';
-import { SongQueue } from '../../../song-queue';
 
-import { BumpRequestData, ValidationResult } from '../../../types/song-request';
-import { getSongId } from '../../../utils/utilities';
-import { BumpSongRequestSchema } from '../../../schemas/schema';
+import { WebSocketService } from '@services/web-socket-service';
+import { SongQueue } from '@song-queue';
+import { getSongId } from '@utils/utilities';
+import type { APIGatewayEvent, APIGatewayProxyResult } from 'aws-lambda';
+import { Code } from 'better-status-codes';
+import { BumpRequest, bumpRequestSchema } from '@schemas/bump-schema';
+import { ValidationResult } from '../../../types/song-request';
 
 const logger = new Logger({ serviceName: 'bump-request' });
 const webSocketService = new WebSocketService();
@@ -35,8 +35,9 @@ export const handler = async (
 
     const bumpResult = await songQueue.bumpSong(
       songId,
-      bumpRequestData.data?.position,
-      bumpRequestData.data?.modOverride
+      bumpRequestData.data!.type,
+      bumpRequestData.data!.position,
+      bumpRequestData.data!.modAllowed
     );
 
     if (bumpResult.success) {
@@ -74,7 +75,7 @@ export const handler = async (
 
 export const getBumpSongRequestData = (
   requestBody: string | null
-): ValidationResult<BumpRequestData> => {
+): ValidationResult<BumpRequest> => {
   if (!requestBody) {
     return {
       success: false,
@@ -88,7 +89,7 @@ export const getBumpSongRequestData = (
   }
 
   try {
-    const bumpRequestData: BumpRequestData = BumpSongRequestSchema.parse(
+    const bumpRequestData: BumpRequest = bumpRequestSchema.parse(
       JSON.parse(requestBody)
     );
 

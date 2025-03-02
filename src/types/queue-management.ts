@@ -1,4 +1,5 @@
 export interface BumpData {
-  bumpsAvailable: number;
+  beanBumpsAvailable: number;
+  channelPointBumpsAvailable: number;
   bumpedUsers: string[];
 }

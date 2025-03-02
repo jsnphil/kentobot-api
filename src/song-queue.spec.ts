@@ -1,6 +1,7 @@
 import { GetParameterCommand, SSMClient } from '@aws-sdk/client-ssm';
 import { SongQueue } from './song-queue';
 import {
+  BumpType,
   QueueManagementErrorCode,
   SongRequest,
   SongRequestErrorCode
@@ -1206,7 +1207,7 @@ describe('SongQueue', () => {
       await songQueue.addSong(mockSongQueue[4]);
 
       // Act
-      await songQueue.bumpSong(mockSongQueue[4].youtubeId);
+      await songQueue.bumpSong(mockSongQueue[4].youtubeId, BumpType.Bean);
 
       const bumpedSong = songQueue.toArray()[0];
 
@@ -1222,7 +1223,7 @@ describe('SongQueue', () => {
       });
       const songQueue = await SongQueue.loadQueue();
 
-      const result = await songQueue.bumpSong('youtubeId2');
+      const result = await songQueue.bumpSong('youtubeId2', BumpType.Bean);
       expect(result.success).toBe(false);
 
       const error = result.errors?.[0];
@@ -1263,7 +1264,7 @@ describe('SongQueue', () => {
       };
 
       await songQueue.addSong(songRequest);
-      const result = await songQueue.bumpSong('youtubeId2');
+      const result = await songQueue.bumpSong('youtubeId2', BumpType.Bean);
 
       expect(result.success).toBe(false);
 
@@ -1324,7 +1325,7 @@ describe('SongQueue', () => {
       };
       await songQueue.addSong(songRequest1);
 
-      const result = await songQueue.bumpSong('youtubeId1');
+      const result = await songQueue.bumpSong('youtubeId1', BumpType.Bean);
 
       expect(result.success).toBe(false);
 
@@ -1386,7 +1387,7 @@ describe('SongQueue', () => {
       };
       await songQueue.addSong(songRequest1);
 
-      const result = await songQueue.bumpSong('youtubeId1');
+      const result = await songQueue.bumpSong('youtubeId1', BumpType.Bean);
 
       expect(result.success).toBe(false);
 
@@ -1420,7 +1421,12 @@ describe('SongQueue', () => {
       });
 
       // Act
-      await songQueue.bumpSong(mockSongQueue[4].youtubeId, undefined, true);
+      await songQueue.bumpSong(
+        mockSongQueue[4].youtubeId,
+        BumpType.Bean,
+        undefined,
+        true
+      );
 
       const bumpedSong = songQueue.toArray()[0];
 
@@ -1450,7 +1456,7 @@ describe('SongQueue', () => {
       );
 
       // Act
-      await songQueue.bumpSong(mockSongQueue[4].youtubeId, 3);
+      await songQueue.bumpSong(mockSongQueue[4].youtubeId, BumpType.Bean, 3);
 
       const bumpedSong = songQueue.toArray()[2];
 

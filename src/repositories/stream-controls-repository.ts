@@ -24,8 +24,6 @@ export class StreamControlsRepository {
       })
     );
 
-    console.log(`Item: ${Item}`);
-
     return Item?.queueStatue?.S;
   }
 

@@ -35,8 +35,8 @@ export class BumpService {
         }
       },
       {
-        code: 'USER_NOT_ELIGIBLE',
-        name: 'User is not eligible for a bump',
+        code: 'FREE_BUMP_NOT_ELIGIBLE',
+        name: 'User is not eligible for a free bump',
         fn: () => {
           if (
             bumpType === BumpType.Bean ||
@@ -45,7 +45,31 @@ export class BumpService {
             return (
               bumpedUsers.filter(
                 (bumpedUser) =>
-                  bumpedUser.user === user && bumpedUser.type === bumpType
+                  bumpedUser.user === user &&
+                  (bumpedUser.type === BumpType.ChannelPoints ||
+                    bumpedUser.type === BumpType.Bean)
+              ).length === 0
+            );
+          } else {
+            return true;
+          }
+        }
+      },
+      {z
+        code: 'PAID_BUMP_NOT_ELIGIBLE',
+        name: 'User is not eligible for a paid bump',
+        fn: () => {
+          if (
+            bumpType === BumpType.Bean ||
+            bumpType === BumpType.ChannelPoints
+          ) {
+            return (
+              bumpedUsers.filter(
+                (bumpedUser) =>
+                  bumpedUser.user === user &&
+                  (bumpedUser.type === BumpType.Sub ||
+                    bumpedUser.type === BumpType.GiftedSub ||
+                    BumpType.Bits)
               ).length === 0
             );
           } else {

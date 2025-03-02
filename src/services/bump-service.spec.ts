@@ -73,15 +73,88 @@ describe('BumpService', () => {
   });
 
   describe('isBumpAllowed - ChannelPointBump', () => {
-    it('should return success if user is eligible for a channel point bump', async () => {});
+    it('should return success if user is eligible for a channel point bump', async () => {
+      const getBumpDataSpy = jest
+        .spyOn(SongBumpRepository.prototype, 'getBumpData')
+        .mockResolvedValue({
+          beanBumpsAvailable: 1,
+          channelPointBumpsAvailable: 1,
+          bumpedUsers: []
+        });
 
-    it('should return false if user is not eligible for a channel point bump', async () => {});
+      const result = await bumpService.isBumpAllowed(
+        'KaladinStormblessed',
+        BumpType.ChannelPoints
+      );
 
-    it('should return error if no channel point bumps are available', async () => {});
+      expect(result.success).toBe(true);
+    });
 
-    it('should return false if no channel point bumps are available', async () => {});
+    it('should return false if user is not eligible for a channel point bump', async () => {
+      const getBumpDataSpy = jest
+        .spyOn(SongBumpRepository.prototype, 'getBumpData')
+        .mockResolvedValue({
+          beanBumpsAvailable: 1,
+          channelPointBumpsAvailable: 1,
+          bumpedUsers: [
+            {
+              user: 'KaladinStormblessed',
+              expiration: Date.now() + 1000 * 60 * 60, // 1 hour from now
+              type: BumpType.ChannelPoints
+            }
+          ]
+        });
 
-    it('should return false the user has already used a free bump', async () => {});
+      const result = await bumpService.isBumpAllowed(
+        'KaladinStormblessed',
+        BumpType.Bean
+      );
+
+      expect(result.success).toBe(false);
+      expect(result.errors).toHaveLength(1);
+      expect(result.errors![0].code).toBe('USER_NOT_ELIGIBLE');
+    });
+
+    it('should return false if no channel point bumps are available', async () => {
+      const getBumpDataSpy = jest
+        .spyOn(SongBumpRepository.prototype, 'getBumpData')
+        .mockResolvedValue({
+          beanBumpsAvailable: 0,
+          channelPointBumpsAvailable: 0,
+          bumpedUsers: []
+        });
+
+      const result = await bumpService.isBumpAllowed('user1', BumpType.Bean);
+
+      expect(result.success).toBe(false);
+      expect(result.errors).toHaveLength(1);
+      expect(result.errors![0].code).toBe('NO_BUMPS_AVAILABLE');
+    });
+
+    it('should return false the user has already used a free bump', async () => {
+      const getBumpDataSpy = jest
+        .spyOn(SongBumpRepository.prototype, 'getBumpData')
+        .mockResolvedValue({
+          beanBumpsAvailable: 1,
+          channelPointBumpsAvailable: 1,
+          bumpedUsers: [
+            {
+              user: 'KaladinStormblessed',
+              expiration: Date.now() + 1000 * 60 * 60, // 1 hour from now
+              type: BumpType.Bean
+            }
+          ]
+        });
+
+      const result = await bumpService.isBumpAllowed(
+        'KaladinStormblessed',
+        BumpType.ChannelPoints
+      );
+
+      expect(result.success).toBe(false);
+      expect(result.errors).toHaveLength(1);
+      expect(result.errors![0].code).toBe('FREE_BUMP_NOT_ELIGIBLE');
+    });
   });
 
   // TODO Add tests for subs, raids, gifts subs, and bits

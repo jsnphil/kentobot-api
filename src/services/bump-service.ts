@@ -38,16 +38,12 @@ export class BumpService {
         code: 'FREE_BUMP_NOT_ELIGIBLE',
         name: 'User is not eligible for a free bump',
         fn: () => {
-          if (
-            bumpType === BumpType.Bean ||
-            bumpType === BumpType.ChannelPoints
-          ) {
+          if (this.isFreeBumpType(bumpType)) {
             return (
               bumpedUsers.filter(
                 (bumpedUser) =>
                   bumpedUser.user === user &&
-                  (bumpedUser.type === BumpType.ChannelPoints ||
-                    bumpedUser.type === BumpType.Bean)
+                  this.isFreeBumpType(bumpedUser.type)
               ).length === 0
             );
           } else {
@@ -55,21 +51,16 @@ export class BumpService {
           }
         }
       },
-      {z
+      {
         code: 'PAID_BUMP_NOT_ELIGIBLE',
         name: 'User is not eligible for a paid bump',
         fn: () => {
-          if (
-            bumpType === BumpType.Bean ||
-            bumpType === BumpType.ChannelPoints
-          ) {
+          if (this.isPaidBumpType(bumpType)) {
             return (
               bumpedUsers.filter(
                 (bumpedUser) =>
                   bumpedUser.user === user &&
-                  (bumpedUser.type === BumpType.Sub ||
-                    bumpedUser.type === BumpType.GiftedSub ||
-                    BumpType.Bits)
+                  this.isPaidBumpType(bumpedUser.type)
               ).length === 0
             );
           } else {
@@ -88,6 +79,7 @@ export class BumpService {
           code: check.code,
           message: check.name
         });
+        break;
       }
     }
 
@@ -101,6 +93,18 @@ export class BumpService {
         errors
       };
     }
+  }
+
+  isFreeBumpType(bumpType: BumpType): boolean {
+    return bumpType === BumpType.Bean || bumpType === BumpType.ChannelPoints;
+  }
+
+  isPaidBumpType(bumpType: BumpType): boolean {
+    return (
+      bumpType === BumpType.Sub ||
+      bumpType === BumpType.GiftedSub ||
+      bumpType === BumpType.Bits
+    );
   }
 
   getBumpPosition(songQueue: SongQueue): number {

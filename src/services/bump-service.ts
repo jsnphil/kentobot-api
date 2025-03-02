@@ -122,8 +122,7 @@ export class BumpService {
     return 1; // This can never happen in a real scenario, the queue will never be all bumps
   }
 
-  // TODO Rename to setBumpExpiration
-  async redeemBump(user: string, type: BumpType) {
+  async setBumpExpiration(user: string, type: BumpType) {
     const now = new Date();
 
     if (type === BumpType.Bean) {

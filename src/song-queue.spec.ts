@@ -1196,7 +1196,7 @@ describe('SongQueue', () => {
         .spyOn(BumpService.prototype, 'isBumpAllowed')
         .mockResolvedValue({ success: true });
 
-      const redeemBump = jest.spyOn(BumpService.prototype, 'redeemBump');
+      const redeemBump = jest.spyOn(BumpService.prototype, 'setBumpExpiration');
 
       const songQueue = await SongQueue.loadQueue();
 
@@ -1399,7 +1399,10 @@ describe('SongQueue', () => {
     });
 
     it('should bump a song to the top of the queue if the user is not eligible but override is set', async () => {
-      const updateBumpData = jest.spyOn(BumpService.prototype, 'redeemBump');
+      const updateBumpData = jest.spyOn(
+        BumpService.prototype,
+        'setBumpExpiration'
+      );
 
       const songQueue = await SongQueue.loadQueue();
 
@@ -1437,7 +1440,10 @@ describe('SongQueue', () => {
     });
 
     it('should bump a song to the middle of the queue when there is a position', async () => {
-      const updateBumpData = jest.spyOn(BumpService.prototype, 'redeemBump');
+      const updateBumpData = jest.spyOn(
+        BumpService.prototype,
+        'setBumpExpiration'
+      );
       const songQueue = await SongQueue.loadQueue();
 
       await songQueue.addSong(mockSongQueue[0]);

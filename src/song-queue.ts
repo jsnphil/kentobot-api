@@ -233,7 +233,7 @@ export class SongQueue {
     this.moveSong(youtubeId, newPosition);
     songToBump.isBumped = true;
 
-    const result = this.bumpService.redeemBump(
+    const result = this.bumpService.setBumpExpiration(
       songToBump.requestedBy,
       bumpType
     );

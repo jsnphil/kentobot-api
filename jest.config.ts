@@ -27,5 +27,13 @@ module.exports = {
     'data-migration/*',
     'test-code/*'
   ],
-  resetMocks: true
+  resetMocks: true,
+  moduleNameMapper: {
+    '^@schemas/(.*)': '<rootDir>/src/schemas/$1',
+    '^@services/(.*)': '<rootDir>/src/services/$1',
+    '^@repositories/(.*)': '<rootDir>/src/repositories/$1',
+    '^@utils/(.*)': '<rootDir>/src/utils/$1',
+    '^@song-queue': '<rootDir>/src/song-queue',
+    '^@types/(.*)': '<rootDir>/src/types/$1'
+  }
 };

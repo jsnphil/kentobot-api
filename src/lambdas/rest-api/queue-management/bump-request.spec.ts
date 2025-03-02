@@ -3,7 +3,8 @@ import { handler, getBumpSongRequestData } from './bump-request';
 import { SongQueue } from '../../../song-queue';
 import { WebSocketService } from '../../../services/web-socket-service';
 import { Code } from 'better-status-codes';
-import { BumpRequestData } from '../../../types/song-request';
+import { BumpRequestData, BumpType } from '../../../types/song-request';
+import { BumpRequest } from '@schemas/bump-schema';
 
 jest.mock('../../../song-queue');
 jest.mock('../../../services/web-socket-service');
@@ -11,35 +12,43 @@ jest.mock('../../../services/web-socket-service');
 describe('bump-request', () => {
   describe('getBumpSongRequestData', () => {
     it('should return success with valid data', () => {
-      const requestBody = JSON.stringify({ user: 'username' });
+      const requestBody = JSON.stringify({
+        user: 'adolin',
+        type: BumpType.Bean
+      } as BumpRequest);
       const result = getBumpSongRequestData(requestBody);
 
       expect(result).toEqual({
         success: true,
-        data: { user: 'username' }
+        data: { user: 'adolin', type: BumpType.Bean }
       });
     });
 
     it('should return success with valid data with a position', () => {
-      const requestBody = JSON.stringify({ user: 'username', position: 1 });
+      const requestBody = JSON.stringify({
+        user: 'dalinar',
+        type: BumpType.Bean,
+        position: 1
+      } as BumpRequest);
       const result = getBumpSongRequestData(requestBody);
 
       expect(result).toEqual({
         success: true,
-        data: { user: 'username', position: 1 }
+        data: { user: 'dalinar', type: BumpType.Bean, position: 1 }
       });
     });
 
     it('should return success with valid data with a mod override', () => {
       const requestBody = JSON.stringify({
-        user: 'username',
-        modOverride: true
+        user: 'shallan',
+        modAllowed: true,
+        type: BumpType.Bean
       });
       const result = getBumpSongRequestData(requestBody);
 
       expect(result).toEqual({
         success: true,
-        data: { user: 'username', modOverride: true }
+        data: { user: 'shallan', modAllowed: true, type: BumpType.Bean }
       });
     });
 

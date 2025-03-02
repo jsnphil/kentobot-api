@@ -24,7 +24,8 @@
       "@repositories/*": ["./src/repositories/*"],
       "@schemas/*": ["./src/schemas/*"],
       "@utils/*": ["./src/utils/*"],
-      "@song-queue": ["./src/song-queue"]
+      "@song-queue": ["./src/song-queue"],
+      "@types": ["./src/types"]
     }
   },
   "exclude": ["node_modules", "cdk.out"]

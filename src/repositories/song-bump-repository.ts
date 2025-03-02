@@ -5,8 +5,10 @@ import {
   TransactWriteItemsCommand,
   UpdateItemCommand
 } from '@aws-sdk/client-dynamodb';
-import { BumpData } from '../types/queue-management';
+
 import { unmarshall } from '@aws-sdk/util-dynamodb';
+import { BumpType } from '../types/song-request';
+import { BumpData } from '@schemas/bump-schema';
 
 const dynamoDBClient = new DynamoDBClient({ region: 'us-east-1' });
 const logger = new Logger({ serviceName: 'song-repository' });
@@ -22,36 +24,35 @@ export class SongBumpRepository {
       new QueryCommand({
         TableName: table,
         KeyConditionExpression: 'pk = :pk AND begins_with(sk, :sk)',
-        // FilterExpression: '#timeToLive > :now',
-        // ExpressionAttributeNames: {
-        //   '#timeToLive': 'ttl'
-        // },
         ExpressionAttributeValues: {
           ':pk': { S: 'bumpData' },
           ':sk': { S: 'bumps' }
-          // ':now': { N: Math.floor(Date.now() / 1000).toString() }
         }
       })
     );
 
     if (!Items || Items.length === 0) {
       return {
-        bumpsAvailable: 0,
+        beanBumpsAvailable: 0,
+        channelPointBumpsAvailable: 0,
         bumpedUsers: []
       };
     }
+
+    console.log(Items);
 
     // TODO May need to filter out expired items
     const bumpDataItem = unmarshall(Items[0]);
     const bumpedUserItems = Items.slice(1).map((item) => unmarshall(item));
 
     return {
-      bumpsAvailable: bumpDataItem.bumpsAvailable,
+      beanBumpsAvailable: bumpDataItem.beanBumpsAvailable,
+      channelPointBumpsAvailable: bumpDataItem.channelPointBumpsAvailable,
       bumpedUsers: bumpedUserItems.map((item) => item.bumpedUser)
     };
   }
 
-  async updateRedeemedBumpData(bumpedUser: string, bumpExpiration: number) {
+  async updateRedeemedBeanBumpData(bumpedUser: string, bumpExpiration: number) {
     await dynamoDBClient.send(
       new TransactWriteItemsCommand({
         TransactItems: [
@@ -63,6 +64,7 @@ export class SongBumpRepository {
                 sk: { S: `bumps#user#${bumpedUser}` },
                 bumpedUser: { S: bumpedUser },
                 bumpExpiration: { N: bumpExpiration.toString() },
+                bumpType: { S: BumpType.Bean },
                 ttl: { N: bumpExpiration.toString() }
               }
             }
@@ -75,7 +77,46 @@ export class SongBumpRepository {
                 sk: { S: 'bumps#config' }
               },
               UpdateExpression:
-                'SET bumpsAvailable = bumpsAvailable - :decrement',
+                'SET beanBumpsAvailable = beanBumpsAvailable - :decrement',
+              ExpressionAttributeValues: {
+                ':decrement': { N: '1' }
+              }
+            }
+          }
+        ]
+      })
+    );
+  }
+
+  async updateRedeemedChannelPointsBumpData(
+    bumpedUser: string,
+    bumpExpiration: number
+  ) {
+    await dynamoDBClient.send(
+      new TransactWriteItemsCommand({
+        TransactItems: [
+          {
+            Put: {
+              TableName: table,
+              Item: {
+                pk: { S: 'bumpData' },
+                sk: { S: `bumps#user#${bumpedUser}` },
+                bumpedUser: { S: bumpedUser },
+                bumpExpiration: { N: bumpExpiration.toString() },
+                bumpType: { S: BumpType.ChannelPoints },
+                ttl: { N: bumpExpiration.toString() }
+              }
+            }
+          },
+          {
+            Update: {
+              TableName: table,
+              Key: {
+                pk: { S: 'bumpData' },
+                sk: { S: 'bumps#config' }
+              },
+              UpdateExpression:
+                'SET channelPointBumpsAvailable = channelPointBumpsAvailable - :decrement',
               ExpressionAttributeValues: {
                 ':decrement': { N: '1' }
               }
@@ -95,7 +136,8 @@ export class SongBumpRepository {
           pk: { S: 'bumpData' },
           sk: { S: 'bumps#config' }
         },
-        UpdateExpression: 'SET bumpsAvailable = :bumpsAvailable',
+        UpdateExpression:
+          'SET channelPointBumpsAvailable = :bumpsAvailable, beanBumpsAvailable = :bumpsAvailable',
         ExpressionAttributeValues: {
           ':bumpsAvailable': { N: count }
         }

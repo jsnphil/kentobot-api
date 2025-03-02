@@ -5,6 +5,15 @@ export enum RequestType {
   DJ_Hour
 }
 
+export enum BumpType {
+  Bean = 'bean',
+  ChannelPoints = 'channelPoints',
+  Bits = 'bits',
+  Sub = 'sub',
+  GiftedSub = 'giftedSub',
+  Raid = 'raid'
+}
+
 export interface SongRequest {
   readonly youtubeId: string;
   readonly title: string;

@@ -4,6 +4,7 @@ import { WebSocketMessageSchema } from '../../schemas/schema';
 import { WebSocketService } from '../../services/web-socket-service';
 import { SongQueue } from '../../song-queue';
 import { SongRequestService } from '../../services/song-request-service';
+import { BumpService } from '@services/bump-service';
 
 interface MessageBody {
   readonly action: string;
@@ -12,6 +13,7 @@ interface MessageBody {
 
 const logger = new Logger({ serviceName: 'message-handler' });
 const songQueueService = new SongRequestService();
+const bumpService = new BumpService();
 
 // const client = new ApiGatewayManagementApiClient({
 //   endpoint: `https://${process.env.WEBSOCKET_API_ID}.execute-api.us-east-1.amazonaws.com/${process.env.WEB_SOCKET_STAGE}`
@@ -57,6 +59,7 @@ export const handleRoute = async (
   }
 };
 
+// TODO These need to respond only to the connection that sent the message, broadcasts will be done by the systems
 export const sendMessage = async (connectionId: string, message: string) => {
   if (message === 'ping') {
     await webSocketService.sendToConnection(
@@ -75,5 +78,8 @@ export const sendMessage = async (connectionId: string, message: string) => {
     await songQueueService.toggleSongRequests('open');
   } else if (message === 'songqueue:close') {
     await songQueueService.toggleSongRequests('closed');
+  } else if (message === 'songqueue:info') {
+    // TODO Probably need to wrap this into a "song info service"?
+    await bumpService.broadcastBumpData();
   }
 };

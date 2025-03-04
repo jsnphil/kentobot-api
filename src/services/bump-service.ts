@@ -2,10 +2,12 @@ import { Logger } from '@aws-lambda-powertools/logger';
 import { SongBumpRepository } from '../repositories/song-bump-repository';
 import { BumpType, ValidationResult } from '../types/song-request';
 import { SongQueue } from '../song-queue';
+import { WebSocketService } from './web-socket-service';
 
 export class BumpService {
   private readonly logger = new Logger({ serviceName: 'song-bump-service' });
   private bumpRepository = new SongBumpRepository();
+  private webSocketService = new WebSocketService();
 
   constructor() {
     this.logger.info('Initializing bump service');
@@ -140,5 +142,26 @@ export class BumpService {
   /* istanbul ignore next */
   async resetBumpCounts() {
     await this.bumpRepository.resetBumpCounts('3'); // Future enhancement - get this from parameter store
+    await this.broadcastBumpData();
+  }
+
+  async broadcastBumpData() {
+    const { bumpedUsers, beanBumpsAvailable, channelPointBumpsAvailable } =
+      await this.bumpRepository.getBumpData();
+
+    this.webSocketService.broadcast(
+      JSON.stringify({
+        bumpData: {
+          beanBumpsAvailable,
+          channelPointBumpsAvailable
+        }
+      })
+    );
+
+    return {
+      bumpedUsers,
+      beanBumpsAvailable,
+      channelPointBumpsAvailable
+    };
   }
 }

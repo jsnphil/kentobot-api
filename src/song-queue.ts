@@ -238,6 +238,8 @@ export class SongQueue {
       bumpType
     );
 
+    this.bumpService.broadcastBumpData();
+
     return {
       success: true
     };

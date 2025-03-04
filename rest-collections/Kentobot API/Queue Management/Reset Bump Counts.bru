@@ -4,8 +4,14 @@ meta {
   seq: 4
 }
 
-get {
+post {
   url: https://{{aws.api.id}}.execute-api.us-east-1.amazonaws.com/{{stage}}/song-queue/reset-bumps
   body: none
-  auth: none
+  auth: apikey
+}
+
+auth:apikey {
+  key: X-API-Key
+  value: {{kentobot.api.key}}
+  placement: header
 }

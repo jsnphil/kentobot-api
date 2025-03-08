@@ -15,10 +15,12 @@ export interface YouTubeVideoResult {
 
 export class YouTubeService {
   private static readonly ssmClient = new SSMClient({ region: 'us-east-1' });
-  private readonly logger = new Logger({ serviceName: 'youtube-client' });
-  private readonly apiKey: string;
+  private static readonly logger = new Logger({
+    serviceName: 'youtube-client'
+  });
+  private static readonly apiKey: string;
 
-  private readonly YOUTUBE_API_URL =
+  private static readonly YOUTUBE_API_URL =
     'https://www.googleapis.com/youtube/v3/videos';
 
   constructor(apiKey: string) {
@@ -26,15 +28,15 @@ export class YouTubeService {
     this.apiKey = apiKey;
   }
 
-  async getVideo(youtubeId: string) {
-    const youtubeUrl = new URL(this.YOUTUBE_API_URL);
+  static async getVideo(youtubeId: string) {
+    const youtubeUrl = new URL(YouTubeService.YOUTUBE_API_URL);
     youtubeUrl.search = new URLSearchParams({
-      key: this.apiKey,
+      key: YouTubeService.apiKey,
       part: 'contentDetails,snippet,status',
       id: youtubeId
     }).toString();
 
-    this.logger.info(`Calling ${youtubeUrl}`);
+    YouTubeService.logger.info(`Calling ${youtubeUrl}`);
 
     const start = Date.now();
 
@@ -67,25 +69,31 @@ export class YouTubeService {
     }
 
     const video = data.items[0];
-    return this.createYouTubeVideoResult(video);
+    return YouTubeService.createYouTubeVideoResult(video);
   }
 
-  private createYouTubeVideoResult(video: VideoListItem): YouTubeVideoResult {
+  private static createYouTubeVideoResult(
+    video: VideoListItem
+  ): YouTubeVideoResult {
     const { snippet, contentDetails, status } = video;
 
     return {
       id: video.id,
       title: video.snippet.title,
-      duration: this.convertDurationToSeconds(contentDetails.duration),
+      duration: YouTubeService.convertDurationToSeconds(
+        contentDetails.duration
+      ),
       isLive: snippet.liveBroadcastContent === 'live',
       isPublic: status.privacyStatus === 'public',
-      availableInUS: this.checkUSAvailability(contentDetails.regionRestriction),
+      availableInUS: YouTubeService.checkUSAvailability(
+        contentDetails.regionRestriction
+      ),
       isEmbeddable: status.embeddable
     };
   }
 
   // Convert ISO 8601 duration (e.g., PT4M30S) to seconds
-  private convertDurationToSeconds(duration: string): number {
+  private static convertDurationToSeconds(duration: string): number {
     const regex = /^PT(\d+H)?(\d+M)?(\d+S)?$/;
     const match = duration.match(regex);
 
@@ -101,7 +109,7 @@ export class YouTubeService {
   }
 
   // Check if the video is available in the US (basic check, can be expanded)
-  private checkUSAvailability(videoData: any): boolean {
+  private static checkUSAvailability(videoData: any): boolean {
     // This can be adjusted based on the actual availability data from YouTube.
     // Assuming there's an API field for this or use a different service to check availability.
     return videoData.snippet.country === 'US';

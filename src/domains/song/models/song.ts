@@ -1,3 +1,9 @@
+import { YouTubeService } from '../../../common/services/youtube-service';
+import {
+  SongQueueValidator,
+  SongValidator
+} from '../../../common/validators/song-validator';
+
 export class Song {
   public readonly id: string;
   public readonly requestedBy: string;
@@ -5,7 +11,7 @@ export class Song {
   public status: 'in queue' | 'bumped' | 'in shuffle' | 'shuffle winner'; // TODO Change this later, maybe an enum
   public readonly duration: number; // in seconds
 
-  constructor(
+  private constructor(
     id: string,
     requestedBy: string,
     title: string,
@@ -17,6 +23,19 @@ export class Song {
     this.title = title;
     this.status = status;
     this.duration = duration;
+  }
+
+  public static async create(id: string): Promise<Song> {
+    const youtubeVideo = await YouTubeService.getVideo(id);
+
+    SongValidator.validate(youtubeVideo);
+    return new Song(
+      youtubeVideo.id,
+      youtubeVideo.title,
+      youtubeVideo.title,
+      'in queue',
+      youtubeVideo.duration
+    );
   }
 
   // Add methods to update status, e.g., for bumping or shuffling

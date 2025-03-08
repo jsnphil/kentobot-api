@@ -1,6 +1,6 @@
 import { YouTubeVideoResult } from '../services/youtube-service';
 
-export class SongQueueValidator {
+export class SongValidator {
   public static validate(songMetadata: YouTubeVideoResult): void {
     // Rule 1: Length should be less than 6 minutes
     if (songMetadata.duration > 360) {
@@ -11,11 +11,11 @@ export class SongQueueValidator {
 
     // Rule 2: Song should not be a YouTube live stream
     if (songMetadata.isLive) {
-      throw new Error('YouTube live streams cannot be added.');
+      throw new Error('Video cannot be a live stream');
     }
 
     // Rule 3: Video should be public
-    if (songMetadata.status !== 'public') {
+    if (!songMetadata.isPublic) {
       throw new Error('The YouTube video must be public.');
     }
 

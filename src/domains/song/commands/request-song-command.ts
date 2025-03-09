@@ -1,9 +1,9 @@
 export class RequestSongCommand {
-  public readonly userId: string;
+  public readonly requestedBy: string;
   public readonly songId: string;
 
-  constructor(userId: string, songId: string) {
-    this.userId = userId;
+  constructor(requestedBy: string, songId: string) {
+    this.requestedBy = requestedBy;
     this.songId = songId;
   }
 }

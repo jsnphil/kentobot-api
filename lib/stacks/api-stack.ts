@@ -486,11 +486,12 @@ export class ApiStack extends cdk.Stack {
     const songRequestLambda = new lambda.NodejsFunction(this, 'RequestSong', {
       runtime: NODE_RUNTIME,
       handler: 'handler',
-      entry: path.join(
-        __dirname,
-        '../../src/lambdas/rest-api/',
-        'queue-management/request-song.ts'
-      ),
+      // entry: path.join(
+      //   __dirname,
+      //   '../../src/lambdas/rest-api/',
+      //   'queue-management/request-song.ts'
+      // ),
+      entry: path.join(__dirname, '../../src/api/request-song.ts'),
       bundling: {
         minify: false,
         externalModules: ['aws-sdk']
@@ -835,6 +836,37 @@ export class ApiStack extends cdk.Stack {
         }
       }
     );
+
+    const addSongToQueueEventHandler = new lambda.NodejsFunction(
+      this,
+      'addSongToQueueEventHandler',
+      {
+        runtime: NODE_RUNTIME,
+        handler: 'handler',
+        entry: path.join(
+          __dirname,
+          '../../src/domains/stream/handlers/add-song-to-queue-event-handler.ts'
+        ),
+        bundling: {
+          minify: false,
+          externalModules: ['aws-sdk']
+        },
+        logRetention: logs.RetentionDays.ONE_WEEK,
+        environment: {
+          ...lambdaEnvironment,
+          ENVIRONMENT: props.environmentName,
+          STREAM_DATA_TABLE: database.tableName
+        }
+      }
+    );
+
+    eventBus.addLambdaTarget(this, 'enter-shuffle-rule', {
+      source: 'kentobot.streaming.system',
+      eventPattern: {
+        detailType: ['song-added-to-queue']
+      },
+      lambda: addSongToQueueEventHandler
+    });
 
     // ***********************
     // TEst code for song queue

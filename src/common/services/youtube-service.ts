@@ -1,7 +1,12 @@
 import { Metrics, MetricUnit } from '@aws-lambda-powertools/metrics';
-import { VideoListItem, VideoListResponse } from '../../types/youtube';
+import {
+  RegionRestriction,
+  VideoListItem,
+  VideoListResponse
+} from '../../types/youtube';
 import { SSMClient } from '@aws-sdk/client-ssm';
 import { Logger } from '@aws-lambda-powertools/logger';
+import { getParameter } from '@aws-lambda-powertools/parameters/ssm';
 
 export interface YouTubeVideoResult {
   id: string;
@@ -18,20 +23,21 @@ export class YouTubeService {
   private static readonly logger = new Logger({
     serviceName: 'youtube-client'
   });
-  private static readonly apiKey: string;
+
+  private static apiKey: string = process.env.YOUTUBE_API_KEY || '';
 
   private static readonly YOUTUBE_API_URL =
     'https://www.googleapis.com/youtube/v3/videos';
 
-  constructor(apiKey: string) {
-    this.logger.info('Initializing YouTubeClient');
-    this.apiKey = apiKey;
-  }
-
   static async getVideo(youtubeId: string) {
+    const youtubeApiKey = await getParameter('youtube-api-key', {
+      decrypt: true,
+      maxAge: 3600
+    });
+
     const youtubeUrl = new URL(YouTubeService.YOUTUBE_API_URL);
     youtubeUrl.search = new URLSearchParams({
-      key: YouTubeService.apiKey,
+      key: youtubeApiKey!,
       part: 'contentDetails,snippet,status',
       id: youtubeId
     }).toString();
@@ -109,9 +115,16 @@ export class YouTubeService {
   }
 
   // Check if the video is available in the US (basic check, can be expanded)
-  private static checkUSAvailability(videoData: any): boolean {
+  private static checkUSAvailability(
+    regionRestriction: RegionRestriction
+  ): boolean {
     // This can be adjusted based on the actual availability data from YouTube.
     // Assuming there's an API field for this or use a different service to check availability.
-    return videoData.snippet.country === 'US';
+    // If there is no restriction, assume it's available.
+    if (!regionRestriction || !regionRestriction.allowed) {
+      return true;
+    }
+
+    return regionRestriction.allowed.includes('US');
   }
 }

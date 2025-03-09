@@ -4,6 +4,8 @@ import * as sqs from 'aws-cdk-lib/aws-sqs';
 import * as eventsTargets from 'aws-cdk-lib/aws-events-targets';
 
 import { Construct } from 'constructs';
+import { Lambda } from 'aws-cdk-lib/aws-ses-actions';
+import { IFunction } from 'aws-cdk-lib/aws-lambda';
 
 export interface EventBusProps {
   readonly environmentName: string;
@@ -16,6 +18,10 @@ export interface TargetProps {
 
 export interface QueueTargetProps extends TargetProps {
   readonly queue: sqs.Queue;
+}
+
+export interface LambdaTargetProps extends TargetProps {
+  readonly lambda: IFunction;
 }
 
 export class EventBus extends Construct {
@@ -46,6 +52,8 @@ export class EventBus extends Construct {
     });
   }
 
+  // TODO Add a DLQ
+  // TODO Add a retry policy
   public addQueueTarget(scope: Construct, id: string, props: QueueTargetProps) {
     const rule = new events.Rule(scope, id, {
       eventBus: this.bus,
@@ -56,5 +64,23 @@ export class EventBus extends Construct {
     });
 
     rule.addTarget(new eventsTargets.SqsQueue(props.queue));
+  }
+
+  // TODO Add a DLQ
+  // TODO Add a retry policy
+  public addLambdaTarget(
+    scope: Construct,
+    id: string,
+    props: LambdaTargetProps
+  ) {
+    const rule = new events.Rule(scope, id, {
+      eventBus: this.bus,
+      eventPattern: {
+        source: [props.source],
+        ...props.eventPattern
+      }
+    });
+
+    rule.addTarget(new eventsTargets.LambdaFunction(props.lambda));
   }
 }

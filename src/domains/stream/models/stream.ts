@@ -1,21 +1,36 @@
-import { BumpCount } from "./bump-count";
-import { SongQueue } from "./song-queue";
+import { Song } from '../../song/models/song';
+import { SongQueue } from '../../song/models/song-queue';
+// import { BumpCount } from './bump-count';
 
 export class Stream {
-  private _streamDate: Date;
-  private _songQueue: SongQueue;
+  private streamDate: Date;
+  private songQueue: SongQueue;
   //   private _songHistory: SongHistory;
-  private _bumpCounts: BumpCount;
+  // private bumpCounts: BumpCount;
+  // public bumpCounts: Map<string, number>, // Tracks how many bumps each user has used
 
   private constructor(
     streamDate: Date,
-    songQueue: SongQueue,
+    songQueue: SongQueue
     // songHistory: SongHistory,
-    bumpCounts: BumpCount
+    // bumpCounts: BumpCount
   ) {
-    this._streamDate = streamDate;
-    this._songQueue = songQueue;
+    this.streamDate = streamDate;
+    this.songQueue = songQueue;
     // this._songHistory = songHistory;
-    this._bumpCounts = bumpCounts;
+    // this.bumpCounts = bumpCounts;
+  }
+
+  public static create(
+    streamDate: Date,
+    songQueue: SongQueue
+    // songHistory: SongHistory,
+    // bumpCounts: BumpCount
+  ): Stream {
+    return new Stream(streamDate, songQueue);
+  }
+
+  public async addSongToQueue(song: Song) {
+    this.songQueue.addSong(song);
   }
 }

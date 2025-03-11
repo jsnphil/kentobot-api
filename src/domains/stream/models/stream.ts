@@ -21,7 +21,7 @@ export class Stream {
     // this.bumpCounts = bumpCounts;
   }
 
-  public static create(
+  public static load(
     streamDate: Date,
     songQueue: SongQueue
     // songHistory: SongHistory,
@@ -30,7 +30,24 @@ export class Stream {
     return new Stream(streamDate, songQueue);
   }
 
+  public static create(streamDate: Date): Stream {
+    const songQueue = SongQueue.create();
+
+    // const songHistory = SongHistory.create();
+    // const bumpCounts = BumpCount.create();
+
+    return new Stream(streamDate, songQueue);
+  }
+
   public async addSongToQueue(song: Song) {
     this.songQueue.addSong(song);
+  }
+
+  public getSongQueue(): Song[] {
+    return this.songQueue.getSongQueue();
+  }
+
+  public getStreamDate(): Date {
+    return this.streamDate;
   }
 }

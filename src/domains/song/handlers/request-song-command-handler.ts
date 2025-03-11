@@ -20,7 +20,7 @@ export class RequestSongCommandHandler {
     const song = await Song.create(songId, requestedBy);
     await stream.addSongToQueue(song);
 
-    await StreamRepository.saveStream(streamDate, stream);
+    await StreamRepository.saveStream(stream);
 
     return song;
   }

@@ -44,22 +44,19 @@ export class StreamRepository {
       await songQueue.addSong(newSong);
     }
 
-    return Stream.create(new Date(result.Item.streamDate.S!), songQueue);
+    return Stream.load(new Date(result.Item.streamDate.S!), songQueue);
   }
 
   // Save a stream
-  public static async saveStream(
-    streamDate: string,
-    streamData: any
-  ): Promise<void> {
+  public static async saveStream(stream: Stream): Promise<void> {
     const command = new PutItemCommand({
       TableName: this.TABLE_NAME,
       Item: {
         pk: { S: 'stream' },
-        sk: { S: `streamDate${streamDate}` },
+        sk: { S: `streamDate${stream.getStreamDate().toISOString()}` },
         streamId: { S: 'stream' },
-        streamDate: { S: `streamDate${streamDate}` },
-        streamData: { S: JSON.stringify(streamData) } // TODO Break this into more attributes
+        streamDate: { S: `streamDate${stream.getStreamDate().toISOString()}` },
+        streamData: { S: JSON.stringify(stream) } // TODO Break this into more attributes
       }
     });
 

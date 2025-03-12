@@ -20,3 +20,4 @@ afterAll(() => {
 process.env.POWERTOOLS_DEV = 'true';
 // process.env.POWERTOOLS_LOG_LEVEL = 'SILENT';
 process.env.STREAM_DATA_TABLE = 'stream-data-table';
+process.env.AWS_REGION = 'us-east-1';

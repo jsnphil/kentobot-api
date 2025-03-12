@@ -1,16 +1,17 @@
+import { StringConcat } from 'aws-cdk-lib';
 import { Song } from '../../song/models/song';
 import { SongQueue } from '../../song/models/song-queue';
 // import { BumpCount } from './bump-count';
 
 export class Stream {
-  private streamDate: Date;
+  private streamDate: string;
   private songQueue: SongQueue;
   //   private _songHistory: SongHistory;
   // private bumpCounts: BumpCount;
   // public bumpCounts: Map<string, number>, // Tracks how many bumps each user has used
 
   private constructor(
-    streamDate: Date,
+    streamDate: string,
     songQueue: SongQueue
     // songHistory: SongHistory,
     // bumpCounts: BumpCount
@@ -22,7 +23,7 @@ export class Stream {
   }
 
   public static load(
-    streamDate: Date,
+    streamDate: string,
     songQueue: SongQueue
     // songHistory: SongHistory,
     // bumpCounts: BumpCount
@@ -30,7 +31,7 @@ export class Stream {
     return new Stream(streamDate, songQueue);
   }
 
-  public static create(streamDate: Date): Stream {
+  public static create(streamDate: string): Stream {
     const songQueue = SongQueue.create();
 
     // const songHistory = SongHistory.create();
@@ -47,7 +48,7 @@ export class Stream {
     return this.songQueue.getSongQueue();
   }
 
-  public getStreamDate(): Date {
+  public getStreamDate(): string {
     return this.streamDate;
   }
 }

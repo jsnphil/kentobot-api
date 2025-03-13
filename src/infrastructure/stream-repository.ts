@@ -19,48 +19,22 @@ export class StreamRepository {
   private static logger = new Logger({ serviceName: 'stream-repository' });
 
   public static async loadStream(streamDate: string) {
-    const params = {
+    this.logger.info(`Loading stream for date: ${streamDate}`);
+    const command = new GetItemCommand({
       TableName: this.TABLE_NAME,
       Key: {
         pk: { S: 'stream' },
         sk: { S: `streamDate#${streamDate}` }
       }
-    };
-
-    console.log(params);
-
-    this.logger.info(`Loading stream for date: ${streamDate}`);
-    const command = new GetItemCommand(params);
+    });
 
     const { Item } = await this.ddbClient.send(command);
 
     if (!Item) {
       return undefined;
+    } else {
+      return unmarshall(Item);
     }
-
-    this.logger.info(JSON.stringify(Item));
-
-    const songQueue = SongQueue.create();
-
-    const unmarshalledItem = unmarshall(Item);
-    console.log(JSON.stringify(unmarshalledItem, null, 2));
-
-    // TODO How to load
-
-    const songData = JSON.parse(Item.streamData.S!); // Deserialize stream data
-    for (const song of songData) {
-      const newSong = await Song.load(
-        song.songId,
-        song.requestedBy,
-        song.title,
-        song.status,
-        song.duration
-      );
-
-      await songQueue.addSong(newSong);
-    }
-
-    return Stream.load(Item.streamDate.S!, songQueue);
   }
 
   // Save a stream
@@ -78,20 +52,13 @@ export class StreamRepository {
           songQueue: {
             S: JSON.stringify(stream.getSongQueue())
           }
-        },
-        ConditionExpression:
-          'attribute_not_exists(pk) AND attribute_not_exists(sk)'
+        }
       });
 
       await this.ddbClient.send(command);
     } catch (err) {
       this.logger.error((err as Error).message);
-
-      if ((err as Error).name === 'ConditionalCheckFailedException') {
-        throw new Error('Stream already exists');
-      } else {
-        throw new Error('Error saving stream');
-      }
+      throw new Error('Error saving stream');
     }
   }
 }

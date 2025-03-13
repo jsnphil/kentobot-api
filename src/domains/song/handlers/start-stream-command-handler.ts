@@ -6,6 +6,12 @@ export class StartStreamCommandHandler {
   constructor() {}
 
   public async execute(command: StartStreamCommand): Promise<void> {
+    const streamData = await StreamRepository.loadStream(command.streamDate);
+
+    if (streamData) {
+      throw new Error('Stream already exists');
+    }
+
     const stream = Stream.create(command.streamDate);
     await StreamRepository.saveStream(stream);
 

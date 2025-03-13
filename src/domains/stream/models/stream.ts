@@ -22,17 +22,21 @@ export class Stream {
     // this.bumpCounts = bumpCounts;
   }
 
-  public static load(
-    streamDate: string,
-    songQueue: SongQueue
-    // songHistory: SongHistory,
-    // bumpCounts: BumpCount
-  ): Stream {
-    return new Stream(streamDate, songQueue);
+  public static load(data: any): Stream {
+    if (!data || typeof data.streamDate !== 'string') {
+      throw new Error('Invalid data');
+    }
+
+    return new Stream(
+      data.streamDate,
+      new SongQueue(
+        Array.isArray(data.songQueue) ? data.songQueue.map(Song.load) : []
+      )
+    );
   }
 
   public static create(streamDate: string): Stream {
-    const songQueue = SongQueue.create();
+    const songQueue = new SongQueue();
 
     // const songHistory = SongHistory.create();
     // const bumpCounts = BumpCount.create();

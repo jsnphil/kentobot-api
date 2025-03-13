@@ -19,5 +19,6 @@ export interface ApiError {
 
 export enum KentobotErrorCode {
   StreamAlreadyExists = 'STREAM_ALREADY_EXISTS',
-  SystemError = 'SYSTEM_ERROR'
+  SystemError = 'SYSTEM_ERROR',
+  StreamNotFound = 'STREAM_NOT_FOUND'
 }

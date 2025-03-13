@@ -5,12 +5,8 @@ import { Song } from './song';
 export class SongQueue {
   private songs: Song[] = [];
 
-  private constructor(songs: Song[] = []) {
+  constructor(songs: Song[] = []) {
     this.songs = songs;
-  }
-
-  public static create(songs: Song[] = []): SongQueue {
-    return new SongQueue(songs);
   }
 
   public async addSong(song: Song): Promise<void> {

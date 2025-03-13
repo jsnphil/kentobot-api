@@ -3,6 +3,7 @@ import { RequestSongCommand } from '../commands/request-song-command';
 import { Song } from '../models/song';
 import { generateStreamDate } from '@utils/utilities';
 import { StreamRepository } from '../../../infrastructure/stream-repository';
+import { Stream } from '../../stream/models/stream';
 
 export class RequestSongCommandHandler {
   constructor() {}
@@ -11,11 +12,13 @@ export class RequestSongCommandHandler {
     const { requestedBy, songId } = command;
 
     const streamDate = generateStreamDate();
-    const stream = await StreamRepository.loadStream(streamDate);
+    const streamData = await StreamRepository.loadStream(streamDate);
 
-    if (!stream) {
+    if (!streamData) {
       throw new Error('Stream not found');
     }
+
+    const stream = Stream.load(streamData);
 
     const song = await Song.create(songId, requestedBy);
     await stream.addSongToQueue(song);

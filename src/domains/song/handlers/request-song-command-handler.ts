@@ -20,6 +20,8 @@ export class RequestSongCommandHandler {
 
     const stream = Stream.load(streamData);
 
+    console.log(JSON.stringify(stream, null, 2));
+
     const song = await Song.create(songId, requestedBy);
     await stream.addSongToQueue(song);
 

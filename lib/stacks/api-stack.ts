@@ -521,6 +521,7 @@ export class ApiStack extends cdk.Stack {
     youtubeApiKeyParameter.grantRead(songRequestLambda);
     maxSongRequestsPerUser.grantRead(songRequestLambda);
     database.grantReadWriteData(songRequestLambda);
+    eventBus.bus.grantPutEventsTo(songRequestLambda);
 
     requestSongResource.addMethod(
       'POST',

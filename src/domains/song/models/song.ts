@@ -35,13 +35,13 @@ export class Song {
     );
   }
 
-  public static async load(
+  public static load(
     id: string,
     requestedBy: string,
     title: string,
     status: 'in queue' | 'bumped' | 'in shuffle' | 'shuffle winner',
     duration: number
-  ): Promise<Song> {
+  ): Song {
     return new Song(id, requestedBy, title, status, duration);
   }
 

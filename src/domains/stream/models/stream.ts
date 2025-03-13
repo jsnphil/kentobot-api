@@ -1,6 +1,7 @@
 import { StringConcat } from 'aws-cdk-lib';
 import { Song } from '../../song/models/song';
 import { SongQueue } from '../../song/models/song-queue';
+import { SamlConsolePrincipal } from 'aws-cdk-lib/aws-iam';
 // import { BumpCount } from './bump-count';
 
 export class Stream {
@@ -27,12 +28,38 @@ export class Stream {
       throw new Error('Invalid data');
     }
 
-    return new Stream(
-      data.streamDate,
-      new SongQueue(
-        Array.isArray(data.songQueue) ? data.songQueue.map(Song.load) : []
-      )
-    );
+    console.log('Loading stream');
+    console.log(JSON.stringify(data, null, 2));
+
+    const songQueue = new SongQueue();
+    // const songData = JSON.parse(data).songQueue;
+    console.log(data.songQueue);
+    console.log(typeof data.songQueue);
+
+    const songQueueArray = JSON.parse(data.songQueue) as any[];
+    console.log(typeof songQueueArray);
+
+    songQueueArray.forEach((songAttrs: any) => {
+      const song = Song.load(
+        songAttrs.id,
+        songAttrs.requestedBy,
+        songAttrs.title,
+        songAttrs.status,
+        songAttrs.duration
+      );
+
+      console.log('Song loaded');
+      console.log(JSON.stringify(song, null, 2));
+      songQueue.addSong(song);
+    });
+
+    console.log('Loaded song queue');
+    console.log(JSON.stringify(songQueue, null, 2));
+    const newStream = new Stream(data.streamDate, songQueue);
+
+    console.log('Loaded stream');
+    console.log(JSON.stringify(newStream, null, 2));
+    return newStream;
   }
 
   public static create(streamDate: string): Stream {

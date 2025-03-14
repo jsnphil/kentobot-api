@@ -1,7 +1,5 @@
-import { StringConcat } from 'aws-cdk-lib';
 import { Song } from '../../song/models/song';
 import { SongQueue } from '../../song/models/song-queue';
-import { SamlConsolePrincipal } from 'aws-cdk-lib/aws-iam';
 // import { BumpCount } from './bump-count';
 
 export class Stream {
@@ -23,29 +21,19 @@ export class Stream {
     // this.bumpCounts = bumpCounts;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public static load(data: any): Stream {
-    // if (!data || typeof data.streamDate !== 'string') {
-    //   throw new Error('Invalid data');
-    // }
-
-    console.log('Loading stream');
-    console.log(JSON.stringify(data, null, 2));
-
-    // const songData = JSON.parse(data).songQueue;
-    console.log(data.songQueue);
-    console.log(`Type of songQueue: ${typeof data.songQueue}`);
-
     // TODO Eventually figure out why this type conversion is necessary
     let songQueueArray;
     if (typeof data.songQueue == 'string') {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       songQueueArray = JSON.parse(data.songQueue) as any[];
     } else {
       songQueueArray = data.songQueue;
     }
-    // const songQueueArray = JSON.parse(data.songQueue) as any[];
-    // console.log(`Type of songQueueArray  ${typeof songQueueArray}`);
 
     const songs: Song[] = [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     songQueueArray.forEach((songAttrs: any) => {
       const song = Song.load(
         songAttrs.id,
@@ -55,30 +43,17 @@ export class Stream {
         songAttrs.duration
       );
 
-      console.log('Song loaded');
-      console.log(JSON.stringify(song, null, 2));
-      // songQueue.addSong(song);
       songs.push(song);
     });
 
     const songQueue = new SongQueue(songs);
+    const stream = new Stream(data.streamDate, songQueue);
 
-    console.log('Loaded song queue');
-    console.log(JSON.stringify(songQueue, null, 2));
-
-    const newStream = new Stream(data.streamDate, songQueue);
-
-    console.log('Loaded stream');
-    console.log(JSON.stringify(newStream, null, 2));
-    return newStream;
+    return stream;
   }
 
   public static create(streamDate: string): Stream {
     const songQueue = new SongQueue();
-
-    // const songHistory = SongHistory.create();
-    // const bumpCounts = BumpCount.create();
-
     return new Stream(streamDate, songQueue);
   }
 

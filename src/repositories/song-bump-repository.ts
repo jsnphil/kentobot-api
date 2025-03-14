@@ -39,7 +39,7 @@ export class SongBumpRepository {
       };
     }
 
-    console.log(Items);
+    logger.debug(JSON.stringify(Items));
 
     // TODO May need to filter out expired items
     const bumpDataItem = unmarshall(Items[0]);

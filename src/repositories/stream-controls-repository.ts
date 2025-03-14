@@ -4,10 +4,9 @@ import {
   GetItemCommand,
   UpdateItemCommand
 } from '@aws-sdk/client-dynamodb';
-import { p } from 'msw/lib/core/GraphQLHandler-C5CUIS_N';
 
 const dynamoDBClient = new DynamoDBClient({ region: 'us-east-1' });
-const logger = new Logger({ serviceName: 'song-controls-repo' });
+// const logger = new Logger({ serviceName: 'song-controls-repo' });
 
 const table = process.env.STREAM_DATA_TABLE;
 

@@ -857,18 +857,32 @@ export class ApiStack extends cdk.Stack {
         environment: {
           ...lambdaEnvironment,
           ENVIRONMENT: props.environmentName,
-          STREAM_DATA_TABLE: database.tableName
+          STREAM_DATA_TABLE: database.tableName,
+          WEBSOCKET_API_ID: webSocketApi.apiId,
+          WEB_SOCKET_STAGE: webSocketApiStage
         }
       }
     );
 
-    eventBus.addLambdaTarget(this, 'enter-shuffle-rule', {
+    eventBus.addLambdaTarget(this, 'song-added-to-queue-event-rule', {
       source: 'kentobot.streaming.system',
       eventPattern: {
         detailType: ['song-added-to-queue']
       },
       lambda: addSongToQueueEventHandler
     });
+
+    database.grantReadData(addSongToQueueEventHandler);
+
+    addSongToQueueEventHandler.addToRolePolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        actions: ['execute-api:ManageConnections'],
+        resources: [
+          `arn:aws:execute-api:${props.env?.region}:${props.env?.account}:${webSocketApi.apiId}/*/*/@connections/*`
+        ]
+      })
+    );
 
     const streamEndpointResource = api.apiGateway.root.addResource('streams');
 
@@ -900,28 +914,5 @@ export class ApiStack extends cdk.Stack {
         apiKeyRequired: true
       }
     );
-
-    // ***********************
-    // TEst code for song queue
-    // ***********************
-    const queueTestLambda = new lambda.NodejsFunction(this, 'queueTest', {
-      runtime: NODE_RUNTIME,
-      handler: 'handler',
-      entry: path.join(__dirname, '../../src/test-code', 'queue-test.ts'),
-      bundling: {
-        minify: false,
-        externalModules: ['aws-sdk']
-      },
-      logRetention: logs.RetentionDays.ONE_WEEK,
-      environment: {
-        ENVIRONMENT: props.environmentName,
-        STREAM_DATA_TABLE: database.tableName
-      },
-      timeout: cdk.Duration.minutes(1),
-      memorySize: 512,
-      architecture: ARCHITECTURE
-    });
-
-    database.grantReadWriteData(queueTestLambda);
   }
 }

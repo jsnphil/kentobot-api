@@ -112,8 +112,6 @@ describe('YouTubeService', () => {
 
       const result = await client.validateResult([video]);
 
-      console.log(result);
-
       expect(result).toBeDefined();
 
       expect(result.success).toBe(true);

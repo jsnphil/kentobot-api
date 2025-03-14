@@ -23,7 +23,7 @@ export class SongQueue {
 
     await EventPublisher.publishEvent(
       new SongAddedToQueueEvent(song),
-      'SongAddedToQueueEvent' // TODO Make this an enum
+      'song-added-to-queue' // TODO Make this an enum
     );
   }
 

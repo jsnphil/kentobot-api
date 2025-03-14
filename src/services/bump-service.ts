@@ -70,11 +70,11 @@ export class BumpService {
       }
     ];
 
-    let errors: { code: string; message: string }[] = [];
+    const errors: { code: string; message: string }[] = [];
 
     for (const check of bumpChecks) {
       if (!check.fn()) {
-        console.log('Check failed: ', check);
+        this.logger.warn('Check failed: ', check);
         errors.push({
           code: check.code,
           message: check.name
@@ -109,9 +109,7 @@ export class BumpService {
 
   getBumpPosition(songQueue: SongQueue): number {
     const queueArray = songQueue.toArray();
-    console.log(queueArray);
 
-    let i = 0;
     for (let i = 0; i < queueArray.length; i++) {
       if (!queueArray[i].isBumped) {
         return i + 1;

@@ -2,8 +2,10 @@ import { APIGatewayEvent, APIGatewayProxyResult } from 'aws-lambda';
 
 import { SongRequestService } from '../../../services/song-request-service';
 import { Code } from 'better-status-codes';
+import { Logger } from '@aws-lambda-powertools/logger';
 
 let songRequestService: SongRequestService;
+const logger = new Logger({ serviceName: 'enter-shuffle' });
 
 export const handler = async (
   event: APIGatewayEvent
@@ -33,7 +35,7 @@ export const handler = async (
       })
     };
   } catch (error) {
-    console.log(JSON.stringify(error, null, 2));
+    logger.error(JSON.stringify(error, null, 2));
     return {
       statusCode: 400,
       body: JSON.stringify({

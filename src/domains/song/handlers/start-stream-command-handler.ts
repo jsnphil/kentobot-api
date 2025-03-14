@@ -1,8 +1,11 @@
 import { StartStreamCommand } from '../commands/start-stream-command';
 import { StreamRepository } from '../../../infrastructure/stream-repository';
 import { Stream } from '../../stream/models/stream';
+import { Logger } from '@aws-lambda-powertools/logger';
 
 export class StartStreamCommandHandler {
+  logger = new Logger({ serviceName: 'add-song-to-queue-event-handler' });
+
   constructor() {}
 
   public async execute(command: StartStreamCommand): Promise<void> {
@@ -15,6 +18,6 @@ export class StartStreamCommandHandler {
     const stream = Stream.create(command.streamDate);
     await StreamRepository.saveStream(stream);
 
-    console.log(`Stream started for date: ${command.streamDate}`);
+    this.logger.info(`Stream started for date: ${command.streamDate}`);
   }
 }

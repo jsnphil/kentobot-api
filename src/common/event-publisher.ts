@@ -1,3 +1,4 @@
+import { Logger } from '@aws-lambda-powertools/logger';
 import {
   EventBridgeClient,
   PutEventsCommand,
@@ -9,8 +10,11 @@ export class EventPublisher {
     region: process.env.AWS_REGION
   });
 
+  static logger = new Logger({ serviceName: 'event-publisher' });
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public static async publishEvent(event: any, eventType: string) {
-    console.log('Publishing event:', event);
+    this.logger.debug('Publishing event:', event);
 
     const params: PutEventsCommandInput = {
       Entries: [
@@ -23,11 +27,10 @@ export class EventPublisher {
       ]
     };
 
-    console.log('Publishing event:', params);
-
     const data = await this.eventBridgeClient.send(
       new PutEventsCommand(params)
     );
-    console.log('Event published:', data);
+
+    this.logger.debug(`Event published: ${data}`);
   }
 }

@@ -17,12 +17,12 @@ export const handler = async (event: SQSEvent) => {
   for (const record of event.Records) {
     const songHistoryItem: SongHistoryRequest = JSON.parse(record.body);
 
-    console.log(`Processing song request: ${songHistoryItem.title}`);
+    logger.info(`Processing song request: ${songHistoryItem.title}`);
 
     const songLength = await getSongLength(songHistoryItem.youtubeId);
 
     for (const play of songHistoryItem.plays) {
-      console.log(`Play by ${play.requester} on ${play.playDate}`);
+      logger.info(`Play by ${play.requester} on ${play.playDate}`);
 
       const songRequest: SongRequest = {
         youtubeId: songHistoryItem.youtubeId,

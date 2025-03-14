@@ -27,10 +27,9 @@ export class YouTubeService {
     );
 
     /* istanbul ignore next */
-    const apiKey = response.Parameter?.Value!;
-    console.log(`API Key: ${apiKey}`);
+    const apiKey = response.Parameter?.Value;
 
-    return new YouTubeService(apiKey);
+    return new YouTubeService(apiKey!);
   }
 
   /* istanbul ignore next */

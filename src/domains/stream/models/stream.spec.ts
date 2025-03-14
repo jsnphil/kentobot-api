@@ -13,7 +13,7 @@ describe('Stream', () => {
   });
 
   it('should load a Stream instance from data', () => {
-    const data = {
+    const data: any = {
       streamDate: '2023-10-01',
       songQueue: [
         {

@@ -33,10 +33,17 @@ export class Stream {
 
     // const songData = JSON.parse(data).songQueue;
     console.log(data.songQueue);
-    console.log(typeof data.songQueue);
+    console.log(`Type of songQueue: ${typeof data.songQueue}`);
 
-    const songQueueArray = data.songQueue as any[];
-    console.log(typeof songQueueArray);
+    // TODO Eventually figure out why this type conversion is necessary
+    let songQueueArray;
+    if (typeof data.songQueue == 'string') {
+      songQueueArray = JSON.parse(data.songQueue) as any[];
+    } else {
+      songQueueArray = data.songQueue;
+    }
+    // const songQueueArray = JSON.parse(data.songQueue) as any[];
+    // console.log(`Type of songQueueArray  ${typeof songQueueArray}`);
 
     const songs: Song[] = [];
     songQueueArray.forEach((songAttrs: any) => {

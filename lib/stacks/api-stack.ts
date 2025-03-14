@@ -507,7 +507,8 @@ export class ApiStack extends cdk.Stack {
         MAX_SONGS_PER_USER: maxSongRequestsPerUser.parameterName,
         STREAM_DATA_TABLE: database.tableName,
         WEBSOCKET_API_ID: webSocketApi.apiId,
-        WEB_SOCKET_STAGE: webSocketApiStage
+        WEB_SOCKET_STAGE: webSocketApiStage,
+        EVENT_BUS_NAME: eventBus.bus.eventBusName
       },
       timeout: cdk.Duration.minutes(1),
       memorySize: 512,

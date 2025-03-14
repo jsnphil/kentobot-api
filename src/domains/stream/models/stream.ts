@@ -31,7 +31,6 @@ export class Stream {
     console.log('Loading stream');
     console.log(JSON.stringify(data, null, 2));
 
-    const songQueue = new SongQueue();
     // const songData = JSON.parse(data).songQueue;
     console.log(data.songQueue);
     console.log(typeof data.songQueue);
@@ -39,6 +38,7 @@ export class Stream {
     const songQueueArray = JSON.parse(data.songQueue) as any[];
     console.log(typeof songQueueArray);
 
+    const songs: Song[] = [];
     songQueueArray.forEach((songAttrs: any) => {
       const song = Song.load(
         songAttrs.id,
@@ -50,11 +50,15 @@ export class Stream {
 
       console.log('Song loaded');
       console.log(JSON.stringify(song, null, 2));
-      songQueue.addSong(song);
+      // songQueue.addSong(song);
+      songs.push(song);
     });
+
+    const songQueue = new SongQueue(songs);
 
     console.log('Loaded song queue');
     console.log(JSON.stringify(songQueue, null, 2));
+
     const newStream = new Stream(data.streamDate, songQueue);
 
     console.log('Loaded stream');
@@ -72,7 +76,7 @@ export class Stream {
   }
 
   public async addSongToQueue(song: Song) {
-    this.songQueue.addSong(song);
+    await this.songQueue.addSong(song);
   }
 
   public getSongQueue(): Song[] {

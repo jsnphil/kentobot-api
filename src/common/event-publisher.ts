@@ -10,6 +10,8 @@ export class EventPublisher {
   });
 
   public static async publishEvent(event: any, eventType: string) {
+    console.log('Publishing event:', event);
+
     const params: PutEventsCommandInput = {
       Entries: [
         {
@@ -21,13 +23,11 @@ export class EventPublisher {
       ]
     };
 
-    try {
-      const data = await this.eventBridgeClient.send(
-        new PutEventsCommand(params)
-      );
-      console.log('Event published:', data);
-    } catch (error) {
-      console.error('Error publishing event:', error);
-    }
+    console.log('Publishing event:', params);
+
+    const data = await this.eventBridgeClient.send(
+      new PutEventsCommand(params)
+    );
+    console.log('Event published:', data);
   }
 }

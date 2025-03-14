@@ -40,6 +40,7 @@ export const handler = async (
       })
     };
   } catch (error) {
+    console.error('Error processing request:', error);
     if ((error as Error).message === 'Stream not found') {
       return {
         statusCode: Code.FORBIDDEN,
@@ -47,6 +48,30 @@ export const handler = async (
           error: {
             code: KentobotErrorCode.StreamNotFound,
             message: 'Stream not found'
+          }
+        })
+      };
+    } else if (
+      (error as Error).message === 'Song already exists in the queue'
+    ) {
+      return {
+        statusCode: Code.BAD_REQUEST,
+        body: JSON.stringify({
+          error: {
+            code: KentobotErrorCode.SongInQueue,
+            message: 'Song already exists in the queue'
+          }
+        })
+      };
+    } else if (
+      (error as Error).message === 'User already has a song in the queue'
+    ) {
+      return {
+        statusCode: Code.BAD_REQUEST,
+        body: JSON.stringify({
+          error: {
+            code: KentobotErrorCode.UserRequestLimit,
+            message: 'User already has a song in the queue'
           }
         })
       };

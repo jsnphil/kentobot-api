@@ -9,6 +9,7 @@ export class SongQueue {
     this.songs = songs;
   }
 
+  // TODO Create custom exception types for these
   public async addSong(song: Song): Promise<void> {
     if (this.songs.some((s) => s.id === song.id)) {
       throw new Error('Song already exists in the queue');

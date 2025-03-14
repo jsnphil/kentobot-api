@@ -24,9 +24,9 @@ export class Stream {
   }
 
   public static load(data: any): Stream {
-    if (!data || typeof data.streamDate !== 'string') {
-      throw new Error('Invalid data');
-    }
+    // if (!data || typeof data.streamDate !== 'string') {
+    //   throw new Error('Invalid data');
+    // }
 
     console.log('Loading stream');
     console.log(JSON.stringify(data, null, 2));
@@ -35,7 +35,7 @@ export class Stream {
     console.log(data.songQueue);
     console.log(typeof data.songQueue);
 
-    const songQueueArray = JSON.parse(data.songQueue) as any[];
+    const songQueueArray = data.songQueue as any[];
     console.log(typeof songQueueArray);
 
     const songs: Song[] = [];

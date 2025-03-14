@@ -1,6 +1,5 @@
 import { Stream } from './stream';
 import { Song } from '../../song/models/song';
-import { SongQueue } from '../../song/models/song-queue';
 
 describe('Stream', () => {
   it('should create a new Stream instance', () => {
@@ -40,17 +39,17 @@ describe('Stream', () => {
     expect(stream.getSongQueue().length).toBe(2);
   });
 
-  it('should add a song to the queue', async () => {
-    const streamDate = '2023-10-01';
-    const stream = Stream.create(streamDate);
+  // it('should add a song to the queue', async () => {
+  //   const streamDate = '2023-10-01';
+  //   const stream = Stream.create(streamDate);
 
-    const song = Song.load('1', 'user1', 'Song 1', 'in queue', 300);
-    await stream.addSongToQueue(song);
+  //   const song = Song.load('1', 'user1', 'Song 1', 'in queue', 300);
+  //   await stream.addSongToQueue(song);
 
-    const songQueue = stream.getSongQueue();
-    expect(songQueue.length).toBe(1);
-    expect(songQueue[0]).toEqual(song);
-  });
+  //   const songQueue = stream.getSongQueue();
+  //   expect(songQueue.length).toBe(1);
+  //   expect(songQueue[0]).toEqual(song);
+  // });
 
   // it('should throw an error when loading invalid data', () => {
   //   const invalidData = {

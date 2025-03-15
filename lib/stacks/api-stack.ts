@@ -660,11 +660,7 @@ export class ApiStack extends cdk.Stack {
       {
         runtime: NODE_RUNTIME,
         handler: 'handler',
-        entry: path.join(
-          __dirname,
-          '../../src/lambdas/rest-api/',
-          'queue-management/remove-request.ts'
-        ),
+        entry: path.join(__dirname, '../../src/api', 'remove-song.ts'),
         bundling: {
           minify: false,
           externalModules: ['aws-sdk']
@@ -839,15 +835,15 @@ export class ApiStack extends cdk.Stack {
       }
     );
 
-    const addSongToQueueEventHandler = new lambda.NodejsFunction(
+    const streamEventHandler = new lambda.NodejsFunction(
       this,
-      'addSongToQueueEventHandler',
+      'streamEventHandler',
       {
         runtime: NODE_RUNTIME,
         handler: 'handler',
         entry: path.join(
           __dirname,
-          '../../src/domains/stream/handlers/add-song-to-queue-event-handler.ts'
+          '../../src/domains/stream/handlers/stream-event-handler.ts'
         ),
         bundling: {
           minify: false,
@@ -864,17 +860,17 @@ export class ApiStack extends cdk.Stack {
       }
     );
 
-    eventBus.addLambdaTarget(this, 'song-added-to-queue-event-rule', {
+    eventBus.addLambdaTarget(this, 'stream-event-event-rule', {
       source: 'kentobot.streaming.system',
       eventPattern: {
-        detailType: ['song-added-to-queue']
+        detailType: ['song-added-to-queue', 'song-removed-from-queue']
       },
-      lambda: addSongToQueueEventHandler
+      lambda: streamEventHandler
     });
 
-    database.grantReadData(addSongToQueueEventHandler);
+    database.grantReadData(streamEventHandler);
 
-    addSongToQueueEventHandler.addToRolePolicy(
+    streamEventHandler.addToRolePolicy(
       new iam.PolicyStatement({
         effect: iam.Effect.ALLOW,
         actions: ['execute-api:ManageConnections'],

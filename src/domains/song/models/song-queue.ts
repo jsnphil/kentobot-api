@@ -1,5 +1,6 @@
 import { EventPublisher } from '../../../common/event-publisher';
 import { SongAddedToQueueEvent } from '../../stream/events/song-added-to-queue-event';
+import { SongRemovedFromQueue } from '../../stream/events/song-removed-from-queue-event';
 import { Song } from './song';
 
 export class SongQueue {
@@ -21,10 +22,24 @@ export class SongQueue {
 
     this.songs.push(song);
 
+    // TODO Move to stream
     await EventPublisher.publishEvent(
       new SongAddedToQueueEvent(song),
       'song-added-to-queue' // TODO Make this an enum
     );
+  }
+
+  public async removeSong(songId: string): Promise<void> {
+    if (this.songs.length === 0) {
+      throw new Error('Queue is empty');
+    }
+
+    const index = this.songs.findIndex((song) => song.id === songId);
+    if (index === -1) {
+      throw new Error('Request not found in queue');
+    }
+
+    this.songs.splice(index, 1);
   }
 
   public getSongQueue(): Song[] {

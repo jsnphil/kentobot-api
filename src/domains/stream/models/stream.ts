@@ -1,5 +1,8 @@
+import { EventPublisher } from '../../../common/event-publisher';
+import { StreamEvent } from '../../../types/event-types';
 import { Song } from '../../song/models/song';
 import { SongQueue } from '../../song/models/song-queue';
+import { SongRemovedFromQueue } from '../events/song-removed-from-queue-event';
 // import { BumpCount } from './bump-count';
 
 export class Stream {
@@ -59,6 +62,16 @@ export class Stream {
 
   public async addSongToQueue(song: Song) {
     await this.songQueue.addSong(song);
+    // TODO Fire event
+  }
+
+  public async removeSongFromQueue(songId: string) {
+    await this.songQueue.removeSong(songId);
+
+    await EventPublisher.publishEvent(
+      new SongRemovedFromQueue(songId),
+      StreamEvent.SONG_REMOVED_FROM_QUEUE // TODO Make this an enum
+    );
   }
 
   public getSongQueue(): Song[] {

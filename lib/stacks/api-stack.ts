@@ -84,8 +84,8 @@ export class ApiStack extends cdk.Stack {
     // ***********************
     // Setup song request resources
     // ***********************
-    // const songRequestEndpointResource =
-    //   api.apiGateway.root.addResource('song-requests');
+    const songRequestEndpointResource =
+      api.apiGateway.root.addResource('songs');
 
     // ***********************
     // Save song data resource
@@ -228,14 +228,14 @@ export class ApiStack extends cdk.Stack {
     // ***********************
     // Get song details and plays endpoint
     // ***********************
-    // const getSongRequestResource =
-    //   songRequestEndpointResource.addResource('{songId}');
+    const getSongRequestResource =
+      songRequestEndpointResource.addResource('{songId}');
 
-    // const getSongRequestDetailsResource =
-    //   getSongRequestResource.addResource('details');
+    const getSongRequestDetailsResource =
+      getSongRequestResource.addResource('details');
 
-    // const getSongRequestPlaysResource =
-    //   getSongRequestResource.addResource('plays');
+    const getSongRequestPlaysResource =
+      getSongRequestResource.addResource('plays');
 
     api.role.attachInlinePolicy(
       new iam.Policy(this, `api-dynamodb-policy`, {
@@ -309,21 +309,21 @@ export class ApiStack extends cdk.Stack {
       }
     });
 
-    // getSongRequestDetailsResource.addMethod(
-    //   'GET',
-    //   getSongRequestDetailsIntegration,
-    //   {
-    //     methodResponses: [
-    //       {
-    //         statusCode: '200',
-    //         responseModels: {
-    //           'application/json': songRequestDetailsModel(this, api.apiGateway)
-    //         }
-    //       },
-    //       ...errorResponses
-    //     ]
-    //   }
-    // );
+    getSongRequestDetailsResource.addMethod(
+      'GET',
+      getSongRequestDetailsIntegration,
+      {
+        methodResponses: [
+          {
+            statusCode: '200',
+            responseModels: {
+              'application/json': songRequestDetailsModel(this, api.apiGateway)
+            }
+          },
+          ...errorResponses
+        ]
+      }
+    );
 
     // ***********************
     // Get song plays endpoint
@@ -395,24 +395,24 @@ export class ApiStack extends cdk.Stack {
       }
     });
 
-    // getSongRequestPlaysResource.addMethod(
-    //   'GET',
-    //   getSongRequestPlaysIntegration,
-    //   {
-    //     methodResponses: [
-    //       {
-    //         statusCode: '200',
-    //         responseModels: {
-    //           'application/json': getSongPlaysResponseModel(
-    //             this,
-    //             api.apiGateway
-    //           )
-    //         }
-    //       },
-    //       ...errorResponses
-    //     ]
-    //   }
-    // );
+    getSongRequestPlaysResource.addMethod(
+      'GET',
+      getSongRequestPlaysIntegration,
+      {
+        methodResponses: [
+          {
+            statusCode: '200',
+            responseModels: {
+              'application/json': getSongPlaysResponseModel(
+                this,
+                api.apiGateway
+              )
+            }
+          },
+          ...errorResponses
+        ]
+      }
+    );
 
     // Get all songs endpoint
     const getAllSongRequestsLambda = new lambda.NodejsFunction(
@@ -449,10 +449,10 @@ export class ApiStack extends cdk.Stack {
       })
     );
 
-    // songRequestEndpointResource.addMethod(
-    //   'GET',
-    //   new apiGateway.LambdaIntegration(getAllSongRequestsLambda)
-    // );
+    songRequestEndpointResource.addMethod(
+      'GET',
+      new apiGateway.LambdaIntegration(getAllSongRequestsLambda)
+    );
 
     // ***********************
     // Queue Management Resources
@@ -604,6 +604,44 @@ export class ApiStack extends cdk.Stack {
     removeSongResource.addMethod(
       'DELETE',
       new apiGateway.LambdaIntegration(removeRequestLambda),
+      {
+        apiKeyRequired: true
+      }
+    );
+
+    // ***********************
+    // Move Request Endpoint
+    // ***********************
+
+    const moveSongResource = queueEndpoint
+      .addResource('move-request')
+      .addResource('{songId}');
+
+    const moveRequestLambda = new lambda.NodejsFunction(this, 'MoveRequest', {
+      runtime: NODE_RUNTIME,
+      handler: 'handler',
+      entry: path.join(__dirname, '../../src/api/move-request.ts'),
+      bundling: {
+        minify: false,
+        externalModules: ['aws-sdk']
+      },
+      logRetention: logs.RetentionDays.ONE_WEEK,
+      environment: {
+        ...lambdaEnvironment,
+        ENVIRONMENT: props.environmentName,
+        STREAM_DATA_TABLE: database.tableName,
+        EVENT_BUS_NAME: eventBus.bus.eventBusName
+      },
+      timeout: cdk.Duration.minutes(1),
+      memorySize: 512,
+      architecture: ARCHITECTURE
+    });
+
+    database.grantReadWriteData(moveRequestLambda);
+
+    moveSongResource.addMethod(
+      'PATCH',
+      new apiGateway.LambdaIntegration(moveRequestLambda),
       {
         apiKeyRequired: true
       }
@@ -981,7 +1019,11 @@ export class ApiStack extends cdk.Stack {
     eventBus.addLambdaTarget(this, 'stream-event-event-rule', {
       source: 'kentobot.streaming.system',
       eventPattern: {
-        detailType: ['song-added-to-queue', 'song-removed-from-queue']
+        detailType: [
+          'song-added-to-queue',
+          'song-removed-from-queue',
+          'song-moved-in-queue'
+        ]
       },
       lambda: streamEventHandler
     });

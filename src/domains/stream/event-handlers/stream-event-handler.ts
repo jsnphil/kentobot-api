@@ -1,10 +1,10 @@
 import { Logger } from '@aws-lambda-powertools/logger';
 import { WebSocketService } from '@services/web-socket-service';
+import { StreamEvent } from '../../../types/event-types';
+import { StreamMode } from 'aws-cdk-lib/aws-kinesis';
 
 const webSocketService = new WebSocketService();
 const logger = new Logger({ serviceName: 'add-song-to-queue-event-handler' });
-
-
 
 export const handler = async (event: any): Promise<void> => {
   logger.debug(`Received event: ${event}`);
@@ -12,11 +12,11 @@ export const handler = async (event: any): Promise<void> => {
   const detailType = event['detail-type'];
 
   let wssMessage;
-  if (detailType === 'song-added-to-queue') {
+  if (detailType === StreamEvent.SONG_ADDED_TO_QUEUE) {
     const { songId, title, requestedBy, status, duration } = event.detail;
 
     wssMessage = {
-      event: 'song-added', // TODO Make this an enum
+      event: StreamEvent.SONG_ADDED_TO_QUEUE,
       data: {
         song: {
           songId,
@@ -29,13 +29,24 @@ export const handler = async (event: any): Promise<void> => {
     };
   }
 
-  if (detailType === 'song-removed-from-queue') {
+  if (detailType === StreamEvent.SONG_REMOVED_FROM_QUEUE) {
     const { songId } = event.detail;
 
     wssMessage = {
-      event: 'song-removed', // TODO Make this an enum
+      event: StreamEvent.SONG_REMOVED_FROM_QUEUE, // TODO Make this an enum
       data: {
         songId
+      }
+    };
+  }
+
+  if (detailType === StreamEvent.SONG_MOVED) {
+    const { songId, newPosition } = event.detail;
+    wssMessage = {
+      event: StreamEvent.SONG_MOVED,
+      data: {
+        songId,
+        newPosition
       }
     };
   }

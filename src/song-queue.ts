@@ -17,6 +17,9 @@ import { BumpService } from './services/bump-service';
 import { SongRequestService } from './services/song-request-service';
 import { BumpRequest } from '@schemas/bump-schema';
 
+/*
+@deprecated
+*/
 export class SongQueue {
   private songs: SongQueueItem[] = [];
   private songRepository = new SongQueueRepository();

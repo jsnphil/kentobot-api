@@ -2,6 +2,7 @@ import { EventPublisher } from '../../../common/event-publisher';
 import { StreamEvent } from '../../../types/event-types';
 import { Song } from '../../song/models/song';
 import { SongQueue } from '../../song/models/song-queue';
+import { SongMovedInQueueEvent } from '../events/song-moved-in-queue-event';
 import { SongRemovedFromQueue } from '../events/song-removed-from-queue-event';
 // import { BumpCount } from './bump-count';
 
@@ -71,6 +72,15 @@ export class Stream {
     await EventPublisher.publishEvent(
       new SongRemovedFromQueue(songId),
       StreamEvent.SONG_REMOVED_FROM_QUEUE // TODO Make this an enum
+    );
+  }
+
+  public async moveSong(songId: string, newPosition: number) {
+    await this.songQueue.moveSong(songId, newPosition);
+
+    await EventPublisher.publishEvent(
+      new SongMovedInQueueEvent(songId, newPosition),
+      StreamEvent.SONG_MOVED // TODO Make this an enum
     );
   }
 

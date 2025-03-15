@@ -42,6 +42,20 @@ export class SongQueue {
     this.songs.splice(index, 1);
   }
 
+  public async moveSong(songId: string, newPosition: number): Promise<void> {
+    if (this.songs.length === 0) {
+      throw new Error('Queue is empty');
+    }
+
+    const index = this.songs.findIndex((song) => song.id === songId);
+    if (index === -1) {
+      throw new Error('Request not found in queue');
+    }
+
+    const song = this.songs.splice(index, 1)[0];
+    this.songs.splice(newPosition, 0, song);
+  }
+
   public getSongQueue(): Song[] {
     return this.songs;
   }

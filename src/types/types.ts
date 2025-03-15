@@ -22,5 +22,6 @@ export enum KentobotErrorCode {
   SystemError = 'SYSTEM_ERROR',
   StreamNotFound = 'STREAM_NOT_FOUND',
   SongInQueue = 'SONG_IN_QUEUE',
-  UserRequestLimit = 'USER_REQUEST_LIMIT'
+  UserRequestLimit = 'USER_REQUEST_LIMIT',
+  SongNotFound = 'SONG_NOT_FOUND'
 }

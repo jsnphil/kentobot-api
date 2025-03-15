@@ -7,6 +7,7 @@ export abstract class DomainEvent {
     this.eventType = eventType;
   }
 
+  /* istanbul ignore next */
   public toJSON(): Record<string, any> {
     return {
       occurredAt: this.occurredAt.toISOString(),

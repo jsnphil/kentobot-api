@@ -1,5 +1,5 @@
 import { Stream } from './stream';
-import { Song } from '../../song/models/song';
+import { Song } from './song';
 
 describe('Stream', () => {
   it('should create a new Stream instance', () => {

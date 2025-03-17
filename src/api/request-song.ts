@@ -1,6 +1,6 @@
 import { APIGatewayEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { RequestSongCommandHandler } from '../domains/song/handlers/request-song-command-handler';
-import { RequestSongCommand } from '../domains/song/commands/request-song-command';
+import { RequestSongCommandHandler } from '../domains/stream/command-handlers/request-song-command-handler';
+import { RequestSongCommand } from '../domains/stream/commands/request-song-command';
 import { Code } from 'better-status-codes';
 import { KentobotErrorCode } from '../types/types';
 

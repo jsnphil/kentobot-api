@@ -1,6 +1,6 @@
 import { EventPublisher } from '../../../common/event-publisher';
-import { SongAddedToQueueEvent } from '../../stream/events/song-added-to-queue-event';
-import { SongRemovedFromQueue } from '../../stream/events/song-removed-from-queue-event';
+import { SongAddedToQueueEvent } from '../events/song-added-to-queue-event';
+import { SongRemovedFromQueue } from '../events/song-removed-from-queue-event';
 import { Song } from './song';
 
 export class SongQueue {

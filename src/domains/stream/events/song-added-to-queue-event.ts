@@ -1,5 +1,5 @@
 import { DomainEvent } from '../../domain-event';
-import { Song } from '../../song/models/song';
+import { Song } from '../models/song';
 
 export class SongAddedToQueueEvent extends DomainEvent {
   constructor(public readonly song: Song) {

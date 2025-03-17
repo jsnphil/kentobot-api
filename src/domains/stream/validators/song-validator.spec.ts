@@ -1,5 +1,5 @@
+import { YouTubeVideoResult } from '../../../common/services/youtube-service';
 import { SongValidator } from './song-validator';
-import { YouTubeVideoResult } from '../services/youtube-service';
 
 describe('SongValidator', () => {
   const validSongMetadata: YouTubeVideoResult = {

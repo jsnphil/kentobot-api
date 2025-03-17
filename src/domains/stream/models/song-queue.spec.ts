@@ -1,8 +1,5 @@
 import { SongQueue } from './song-queue';
 import { Song } from './song';
-import { EventPublisher } from '../../../common/event-publisher';
-import { SongAddedToQueueEvent } from '../../stream/events/song-added-to-queue-event';
-import { SongRemovedFromQueue } from '../../stream/events/song-removed-from-queue-event';
 
 jest.mock('../../../common/event-publisher');
 

@@ -3,9 +3,8 @@ import {
   GetItemCommand,
   PutItemCommand
 } from '@aws-sdk/client-dynamodb';
-import { Stream } from '../domains/stream/models/stream';
-import { Song } from '../domains/song/models/song';
-import { SongQueue } from '../domains/song/models/song-queue';
+import { Stream } from '../models/stream';
+
 import { Logger } from '@aws-lambda-powertools/logger';
 import { unmarshall } from '@aws-sdk/util-dynamodb';
 

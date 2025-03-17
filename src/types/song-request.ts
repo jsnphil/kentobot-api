@@ -118,3 +118,10 @@ export interface BumpRequestData {
   modOverride?: boolean;
   position?: number;
 }
+
+export enum SongRequestStatus {
+  QUEUED = 'QUEUED',
+  BUMPED = 'BUMPED',
+  SHUFFLE_ENTERED = 'SHUFFLE_ENTERED',
+  SHUFFLE_WINNER = 'SHUFFLE_WINNER'
+}

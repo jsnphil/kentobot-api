@@ -1,5 +1,5 @@
 import { YouTubeService } from '../../../common/services/youtube-service';
-import { SongValidator } from '../../../common/validators/song-validator';
+import { SongValidator } from '../validators/song-validator';
 
 export class Song {
   public readonly id: string;

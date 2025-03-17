@@ -1,7 +1,7 @@
 import { EventPublisher } from '../../../common/event-publisher';
 import { StreamEvent } from '../../../types/event-types';
-import { Song } from '../../song/models/song';
-import { SongQueue } from '../../song/models/song-queue';
+import { Song } from './song';
+import { SongQueue } from './song-queue';
 import { SongMovedInQueueEvent } from '../events/song-moved-in-queue-event';
 import { SongRemovedFromQueue } from '../events/song-removed-from-queue-event';
 // import { BumpCount } from './bump-count';

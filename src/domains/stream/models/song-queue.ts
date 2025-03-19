@@ -42,7 +42,7 @@ export class SongQueue {
     this.songs.splice(index, 1);
   }
 
-  public async moveSong(songId: string, newPosition: number): Promise<void> {
+  public moveSong(songId: string, newPosition: number) {
     if (this.songs.length === 0) {
       throw new Error('Queue is empty');
     }
@@ -54,6 +54,10 @@ export class SongQueue {
 
     const song = this.songs.splice(index, 1)[0];
     this.songs.splice(newPosition, 0, song);
+  }
+
+  public getSongByUser(requestedBy: string): Song | undefined {
+    return this.songs.find((song) => song.requestedBy === requestedBy);
   }
 
   public getSongQueue(): Song[] {

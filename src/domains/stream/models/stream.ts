@@ -4,14 +4,17 @@ import { Song } from './song';
 import { SongQueue } from './song-queue';
 import { SongMovedInQueueEvent } from '../events/song-moved-in-queue-event';
 import { SongRemovedFromQueue } from '../events/song-removed-from-queue-event';
+import { BumpType } from '../../../types/song-request';
 // import { BumpCount } from './bump-count';
 
 export class Stream {
   private streamDate: string;
   private songQueue: SongQueue;
+  private beanBumpsAvailable: number;
+  channelPointBumpsAvailable: number;
   //   private _songHistory: SongHistory;
   // private bumpCounts: BumpCount;
-  // public bumpCounts: Map<string, number>, // Tracks how many bumps each user has used
+  // public bumpCounts: Map<string, number>; // Tracks how many bumps each user has used
 
   private constructor(
     streamDate: string,
@@ -21,6 +24,8 @@ export class Stream {
   ) {
     this.streamDate = streamDate;
     this.songQueue = songQueue;
+    this.beanBumpsAvailable = 3;
+    this.channelPointBumpsAvailable = 3;
     // this._songHistory = songHistory;
     // this.bumpCounts = bumpCounts;
   }
@@ -82,6 +87,58 @@ export class Stream {
       new SongMovedInQueueEvent(songId, newPosition),
       StreamEvent.SONG_MOVED // TODO Make this an enum
     );
+  }
+
+  public async bumpSongForUser(
+    user: string,
+    bumpType: BumpType,
+    position?: number,
+    modOverride?: boolean
+  ) {
+    if (bumpType === BumpType.Bean && this.beanBumpsAvailable > 0) {
+      throw new Error('No bean bumps available');
+    }
+
+    // TODO Check the user is eligible to bump, or that a mod is overriding
+
+    const song = this.songQueue.getSongByUser(user);
+    if (!song) {
+      throw new Error('User does not have a song in the queue');
+    }
+
+    if (song.status === 'bumped') {
+      throw new Error('Song is already bumped');
+    }
+
+    const bumpPosition = position || this.getBumpPosition();
+
+    this.songQueue.moveSong(song.id, bumpPosition);
+
+    // TODO Update the user's elibility to bump
+
+    this.decrementBumpCount(bumpType);
+  }
+
+  getBumpPosition(): number {
+    const queue = this.songQueue.getSongQueue();
+
+    for (let i = 0; i < queue.length; i++) {
+      if (queue[i].status !== 'bumped') {
+        return i + 1;
+      }
+    }
+
+    return 0;
+  }
+
+  decrementBumpCount(bumpType: BumpType) {
+    if (bumpType === BumpType.Bean) {
+      this.beanBumpsAvailable--;
+    } else if (bumpType === BumpType.ChannelPoints) {
+      // TODO Implement
+
+      this.channelPointBumpsAvailable--;
+    }
   }
 
   public getSongQueue(): Song[] {

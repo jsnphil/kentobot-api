@@ -94,7 +94,7 @@ describe('Stream', () => {
         .mockResolvedValue(false);
 
       await expect(
-        stream.bumpSongForUser('user1', BumpType.Bean)
+        stream.bumpSongForUser('user1', BumpType.Bean, undefined, false)
       ).rejects.toThrow('User is not eligible for a free bump');
     });
 

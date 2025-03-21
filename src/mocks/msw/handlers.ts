@@ -449,7 +449,7 @@ export const handlers = [
       return new HttpResponse(null, { status: 404 });
     }
   }),
-  http.post(' https://events.us-east-1.amazonaws.com/', ({ request }) => {
+  http.post('https://events.us-east-1.amazonaws.com/', ({ request }) => {
     return new HttpResponse(null, { status: 200 });
   })
 ];

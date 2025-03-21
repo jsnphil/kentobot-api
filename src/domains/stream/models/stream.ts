@@ -104,16 +104,14 @@ export class Stream {
       throw new Error(`No bumps available for type [${bumpType}]`);
     }
 
-    const bumpEligibility = await this.bumpService.isUserEligible(
+    const isUserEligible = await this.bumpService.isUserEligible(
       user,
       bumpType
     );
-    console.log(
-      `Bump eligibility: ${bumpEligibility}, Mod override: ${modOverride}`
-    );
 
     // TODO need to check list of bumps from the stream to see if the user has already used their bump when redeeming a paid bump
-    if (!this.bumpService.isUserEligible(user, bumpType) || !modOverride) {
+
+    if (!isUserEligible && !modOverride) {
       throw new Error('User is not eligible for a free bump');
     }
 

@@ -8,6 +8,7 @@
     "build": "tsc",
     "watch": "tsc -w",
     "test": "jest --coverage",
+    "test:ui": "vitest --ui",
     "cdk": "cdk",
     "deploy-dev": "cdk deploy Dev/* --require-approval never",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
@@ -30,7 +31,8 @@
     "ts-jest": "^29.2.5",
     "ts-node": "^10.9.2",
     "typescript": "~5.7.3",
-    "typescript-eslint": "^8.26.1"
+    "typescript-eslint": "^8.26.1",
+    "vitest": "^3.0.9"
   },
   "dependencies": {
     "@aws-lambda-powertools/logger": "^2.15.0",

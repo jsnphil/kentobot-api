@@ -56,6 +56,46 @@ export class SongQueue {
     this.songs.splice(newPosition, 0, song);
   }
 
+  public bumpUserRequest(user: string, bumpType: string, position?: number) {
+    if (this.songs.length === 0) {
+      throw new Error('Queue is empty');
+    }
+
+    const songIndex = this.songs.findIndex((song) => song.requestedBy === user);
+
+    if (songIndex === -1) {
+      throw new Error('Request not found in queue');
+    }
+
+    const bumpPosition = this.getBumpPosition(position);
+
+    // 🔹 Remove song from current position
+    const [song] = this.songs.splice(songIndex, 1);
+    song.status = 'bumped';
+
+    // 🔹 Insert song at new position
+    this.songs.splice(bumpPosition, 0, song);
+
+    return {
+      songId: song.id,
+      bumpPosition
+    };
+  }
+
+  getBumpPosition(newPosition: number | undefined): number {
+    if (newPosition) {
+      return newPosition - 1;
+    }
+
+    for (let i = 0; i < this.songs.length; i++) {
+      if (this.songs[i].status !== 'bumped') {
+        return i;
+      }
+    }
+
+    return 0;
+  }
+
   public getSongByUser(requestedBy: string): Song | undefined {
     return this.songs.find((song) => song.requestedBy === requestedBy);
   }

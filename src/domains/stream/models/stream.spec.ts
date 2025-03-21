@@ -1,5 +1,6 @@
 import { Stream } from './stream';
 import { Song } from './song';
+import { BumpType } from '../../../types/song-request';
 
 describe('Stream', () => {
   it('should create a new Stream instance', () => {
@@ -39,31 +40,103 @@ describe('Stream', () => {
     expect(stream.getSongQueue().length).toBe(2);
   });
 
-  // it('should add a song to the queue', async () => {
-  //   const streamDate = '2023-10-01';
-  //   const stream = Stream.create(streamDate);
+  describe('bumpSongForUser', () => {
+    beforeEach(() => {
+      jest.resetAllMocks();
+    });
+    it('should bump a song for a user with bean bump', async () => {
+      const streamDate = '2023-10-01';
+      const stream = Stream.create(streamDate);
 
-  //   const song = Song.load('1', 'user1', 'Song 1', 'in queue', 300);
-  //   await stream.addSongToQueue(song);
+      jest
+        .spyOn(stream['bumpService'], 'isUserEligible')
+        .mockResolvedValue(true);
 
-  //   const songQueue = stream.getSongQueue();
-  //   expect(songQueue.length).toBe(1);
-  //   expect(songQueue[0]).toEqual(song);
-  // });
+      const songs = [
+        Song.load('1', 'Vin', 'Song 1', 'in queue', 300),
+        Song.load('2', 'Kelsier', 'Song 2', 'in queue', 250),
+        Song.load('3', 'Sazed', 'Song 3', 'in queue', 200),
+        Song.load('4', 'Elend', 'Song 4', 'in queue', 180),
+        Song.load('5', 'Marsh', 'Song 5', 'in queue', 220)
+      ];
 
-  // it('should throw an error when loading invalid data', () => {
-  //   const invalidData = {
-  //     songData: [
-  //       {
-  //         id: '1',
-  //         requestedBy: 'user1',
-  //         title: 'Song 1',
-  //         status: 'queued',
-  //         duration: 300
-  //       }
-  //     ]
-  //   };
+      for (const song of songs) {
+        await stream.addSongToQueue(song);
+      }
 
-  //   expect(() => Stream.load(invalidData)).toThrow('Invalid data');
-  // });
+      await stream.bumpSongForUser('Sazed', BumpType.Bean);
+
+      const songQueue = stream.getSongQueue();
+      console.log(songQueue);
+
+      expect(songQueue[0].id).toBe('3');
+      expect(songQueue[0].status).toBe('bumped');
+      expect(stream.getAvailableBeanBumps()).toBe(2);
+    });
+
+    it('should throw an error if no bean bumps are available', async () => {
+      const streamDate = '2023-10-01';
+      const stream = Stream.create(streamDate);
+
+      stream['beanBumpsAvailable'] = 0;
+
+      await expect(
+        stream.bumpSongForUser('user1', BumpType.Bean)
+      ).rejects.toThrow('No bumps available for type [bean]');
+    });
+
+    it('should throw an error if user is not eligible for a free bump', async () => {
+      const streamDate = '2023-10-01';
+      const stream = Stream.create(streamDate);
+
+      jest
+        .spyOn(stream['bumpService'], 'isUserEligible')
+        .mockResolvedValue(false);
+
+      await expect(
+        stream.bumpSongForUser('user1', BumpType.Bean)
+      ).rejects.toThrow('User is not eligible for a free bump');
+    });
+
+    it('should bump a song for a user with channel points', async () => {
+      const streamDate = '2023-10-01';
+      const stream = Stream.create(streamDate);
+
+      jest
+        .spyOn(stream['bumpService'], 'isUserEligible')
+        .mockResolvedValue(true);
+
+      const songs = [
+        Song.load('1', 'Vin', 'Song 1', 'in queue', 300),
+        Song.load('2', 'Kelsier', 'Song 2', 'in queue', 250),
+        Song.load('3', 'Sazed', 'Song 3', 'in queue', 200),
+        Song.load('4', 'Elend', 'Song 4', 'in queue', 180),
+        Song.load('5', 'Marsh', 'Song 5', 'in queue', 220)
+      ];
+
+      for (const song of songs) {
+        await stream.addSongToQueue(song);
+      }
+
+      await stream.bumpSongForUser('Sazed', BumpType.ChannelPoints);
+
+      const songQueue = stream.getSongQueue();
+      console.log(songQueue);
+
+      expect(songQueue[0].id).toBe('3');
+      expect(songQueue[0].status).toBe('bumped');
+      expect(stream.getAvailableChannelPointBumps()).toBe(2);
+    });
+
+    it('should throw an error if no channel point bumps are available', async () => {
+      const streamDate = '2023-10-01';
+      const stream = Stream.create(streamDate);
+
+      stream['channelPointBumpsAvailable'] = 0;
+
+      await expect(
+        stream.bumpSongForUser('user1', BumpType.ChannelPoints)
+      ).rejects.toThrow('No bumps available for type [channelPoints]');
+    });
+  });
 });

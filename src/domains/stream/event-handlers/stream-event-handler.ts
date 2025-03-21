@@ -40,13 +40,16 @@ export const handler = async (event: any): Promise<void> => {
     };
   }
 
-  if (detailType === StreamEvent.SONG_MOVED) {
-    const { songId, newPosition } = event.detail;
+  if (
+    detailType === StreamEvent.SONG_MOVED ||
+    detailType === StreamEvent.SONG_BUMPED
+  ) {
+    const { songId, position } = event.detail;
     wssMessage = {
-      event: StreamEvent.SONG_MOVED,
+      event: detailType,
       data: {
         songId,
-        newPosition
+        position
       }
     };
   }

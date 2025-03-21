@@ -5,6 +5,8 @@ import { SongQueue } from './song-queue';
 import { SongMovedInQueueEvent } from '../events/song-moved-in-queue-event';
 import { SongRemovedFromQueue } from '../events/song-removed-from-queue-event';
 import { BumpType } from '../../../types/song-request';
+import { BumpService } from '../services/bump-service';
+import { SongBumpedEvent } from '../events/song-bumped-event';
 // import { BumpCount } from './bump-count';
 
 export class Stream {
@@ -15,6 +17,8 @@ export class Stream {
   //   private _songHistory: SongHistory;
   // private bumpCounts: BumpCount;
   // public bumpCounts: Map<string, number>; // Tracks how many bumps each user has used
+
+  private bumpService;
 
   private constructor(
     streamDate: string,
@@ -28,6 +32,7 @@ export class Stream {
     this.channelPointBumpsAvailable = 3;
     // this._songHistory = songHistory;
     // this.bumpCounts = bumpCounts;
+    this.bumpService = new BumpService();
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -95,40 +100,45 @@ export class Stream {
     position?: number,
     modOverride?: boolean
   ) {
-    if (bumpType === BumpType.Bean && this.beanBumpsAvailable > 0) {
-      throw new Error('No bean bumps available');
+    if (!this.bumpAvailable(bumpType)) {
+      throw new Error(`No bumps available for type [${bumpType}]`);
     }
 
-    // TODO Check the user is eligible to bump, or that a mod is overriding
+    const bumpEligibility = await this.bumpService.isUserEligible(
+      user,
+      bumpType
+    );
+    console.log(
+      `Bump eligibility: ${bumpEligibility}, Mod override: ${modOverride}`
+    );
 
-    const song = this.songQueue.getSongByUser(user);
-    if (!song) {
-      throw new Error('User does not have a song in the queue');
+    // TODO need to check list of bumps from the stream to see if the user has already used their bump when redeeming a paid bump
+    if (!this.bumpService.isUserEligible(user, bumpType) || !modOverride) {
+      throw new Error('User is not eligible for a free bump');
     }
 
-    if (song.status === 'bumped') {
-      throw new Error('Song is already bumped');
-    }
-
-    const bumpPosition = position || this.getBumpPosition();
-
-    this.songQueue.moveSong(song.id, bumpPosition);
-
-    // TODO Update the user's elibility to bump
+    const { songId, bumpPosition } = this.songQueue.bumpUserRequest(
+      user,
+      bumpType,
+      position
+    );
 
     this.decrementBumpCount(bumpType);
+
+    EventPublisher.publishEvent(
+      new SongBumpedEvent(songId, bumpPosition),
+      StreamEvent.SONG_BUMPED
+    );
   }
 
-  getBumpPosition(): number {
-    const queue = this.songQueue.getSongQueue();
-
-    for (let i = 0; i < queue.length; i++) {
-      if (queue[i].status !== 'bumped') {
-        return i + 1;
-      }
+  bumpAvailable(bumpType: BumpType) {
+    if (bumpType === BumpType.Bean) {
+      return this.beanBumpsAvailable > 0;
+    } else if (bumpType === BumpType.ChannelPoints) {
+      return this.channelPointBumpsAvailable > 0;
     }
 
-    return 0;
+    throw new Error('Invalid bump type');
   }
 
   decrementBumpCount(bumpType: BumpType) {
@@ -147,5 +157,13 @@ export class Stream {
 
   public getStreamDate(): string {
     return this.streamDate;
+  }
+
+  public getAvailableBeanBumps(): number {
+    return this.beanBumpsAvailable;
+  }
+
+  public getAvailableChannelPointBumps(): number {
+    return this.channelPointBumpsAvailable;
   }
 }

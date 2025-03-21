@@ -1,5 +1,6 @@
 import { BumpSongCommand } from '../commands/bump-song-command';
 import { StreamFactory } from '../factories/StreamFactory';
+import { StreamRepository } from '../repositories/stream-repository';
 
 export class BumpSongCommandHandler {
   public async execute(command: BumpSongCommand): Promise<void> {
@@ -14,6 +15,8 @@ export class BumpSongCommandHandler {
       command.position,
       command.modOverride
     );
+
+    await StreamRepository.saveStream(stream);
 
     // return { songId: command.songId };
   }

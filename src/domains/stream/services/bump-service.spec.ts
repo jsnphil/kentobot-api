@@ -70,4 +70,42 @@ describe('BumpService', () => {
       expect(getUserBumpEligibilitySpy).toHaveBeenCalledWith(user);
     });
   });
+
+  describe('updateUserBumpEligiblity', () => {
+    it('should update user bump eligibility with a new expiration date', async () => {
+      // Arrange
+      const user = 'user';
+      const expiration = new Date();
+      expiration.setDate(new Date().getDate() + 7);
+
+      const updateUserBumpEligibilitySpy = jest
+        .spyOn(BumpRepository, 'updateUserBumpEligibility')
+        .mockResolvedValue(undefined);
+
+      const bumpService = new BumpService();
+      // Act
+      await bumpService.updateUserBumpEligiblity(user);
+      // Assert
+      expect(updateUserBumpEligibilitySpy).toHaveBeenCalledWith(
+        user,
+        expiration.toISOString()
+      );
+    });
+
+    it('should handle errors when updating user bump eligibility', async () => {
+      // Arrange
+      const user = 'user';
+      const error = new Error('Failed to update eligibility');
+
+      jest
+        .spyOn(BumpRepository, 'updateUserBumpEligibility')
+        .mockRejectedValue(error);
+
+      const bumpService = new BumpService();
+      // Act & Assert
+      await expect(bumpService.updateUserBumpEligiblity(user)).rejects.toThrow(
+        'Failed to update eligibility'
+      );
+    });
+  });
 });

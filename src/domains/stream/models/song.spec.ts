@@ -1,6 +1,7 @@
 import { Song } from './song';
 import { YouTubeService } from '../../../common/services/youtube-service';
 import { SongValidator } from '../validators/song-validator';
+import { SongRequestStatus } from '../../../types/song-request';
 
 jest.mock('../../../common/services/youtube-service');
 jest.mock('../validators/song-validator');
@@ -27,7 +28,7 @@ describe('Song', () => {
     expect(song.id).toBe(mockYouTubeVideo.id);
     expect(song.title).toBe(mockYouTubeVideo.title);
     expect(song.requestedBy).toBe('Kaladlin');
-    expect(song.status).toBe('in queue');
+    expect(song.status).toBe(SongRequestStatus.QUEUED);
     expect(song.duration).toBe(mockYouTubeVideo.duration);
   });
 

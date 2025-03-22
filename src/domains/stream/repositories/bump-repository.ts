@@ -14,13 +14,10 @@ export class BumpRepository {
 
   private static logger = new Logger({ serviceName: 'bump-repository' });
 
-  public static async updateUserBumpCooldown(
+  public static async updateUserBumpEligibility(
     user: string,
     bumpExpiration: string
   ): Promise<void> {
-    // Here you would typically interact with your user repository to update the bump cooldown
-    // For this example, we'll just return void to simulate the update
-
     try {
       const command = new PutItemCommand({
         TableName: this.TABLE_NAME,
@@ -35,7 +32,7 @@ export class BumpRepository {
       await this.ddbClient.send(command);
     } catch (error) {
       this.logger.error((error as Error).message);
-      // TODO Throw a custom error here
+      throw new Error('Error updating user bump cooldown');
     }
   }
 

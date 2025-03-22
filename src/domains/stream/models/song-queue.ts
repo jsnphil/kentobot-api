@@ -1,6 +1,4 @@
-import { EventPublisher } from '../../../common/event-publisher';
-import { SongAddedToQueueEvent } from '../events/song-added-to-queue-event';
-import { SongRemovedFromQueue } from '../events/song-removed-from-queue-event';
+import { SongRequestStatus } from '../../../types/song-request';
 import { Song } from './song';
 
 export class SongQueue {
@@ -11,7 +9,7 @@ export class SongQueue {
   }
 
   // TODO Create custom exception types for these
-  public async addSong(song: Song): Promise<void> {
+  public addSong(song: Song) {
     if (this.songs.some((s) => s.id === song.id)) {
       throw new Error('Song already exists in the queue');
     }
@@ -21,15 +19,9 @@ export class SongQueue {
     }
 
     this.songs.push(song);
-
-    // TODO Move to stream
-    await EventPublisher.publishEvent(
-      new SongAddedToQueueEvent(song),
-      'song-added-to-queue' // TODO Make this an enum
-    );
   }
 
-  public async removeSong(songId: string): Promise<void> {
+  public removeSong(songId: string) {
     if (this.songs.length === 0) {
       throw new Error('Queue is empty');
     }
@@ -71,7 +63,7 @@ export class SongQueue {
 
     // 🔹 Remove song from current position
     const [song] = this.songs.splice(songIndex, 1);
-    song.status = 'bumped';
+    song.status = SongRequestStatus.BUMPED;
 
     // 🔹 Insert song at new position
     this.songs.splice(bumpPosition, 0, song);
@@ -88,16 +80,14 @@ export class SongQueue {
     }
 
     for (let i = 0; i < this.songs.length; i++) {
-      if (this.songs[i].status !== 'bumped') {
+      if (this.songs[i].status !== SongRequestStatus.BUMPED) {
         return i;
       }
     }
 
+    // This can't happen in practice, because the queue can never be already all bumps
+    /* istanbul ignore next */
     return 0;
-  }
-
-  public getSongByUser(requestedBy: string): Song | undefined {
-    return this.songs.find((song) => song.requestedBy === requestedBy);
   }
 
   public getSongQueue(): Song[] {

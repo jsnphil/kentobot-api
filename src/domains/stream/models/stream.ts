@@ -7,6 +7,7 @@ import { SongRemovedFromQueue } from '../events/song-removed-from-queue-event';
 import { BumpType } from '../../../types/song-request';
 import { BumpService } from '../services/bump-service';
 import { SongBumpedEvent } from '../events/song-bumped-event';
+import { SongAddedToQueueEvent } from '../events/song-added-to-queue-event';
 // import { BumpCount } from './bump-count';
 
 export class Stream {
@@ -39,7 +40,9 @@ export class Stream {
   public static load(data: any): Stream {
     // TODO Eventually figure out why this type conversion is necessary
     let songQueueArray;
+    /* istanbul ignore next */
     if (typeof data.songQueue == 'string') {
+      /* istanbul ignore next */
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       songQueueArray = JSON.parse(data.songQueue) as any[];
     } else {
@@ -73,24 +76,28 @@ export class Stream {
 
   public async addSongToQueue(song: Song) {
     await this.songQueue.addSong(song);
-    // TODO Fire event
-  }
-
-  public async removeSongFromQueue(songId: string) {
-    await this.songQueue.removeSong(songId);
 
     await EventPublisher.publishEvent(
-      new SongRemovedFromQueue(songId),
-      StreamEvent.SONG_REMOVED_FROM_QUEUE // TODO Make this an enum
+      new SongAddedToQueueEvent(song),
+      StreamEvent.SONG_ADDED_TO_QUEUE
     );
   }
 
-  public async moveSong(songId: string, newPosition: number) {
-    await this.songQueue.moveSong(songId, newPosition);
+  public removeSongFromQueue(songId: string) {
+    this.songQueue.removeSong(songId);
 
-    await EventPublisher.publishEvent(
+    EventPublisher.publishEvent(
+      new SongRemovedFromQueue(songId),
+      StreamEvent.SONG_REMOVED_FROM_QUEUE
+    );
+  }
+
+  public moveSong(songId: string, newPosition: number) {
+    this.songQueue.moveSong(songId, newPosition - 1);
+
+    EventPublisher.publishEvent(
       new SongMovedInQueueEvent(songId, newPosition),
-      StreamEvent.SONG_MOVED // TODO Make this an enum
+      StreamEvent.SONG_MOVED
     );
   }
 
@@ -136,6 +143,8 @@ export class Stream {
       return this.channelPointBumpsAvailable > 0;
     }
 
+    // This should never happen in reality
+    /* istanbul ignore next */
     throw new Error('Invalid bump type');
   }
 
@@ -143,8 +152,6 @@ export class Stream {
     if (bumpType === BumpType.Bean) {
       this.beanBumpsAvailable--;
     } else if (bumpType === BumpType.ChannelPoints) {
-      // TODO Implement
-
       this.channelPointBumpsAvailable--;
     }
   }

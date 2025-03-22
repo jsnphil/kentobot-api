@@ -1,18 +1,19 @@
 import { YouTubeService } from '../../../common/services/youtube-service';
+import { SongRequestStatus } from '../../../types/song-request';
 import { SongValidator } from '../validators/song-validator';
 
 export class Song {
   public readonly id: string;
   public readonly requestedBy: string;
   public readonly title: string;
-  public status: 'in queue' | 'bumped' | 'in shuffle' | 'shuffle winner'; // TODO Change this later, maybe an enum
+  public status: SongRequestStatus;
   public readonly duration: number; // in seconds
 
   private constructor(
     id: string,
     requestedBy: string,
     title: string,
-    status: 'in queue' | 'bumped' | 'in shuffle' | 'shuffle winner',
+    status: SongRequestStatus,
     duration: number
   ) {
     this.id = id;
@@ -30,7 +31,7 @@ export class Song {
       youtubeVideo.id,
       requestedBy,
       youtubeVideo.title,
-      'in queue',
+      SongRequestStatus.QUEUED,
       youtubeVideo.duration
     );
   }
@@ -39,7 +40,7 @@ export class Song {
     id: string,
     requestedBy: string,
     title: string,
-    status: 'in queue' | 'bumped' | 'in shuffle' | 'shuffle winner',
+    status: SongRequestStatus,
     duration: number
   ): Song {
     return new Song(id, requestedBy, title, status, duration);

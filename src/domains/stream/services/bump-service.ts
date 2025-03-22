@@ -17,4 +17,16 @@ export class BumpService {
 
     return false;
   }
+
+  // TODO This be triggered by a Bump event
+
+  public async updateUserBumpEligiblity(user: string) {
+    const expiration = new Date();
+    expiration.setDate(new Date().getDate() + 7);
+
+    await BumpRepository.updateUserBumpEligibility(
+      user,
+      expiration.toISOString()
+    );
+  }
 }

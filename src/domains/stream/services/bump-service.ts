@@ -21,7 +21,9 @@ export class BumpService {
   // TODO This be triggered by a Bump event
 
   public async updateUserBumpEligiblity(user: string) {
-    const expiration = new Date();
+    const timestamp = new Date().toISOString().split('T')[0];
+
+    const expiration = new Date(timestamp);
     expiration.setDate(new Date().getDate() + 7);
 
     await BumpRepository.updateUserBumpEligibility(

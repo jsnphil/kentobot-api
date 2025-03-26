@@ -2,8 +2,8 @@ export class MoveSongCommand {
   public readonly songId: string;
   public readonly position: number;
 
-  constructor(songId: string) {
+  constructor(songId: string, position: number) {
     this.songId = songId;
-    this.position = 0; // Default position
+    this.position = position;
   }
 }

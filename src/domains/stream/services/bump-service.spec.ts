@@ -75,7 +75,10 @@ describe('BumpService', () => {
     it('should update user bump eligibility with a new expiration date', async () => {
       // Arrange
       const user = 'user';
-      const expiration = new Date();
+
+      const timestamp = new Date().toISOString().split('T')[0];
+
+      const expiration = new Date(timestamp);
       expiration.setDate(new Date().getDate() + 7);
 
       const updateUserBumpEligibilitySpy = jest

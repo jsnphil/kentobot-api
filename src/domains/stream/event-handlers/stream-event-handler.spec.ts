@@ -80,4 +80,54 @@ describe('stream-event-handler', () => {
     await handler(event);
     expect(broadcastSpy).toHaveBeenCalledWith(expectedMessage);
   });
+
+  it('should broadcast a song-moved message when detailType is song-moved', async () => {
+    const event = {
+      'detail-type': StreamEvent.SONG_MOVED,
+      detail: {
+        songId: '1',
+        position: 2
+      }
+    };
+
+    const expectedMessage = JSON.stringify({
+      event: 'song-moved',
+      data: {
+        songId: '1',
+        position: 2
+      }
+    });
+
+    const broadcastSpy = jest
+      .spyOn(WebSocketService.prototype, 'broadcast')
+      .mockImplementation(() => Promise.resolve());
+
+    await handler(event);
+    expect(broadcastSpy).toHaveBeenCalledWith(expectedMessage);
+  });
+
+  it('should broadcast a song-bumped message when detailType is song-bumped', async () => {
+    const event = {
+      'detail-type': StreamEvent.SONG_BUMPED,
+      detail: {
+        songId: '1',
+        position: 2
+      }
+    };
+
+    const expectedMessage = JSON.stringify({
+      event: 'song-bumped',
+      data: {
+        songId: '1',
+        position: 2
+      }
+    });
+
+    const broadcastSpy = jest
+      .spyOn(WebSocketService.prototype, 'broadcast')
+      .mockImplementation(() => Promise.resolve());
+
+    await handler(event);
+    expect(broadcastSpy).toHaveBeenCalledWith(expectedMessage);
+  });
 });

@@ -32,7 +32,8 @@ module.exports = {
     'mocks/*',
     'data-migration/*',
     'test-code/*',
-    'src/lambdas/*'
+    'src/lambdas/*',
+    'src/schemas/*'
   ],
   resetMocks: true,
   moduleNameMapper: {

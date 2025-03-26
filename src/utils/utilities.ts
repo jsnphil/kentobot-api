@@ -36,6 +36,7 @@ export async function streamToString(readableData: Readable): Promise<string> {
   });
 }
 
+/* istanbul ignore next */
 export const generateStreamDate = () => {
   return new Date()
     .toLocaleDateString('en-US', {

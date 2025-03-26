@@ -1,32 +1,30 @@
-import { APIGatewayEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { MoveSongCommandHandler } from '../domains/stream/command-handlers/move-song-command-handler';
-import { MoveSongCommand } from '../domains/stream/commands/move-song-command';
 import { Logger } from '@aws-lambda-powertools/logger';
+import { APIGatewayEvent, APIGatewayProxyHandler } from 'aws-lambda';
 import { KentobotErrorCode } from '../types/types';
 import { Code } from 'better-status-codes';
+import { BumpSongCommandHandler } from '../domains/stream/command-handlers/bump-song-command-handler';
+import { BumpSongCommand } from '../domains/stream/commands/bump-song-command';
 
-const logger = new Logger({ serviceName: 'move-request-lambda' });
+const logger = new Logger({ serviceName: 'bump-song-lambda' });
 
-export const handler = async (
-  event: APIGatewayEvent
-): Promise<APIGatewayProxyResult> => {
-  const songId = event.pathParameters?.songId;
-
+export const handler = async (event: APIGatewayEvent) => {
   const body = JSON.parse(event.body || '{}');
-  const { position } = body;
+  const { user, position, bumpType, modOverride } = body;
 
-  if (!songId || !position) {
+  if (!user) {
     return {
       statusCode: 400,
       body: JSON.stringify({
-        message: 'songId and position are required'
+        message: 'User is required'
       })
     };
   }
 
+  // Your logic here
+  // For example, bump the song in the playlist
   try {
-    const commandHandler = new MoveSongCommandHandler();
-    const command = new MoveSongCommand(songId, position);
+    const commandHandler = new BumpSongCommandHandler();
+    const command = new BumpSongCommand(bumpType, user, position, modOverride);
 
     await commandHandler.execute(command);
 

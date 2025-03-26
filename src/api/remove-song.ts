@@ -28,7 +28,7 @@ export const handler = async (
     await commandHandler.execute(command);
 
     return {
-      statusCode: 200,
+      statusCode: Code.OK,
       body: JSON.stringify({
         message: 'Song removed from queue successfully',
         songId

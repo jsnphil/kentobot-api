@@ -1,5 +1,5 @@
 import { BumpSongCommand } from '../commands/bump-song-command';
-import { StreamFactory } from '../factories/StreamFactory';
+import { StreamFactory } from '../factories/stream-factory';
 import { StreamRepository } from '../repositories/stream-repository';
 
 export class BumpSongCommandHandler {

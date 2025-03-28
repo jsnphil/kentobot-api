@@ -1,8 +1,20 @@
 import { Stream } from './stream';
 import { Song } from './song';
 import { BumpType, SongRequestStatus } from '../../../types/song-request';
+import {
+  EventBridgeClient,
+  PutEventsCommand
+} from '@aws-sdk/client-eventbridge';
+import { mockClient } from 'aws-sdk-client-mock';
+import { mock } from 'node:test';
+
+const mockEventBridgeClient = mockClient(EventBridgeClient);
 
 describe('Stream', () => {
+  beforeEach(() => {
+    mockEventBridgeClient.on(PutEventsCommand).resolves({});
+  });
+
   it('should create a new Stream instance', () => {
     const streamDate = '2023-10-01';
     const stream = Stream.create(streamDate);

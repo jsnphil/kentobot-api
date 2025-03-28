@@ -1,1 +1,0 @@
-# Kentobot AWS API

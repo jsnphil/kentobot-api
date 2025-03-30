@@ -1022,7 +1022,8 @@ export class ApiStack extends cdk.Stack {
         detailType: [
           'song-added-to-queue',
           'song-removed-from-queue',
-          'song-moved-in-queue'
+          'song-moved-in-queue',
+          'song-bumped-in-queue'
         ]
       },
       lambda: streamEventHandler

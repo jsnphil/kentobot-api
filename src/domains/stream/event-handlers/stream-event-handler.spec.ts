@@ -38,7 +38,7 @@ describe('stream-event-handler', () => {
     };
 
     const expectedMessage = JSON.stringify({
-      event: 'song-added',
+      event: 'song-added-to-queue',
       data: {
         song: {
           songId: '1',
@@ -67,7 +67,7 @@ describe('stream-event-handler', () => {
     };
 
     const expectedMessage = JSON.stringify({
-      event: 'song-removed',
+      event: 'song-removed-from-queue',
       data: {
         songId: '1'
       }
@@ -91,7 +91,7 @@ describe('stream-event-handler', () => {
     };
 
     const expectedMessage = JSON.stringify({
-      event: 'song-moved',
+      event: 'song-moved-in-queue',
       data: {
         songId: '1',
         position: 2
@@ -116,7 +116,7 @@ describe('stream-event-handler', () => {
     };
 
     const expectedMessage = JSON.stringify({
-      event: 'song-bumped',
+      event: 'song-bumped-in-queue',
       data: {
         songId: '1',
         position: 2

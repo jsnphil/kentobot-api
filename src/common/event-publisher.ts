@@ -27,10 +27,11 @@ export class EventPublisher {
       ]
     };
 
+    this.logger.debug(`Event parameters: ${JSON.stringify(params)}`);
     const data = await this.eventBridgeClient.send(
       new PutEventsCommand(params)
     );
 
-    this.logger.debug(`Event published: ${data}`);
+    this.logger.debug(`Event published: ${JSON.stringify(data)}`);
   }
 }

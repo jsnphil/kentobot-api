@@ -1,7 +1,6 @@
 import { Logger } from '@aws-lambda-powertools/logger';
 import { WebSocketService } from '@services/web-socket-service';
 import { StreamEvent } from '../../../types/event-types';
-import { StreamMode } from 'aws-cdk-lib/aws-kinesis';
 
 const webSocketService = new WebSocketService();
 const logger = new Logger({ serviceName: 'add-song-to-queue-event-handler' });

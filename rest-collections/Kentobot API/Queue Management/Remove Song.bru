@@ -5,13 +5,14 @@ meta {
 }
 
 delete {
-  url: https://{{aws.api.id}}.execute-api.us-east-1.amazonaws.com/{{stage}}/song-queue/:songId
+  url: https://{{aws.api.id}}.execute-api.us-east-1.amazonaws.com/{{stage}}/streams/:stream/queue/remove-request/:songId
   body: json
   auth: apikey
 }
 
 params:path {
-  songId: TEDAKLTIwOE
+  songId: 
+  stream: 
 }
 
 auth:apikey {

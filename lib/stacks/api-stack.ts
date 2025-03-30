@@ -597,11 +597,11 @@ export class ApiStack extends cdk.Stack {
     database.grantReadWriteData(removeRequestLambda);
     eventBus.bus.grantPutEventsTo(removeRequestLambda);
 
-    const removeSongResource = queueEndpoint
-      .addResource('remove-song')
+    const removeRequestResource = queueEndpoint
+      .addResource('remove-request')
       .addResource('{songId}');
 
-    removeSongResource.addMethod(
+    removeRequestResource.addMethod(
       'DELETE',
       new apiGateway.LambdaIntegration(removeRequestLambda),
       {
@@ -642,6 +642,44 @@ export class ApiStack extends cdk.Stack {
     moveSongResource.addMethod(
       'PATCH',
       new apiGateway.LambdaIntegration(moveRequestLambda),
+      {
+        apiKeyRequired: true
+      }
+    );
+
+    // ***********************
+    // Bump song resource
+    // ***********************
+
+    const bumpRequestResource = queueEndpoint
+      .addResource('bump-request')
+      .addResource('{songId}');
+
+    const bumpRequestLambda = new lambda.NodejsFunction(this, 'BumpRequest', {
+      runtime: NODE_RUNTIME,
+      handler: 'handler',
+      entry: path.join(__dirname, '../../src/api/bump-request.ts'),
+      bundling: {
+        minify: false,
+        externalModules: ['aws-sdk']
+      },
+      logRetention: logs.RetentionDays.ONE_WEEK,
+      environment: {
+        ...lambdaEnvironment,
+        ENVIRONMENT: props.environmentName,
+        STREAM_DATA_TABLE: database.tableName,
+        EVENT_BUS_NAME: eventBus.bus.eventBusName
+      },
+      timeout: cdk.Duration.minutes(1),
+      memorySize: 512,
+      architecture: ARCHITECTURE
+    });
+
+    database.grantReadWriteData(moveRequestLambda);
+
+    bumpRequestResource.addMethod(
+      'PATCH',
+      new apiGateway.LambdaIntegration(bumpRequestLambda),
       {
         apiKeyRequired: true
       }

@@ -5,13 +5,14 @@ meta {
 }
 
 post {
-  url: https://{{aws.api.id}}.execute-api.us-east-1.amazonaws.com/{{stage}}/song-queue/bump-request/:songId
+  url: https://{{aws.api.id}}.execute-api.us-east-1.amazonaws.com/{{stage}}/streams/:stream/queue/bump-request/:songId
   body: json
   auth: apikey
 }
 
 params:path {
-  songId: hNFM2f4BvAo
+  songId: currrent
+  stream: 
 }
 
 auth:apikey {

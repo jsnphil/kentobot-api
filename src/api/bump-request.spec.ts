@@ -1,5 +1,5 @@
 import { APIGatewayProxyEvent, Context } from 'aws-lambda';
-import { handler } from './bump-song';
+import { handler } from './bump-request';
 import { BumpSongCommandHandler } from '../domains/stream/command-handlers/bump-song-command-handler';
 import { BumpSongCommand } from '../domains/stream/commands/bump-song-command';
 import { Code } from 'better-status-codes';

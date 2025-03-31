@@ -90,7 +90,7 @@ export class SongQueue {
     return 0;
   }
 
-  public getSongQueue(): Song[] {
+  public getSongs(): Song[] {
     return this.songs;
   }
 }

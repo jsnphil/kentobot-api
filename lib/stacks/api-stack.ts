@@ -15,6 +15,7 @@ import * as iam from 'aws-cdk-lib/aws-iam';
 import { Construct } from 'constructs';
 import { createSongRequestParameters } from '../constructs/song-request-parameters';
 import { ARCHITECTURE, lambdaEnvironment, NODE_RUNTIME } from '../CDKConstants';
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 import path = require('path');
 import {
   errorResponses,

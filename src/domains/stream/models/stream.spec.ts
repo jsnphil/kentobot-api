@@ -21,7 +21,7 @@ describe('Stream', () => {
 
     expect(stream).toBeInstanceOf(Stream);
     expect(stream.getStreamDate()).toBe(streamDate);
-    expect(stream.getSongQueue()).toEqual([]);
+    expect(stream.getSongQueue().getSongs()).toEqual([]);
   });
 
   it('should load a Stream instance from data', () => {
@@ -49,7 +49,7 @@ describe('Stream', () => {
 
     expect(stream).toBeInstanceOf(Stream);
     expect(stream.getStreamDate()).toBe(data.streamDate);
-    expect(stream.getSongQueue().length).toBe(2);
+    expect(stream.getSongQueue().getSongs().length).toBe(2);
   });
 
   describe('moveSong', () => {
@@ -78,18 +78,18 @@ describe('Stream', () => {
       const songQueue = stream.getSongQueue();
       console.log(songQueue);
 
-      expect(songQueue[0].id).toBe('1');
-      expect(songQueue[1].id).toBe('3');
-      expect(songQueue[2].id).toBe('4');
-      expect(songQueue[3].id).toBe('5');
-      expect(songQueue[4].id).toBe('2');
+      expect(songQueue.getSongs()[0].id).toBe('1');
+      expect(songQueue.getSongs()[1].id).toBe('3');
+      expect(songQueue.getSongs()[2].id).toBe('4');
+      expect(songQueue.getSongs()[3].id).toBe('5');
+      expect(songQueue.getSongs()[4].id).toBe('2');
     });
 
     it('should throw an error if the queue is empty', () => {
       const stream = Stream.create('2023-10-01');
       const songQueue = stream.getSongQueue();
 
-      expect(songQueue.length).toBe(0);
+      expect(songQueue.getSongs().length).toBe(0);
       expect(() => stream.moveSong('1', 2)).toThrow('Queue is empty');
     });
 
@@ -130,8 +130,8 @@ describe('Stream', () => {
       const songQueue = stream.getSongQueue();
       console.log(songQueue);
 
-      expect(songQueue[0].id).toBe('3');
-      expect(songQueue[0].status).toBe(SongRequestStatus.BUMPED);
+      expect(songQueue.getSongs()[0].id).toBe('3');
+      expect(songQueue.getSongs()[0].status).toBe(SongRequestStatus.BUMPED);
       expect(stream.getAvailableBeanBumps()).toBe(2);
     });
 
@@ -184,8 +184,8 @@ describe('Stream', () => {
       const songQueue = stream.getSongQueue();
       console.log(songQueue);
 
-      expect(songQueue[0].id).toBe('3');
-      expect(songQueue[0].status).toBe(SongRequestStatus.BUMPED);
+      expect(songQueue.getSongs()[0].id).toBe('3');
+      expect(songQueue.getSongs()[0].status).toBe(SongRequestStatus.BUMPED);
       expect(stream.getAvailableChannelPointBumps()).toBe(2);
     });
 
@@ -223,18 +223,18 @@ describe('Stream', () => {
       const songQueue = stream.getSongQueue();
       console.log(songQueue);
 
-      expect(songQueue.length).toBe(4);
-      expect(songQueue[0].id).toBe('1');
-      expect(songQueue[1].id).toBe('2');
-      expect(songQueue[2].id).toBe('4');
-      expect(songQueue[3].id).toBe('5');
+      expect(songQueue.getSongs().length).toBe(4);
+      expect(songQueue.getSongs()[0].id).toBe('1');
+      expect(songQueue.getSongs()[1].id).toBe('2');
+      expect(songQueue.getSongs()[2].id).toBe('4');
+      expect(songQueue.getSongs()[3].id).toBe('5');
     });
 
     it('should throw an error if the queue is empty', () => {
       const stream = Stream.create('2023-10-01');
       const songQueue = stream.getSongQueue();
 
-      expect(songQueue.length).toBe(0);
+      expect(songQueue.getSongs().length).toBe(0);
       expect(() => stream.removeSongFromQueue('1')).toThrow('Queue is empty');
     });
   });

@@ -42,7 +42,7 @@ describe('SongQueue', () => {
   describe('addSong', () => {
     it('should add a song to the queue', async () => {
       await songQueue.addSong(song1);
-      expect(songQueue.getSongQueue()).toContain(song1);
+      expect(songQueue.getSongs()).toContain(song1);
     });
 
     it('should throw an error if the song already exists in the queue', () => {
@@ -72,7 +72,7 @@ describe('SongQueue', () => {
     it('should remove a song from the queue', () => {
       songQueue.addSong(song1);
       songQueue.removeSong(song1.id);
-      expect(songQueue.getSongQueue()).not.toContain(song1);
+      expect(songQueue.getSongs()).not.toContain(song1);
     });
 
     it('should throw an error if the queue is empty', () => {
@@ -91,11 +91,11 @@ describe('SongQueue', () => {
     it('should return the current song queue', () => {
       songQueue.addSong(song1);
       songQueue.addSong(song2);
-      expect(songQueue.getSongQueue()).toEqual([song1, song2]);
+      expect(songQueue.getSongs()).toEqual([song1, song2]);
     });
 
     it('should return an empty array if the queue is empty', () => {
-      expect(songQueue.getSongQueue()).toEqual([]);
+      expect(songQueue.getSongs()).toEqual([]);
     });
   });
 
@@ -107,7 +107,7 @@ describe('SongQueue', () => {
 
       songQueue.moveSong(song2.id, 3);
 
-      const songQueueArray = songQueue.getSongQueue();
+      const songQueueArray = songQueue.getSongs();
       expect(songQueueArray[0]).toBe(song1);
       expect(songQueueArray[1]).toBe(song3);
       expect(songQueueArray[2]).toBe(song2);
@@ -136,7 +136,7 @@ describe('SongQueue', () => {
 
       songQueue.bumpUserRequest('Elend', BumpType.Bean);
 
-      const songQueueArray = songQueue.getSongQueue();
+      const songQueueArray = songQueue.getSongs();
       expect(songQueueArray[0].status).toBe(SongRequestStatus.BUMPED);
       expect(songQueueArray[0].requestedBy).toBe('Elend');
       expect(songQueueArray[1]).toBe(song1);

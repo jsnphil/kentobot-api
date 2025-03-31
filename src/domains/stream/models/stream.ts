@@ -156,8 +156,8 @@ export class Stream {
     }
   }
 
-  public getSongQueue(): Song[] {
-    return this.songQueue.getSongQueue();
+  public getSongQueue(): SongQueue {
+    return this.songQueue;
   }
 
   public getStreamDate(): string {

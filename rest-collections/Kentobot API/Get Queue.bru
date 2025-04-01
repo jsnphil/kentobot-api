@@ -1,0 +1,21 @@
+meta {
+  name: Get Queue
+  type: http
+  seq: 3
+}
+
+get {
+  url: https://{{aws.api.id}}.execute-api.us-east-1.amazonaws.com/{{stage}}/streams/:stream/queue
+  body: none
+  auth: apikey
+}
+
+params:path {
+  stream: current
+}
+
+auth:apikey {
+  key: X-API-Key
+  value: {{kentobot.api.key}}
+  placement: header
+}

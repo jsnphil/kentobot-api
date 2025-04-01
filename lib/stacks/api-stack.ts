@@ -652,14 +652,10 @@ export class ApiStack extends cdk.Stack {
     // Bump song resource
     // ***********************
 
-    const bumpRequestResource = queueEndpoint
-      .addResource('bump-request')
-      .addResource('{songId}');
-
-    const bumpRequestLambda = new lambda.NodejsFunction(this, 'BumpRequest', {
+    const getQueueLambda = new lambda.NodejsFunction(this, 'GetQueue', {
       runtime: NODE_RUNTIME,
       handler: 'handler',
-      entry: path.join(__dirname, '../../src/api/bump-request.ts'),
+      entry: path.join(__dirname, '../../src/api/get-queue.ts'),
       bundling: {
         minify: false,
         externalModules: ['aws-sdk']
@@ -668,19 +664,18 @@ export class ApiStack extends cdk.Stack {
       environment: {
         ...lambdaEnvironment,
         ENVIRONMENT: props.environmentName,
-        STREAM_DATA_TABLE: database.tableName,
-        EVENT_BUS_NAME: eventBus.bus.eventBusName
+        STREAM_DATA_TABLE: database.tableName
       },
       timeout: cdk.Duration.minutes(1),
       memorySize: 512,
       architecture: ARCHITECTURE
     });
 
-    database.grantReadWriteData(moveRequestLambda);
+    database.grantReadData(getQueueLambda);
 
-    bumpRequestResource.addMethod(
-      'PATCH',
-      new apiGateway.LambdaIntegration(bumpRequestLambda),
+    queueEndpoint.addMethod(
+      'GET',
+      new apiGateway.LambdaIntegration(getQueueLambda),
       {
         apiKeyRequired: true
       }

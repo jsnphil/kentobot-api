@@ -27,22 +27,24 @@ describe('Stream', () => {
   it('should load a Stream instance from data', () => {
     const data: any = {
       streamDate: '2023-10-01',
-      songQueue: [
-        {
-          id: '1',
-          requestedBy: 'user1',
-          title: 'Song 1',
-          status: SongRequestStatus.QUEUED,
-          duration: 300
-        },
-        {
-          id: '2',
-          requestedBy: 'user2',
-          title: 'Song 2',
-          status: SongRequestStatus.QUEUED,
-          duration: 200
-        }
-      ]
+      songQueue: {
+        songs: [
+          {
+            id: '1',
+            requestedBy: 'user1',
+            title: 'Song 1',
+            status: SongRequestStatus.QUEUED,
+            duration: 300
+          },
+          {
+            id: '2',
+            requestedBy: 'user2',
+            title: 'Song 2',
+            status: SongRequestStatus.QUEUED,
+            duration: 200
+          }
+        ]
+      }
     };
 
     const stream = Stream.load(data);

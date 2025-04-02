@@ -1,21 +1,17 @@
-import { APIGatewayEvent, APIGatewayProxyResult } from 'aws-lambda';
+import { APIGatewayEvent } from 'aws-lambda';
 import { MoveSongCommandHandler } from '../domains/stream/command-handlers/move-song-command-handler';
 import { MoveSongCommand } from '../domains/stream/commands/move-song-command';
-import { Logger } from '@aws-lambda-powertools/logger';
-import { KentobotErrorCode } from '../types/types';
 import { Code } from 'better-status-codes';
+import { apiLambdaWrapper } from '../common/api-lambda-wrapper';
 
-const logger = new Logger({ serviceName: 'move-request-lambda' });
-
-export const handler = async (
-  event: APIGatewayEvent
-): Promise<APIGatewayProxyResult> => {
+export const handler = apiLambdaWrapper(async (event: APIGatewayEvent) => {
   const songId = event.pathParameters?.songId;
 
   const body = JSON.parse(event.body || '{}');
   const { position } = body;
 
   if (!songId || !position) {
+    // TODO Throw this instead
     return {
       statusCode: 400,
       body: JSON.stringify({
@@ -24,26 +20,13 @@ export const handler = async (
     };
   }
 
-  try {
-    const commandHandler = new MoveSongCommandHandler();
-    const command = new MoveSongCommand(songId, position);
+  const commandHandler = new MoveSongCommandHandler();
+  const command = new MoveSongCommand(songId, position);
 
-    await commandHandler.execute(command);
+  await commandHandler.execute(command);
 
-    return {
-      statusCode: Code.OK,
-      body: JSON.stringify({})
-    };
-  } catch (error) {
-    logger.error(`Error processing request: ${error}`);
-    return {
-      statusCode: Code.INTERNAL_SERVER_ERROR,
-      body: JSON.stringify({
-        error: {
-          code: KentobotErrorCode.SystemError,
-          message: 'An error occurred while removing the song from the queue'
-        }
-      })
-    };
-  }
-};
+  return {
+    statusCode: Code.OK,
+    body: JSON.stringify({})
+  };
+});

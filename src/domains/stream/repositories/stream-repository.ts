@@ -32,7 +32,12 @@ export class StreamRepository {
     if (!Item) {
       return undefined;
     } else {
-      return unmarshall(Item);
+      const unmarshalledItem = unmarshall(Item);
+
+      return {
+        ...unmarshalledItem,
+        songQueue: JSON.parse(unmarshalledItem.songQueue)
+      };
     }
   }
 

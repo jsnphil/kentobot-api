@@ -38,20 +38,9 @@ export class Stream {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public static load(data: any): Stream {
-    // TODO Eventually figure out why this type conversion is necessary
-    let songQueueArray;
-    /* istanbul ignore next */
-    if (typeof data.songQueue == 'string') {
-      /* istanbul ignore next */
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      songQueueArray = JSON.parse(data.songQueue) as any[];
-    } else {
-      songQueueArray = data.songQueue;
-    }
-
     const songs: Song[] = [];
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    songQueueArray.forEach((songAttrs: any) => {
+    data.songQueue.songs.forEach((songAttrs: any) => {
       const song = Song.load(
         songAttrs.id,
         songAttrs.requestedBy,

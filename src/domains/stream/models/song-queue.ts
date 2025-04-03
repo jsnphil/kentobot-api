@@ -93,4 +93,23 @@ export class SongQueue {
   public getSongs(): Song[] {
     return this.songs;
   }
+
+  public getSongRequestByUser(user: string): Song | undefined {
+    return this.songs.find((song) => song.requestedBy === user);
+  }
+
+  enterShuffle(user: string) {
+    const songRequest = this.getSongRequestByUser(user);
+    if (!songRequest) {
+      throw new Error('User does not have a song in the queue');
+    }
+
+    if (songRequest.status === SongRequestStatus.SHUFFLE_ENTERED) {
+      throw new Error('User already entered shuffle');
+    }
+
+    songRequest.status = SongRequestStatus.SHUFFLE_ENTERED;
+
+    return songRequest.id;
+  }
 }

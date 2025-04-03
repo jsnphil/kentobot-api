@@ -44,7 +44,8 @@ describe('Stream', () => {
             duration: 200
           }
         ]
-      }
+      },
+      shuffleEntries: []
     };
 
     const stream = Stream.load(data);

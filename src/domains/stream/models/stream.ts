@@ -4,17 +4,22 @@ import { Song } from './song';
 import { SongQueue } from './song-queue';
 import { SongMovedInQueueEvent } from '../events/song-moved-in-queue-event';
 import { SongRemovedFromQueue } from '../events/song-removed-from-queue-event';
-import { BumpType } from '../../../types/song-request';
+import { BumpType, SongRequestStatus } from '../../../types/song-request';
 import { BumpService } from '../services/bump-service';
 import { SongBumpedEvent } from '../events/song-bumped-event';
 import { SongAddedToQueueEvent } from '../events/song-added-to-queue-event';
+import { SongEnteredInShuffleEvent } from '../events/song-entered-in-shuffle-event';
 // import { BumpCount } from './bump-count';
 
 export class Stream {
   private streamDate: string;
   private songQueue: SongQueue;
   private beanBumpsAvailable: number;
-  channelPointBumpsAvailable: number;
+  private channelPointBumpsAvailable: number;
+  private shuffleEntries: string[] = []; // List of users who have entered shuffle mode
+  private shuffleMode: boolean = false; // Flag to indicate if shuffle mode is active
+  private shuffleOpened: boolean = false; // Flag to indicate if shuffle mode is opened
+  // private shuffleClosed: boolean = false; // Flag to indicate if shuffle mode is closed
   //   private _songHistory: SongHistory;
   // private bumpCounts: BumpCount;
   // public bumpCounts: Map<string, number>; // Tracks how many bumps each user has used
@@ -23,7 +28,9 @@ export class Stream {
 
   private constructor(
     streamDate: string,
-    songQueue: SongQueue
+    songQueue: SongQueue,
+    shuffleEntries: string[] = [],
+    shuffleOpened: boolean = false
     // songHistory: SongHistory,
     // bumpCounts: BumpCount
   ) {
@@ -31,6 +38,9 @@ export class Stream {
     this.songQueue = songQueue;
     this.beanBumpsAvailable = 3;
     this.channelPointBumpsAvailable = 3;
+    this.shuffleEntries = shuffleEntries;
+    this.shuffleMode = true;
+    this.shuffleOpened = false;
     // this._songHistory = songHistory;
     // this.bumpCounts = bumpCounts;
     this.bumpService = new BumpService();
@@ -53,7 +63,18 @@ export class Stream {
     });
 
     const songQueue = new SongQueue(songs);
-    const stream = new Stream(data.streamDate, songQueue);
+
+    const shuffleUsers: string[] = [];
+    data.shuffleEntries.forEach((user: string) => {
+      shuffleUsers.push(user);
+    });
+
+    const stream = new Stream(
+      data.streamDate,
+      songQueue,
+      shuffleUsers,
+      data.shuffleOpened
+    );
 
     return stream;
   }
@@ -159,5 +180,19 @@ export class Stream {
 
   public getAvailableChannelPointBumps(): number {
     return this.channelPointBumpsAvailable;
+  }
+
+  public enterShuffle(user: string) {
+    if (!this.shuffleOpened) {
+      throw new Error('Shuffle is not open');
+    }
+
+    const songId = this.songQueue.enterShuffle(user);
+    this.shuffleEntries.push(user);
+
+    EventPublisher.publishEvent(
+      new SongEnteredInShuffleEvent(songId, user),
+      StreamEvent.SONG_BUMPED
+    );
   }
 }

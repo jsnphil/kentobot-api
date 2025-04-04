@@ -4,6 +4,7 @@ import {
   PostToConnectionCommand
 } from '@aws-sdk/client-apigatewaymanagementapi';
 import { WebSocketConnectionsRepository } from '../repositories/websocket-connections-repository';
+import { log } from 'console';
 
 const logger = new Logger({ serviceName: 'web-socket-service' });
 
@@ -45,6 +46,9 @@ export class WebSocketService {
   async broadcast(message: string) {
     const connections = await connectionsRepo.getAllConnections();
 
+    logger.debug(
+      `Broadcasting message [${message}] to ${connections.length} connections`
+    );
     await Promise.all(
       connections.map(async (connection) => {
         await this.sendToConnection(connection.connectionId, message);

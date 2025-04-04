@@ -2,8 +2,6 @@ import { APIGatewayProxyWebsocketEventV2 } from 'aws-lambda';
 import { Logger } from '@aws-lambda-powertools/logger';
 import { WebSocketMessageSchema } from '../../schemas/schema';
 import { WebSocketService } from '../../services/web-socket-service';
-import { SongQueue } from '../../song-queue';
-import { SongRequestService } from '../../services/song-request-service';
 
 interface MessageBody {
   readonly action: string;
@@ -11,7 +9,6 @@ interface MessageBody {
 }
 
 const logger = new Logger({ serviceName: 'message-handler' });
-const songQueueService = new SongRequestService();
 
 // const client = new ApiGatewayManagementApiClient({
 //   endpoint: `https://${process.env.WEBSOCKET_API_ID}.execute-api.us-east-1.amazonaws.com/${process.env.WEB_SOCKET_STAGE}`
@@ -64,16 +61,16 @@ export const sendMessage = async (connectionId: string, message: string) => {
       JSON.stringify({ message: 'pong' })
     );
   } else if (message === 'songqueue') {
-    const songQueue = await SongQueue.loadQueue();
-    await webSocketService.broadcast(
-      JSON.stringify({ songQueue: songQueue.toArray() })
-    );
+    // TODO Implement
+    // await webSocketService.broadcast(
+    //   JSON.stringify({ songQueue: songQueue.toArray() })
+    // );
   } else if (message === 'songqueue:next') {
     // TODO Will need something here to make sure only the songplayer can call this
-    await songQueueService.sendNextSong(connectionId);
+    // TODO Implement
   } else if (message === 'songqueue:open') {
-    await songQueueService.toggleSongRequests('open');
+    // TODO Implement
   } else if (message === 'songqueue:close') {
-    await songQueueService.toggleSongRequests('closed');
+    // TODO Implement
   }
 };

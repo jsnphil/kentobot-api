@@ -15,6 +15,7 @@ import * as iam from 'aws-cdk-lib/aws-iam';
 import { Construct } from 'constructs';
 import { createSongRequestParameters } from '../constructs/song-request-parameters';
 import { ARCHITECTURE, lambdaEnvironment, NODE_RUNTIME } from '../CDKConstants';
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 import path = require('path');
 import {
   errorResponses,
@@ -85,7 +86,7 @@ export class ApiStack extends cdk.Stack {
     // Setup song request resources
     // ***********************
     const songRequestEndpointResource =
-      api.apiGateway.root.addResource('song-requests');
+      api.apiGateway.root.addResource('songs');
 
     // ***********************
     // Save song data resource
@@ -146,7 +147,7 @@ export class ApiStack extends cdk.Stack {
     });
 
     // Save song played endpoint
-    const saveSongResource = songRequestEndpointResource.addResource('save');
+    // const saveSongResource = songRequestEndpointResource.addResource('save');
 
     api.role.attachInlinePolicy(
       new iam.Policy(this, 'put-events-policy', {
@@ -200,30 +201,30 @@ export class ApiStack extends cdk.Stack {
       }
     });
 
-    saveSongResource.addMethod('POST', saveSongPlayedIntegration, {
-      apiKeyRequired: true,
-      methodResponses: [
-        {
-          statusCode: '200',
-          responseModels: {
-            'application/json': saveSongPlayResponseModel(this, api.apiGateway)
-          }
-        },
-        ...errorResponses
-      ],
-      requestValidator: new apiGateway.RequestValidator(
-        this,
-        'body-validator',
-        {
-          restApi: api.apiGateway,
-          requestValidatorName: 'body-validator',
-          validateRequestBody: true
-        }
-      ),
-      requestModels: {
-        'application/json': saveSongRequestModel(this, api.apiGateway)
-      }
-    });
+    // saveSongResource.addMethod('POST', saveSongPlayedIntegration, {
+    //   apiKeyRequired: true,
+    //   methodResponses: [
+    //     {
+    //       statusCode: '200',
+    //       responseModels: {
+    //         'application/json': saveSongPlayResponseModel(this, api.apiGateway)
+    //       }
+    //     },
+    //     ...errorResponses
+    //   ],
+    //   requestValidator: new apiGateway.RequestValidator(
+    //     this,
+    //     'body-validator',
+    //     {
+    //       restApi: api.apiGateway,
+    //       requestValidatorName: 'body-validator',
+    //       validateRequestBody: true
+    //     }
+    //   ),
+    //   requestModels: {
+    //     'application/json': saveSongRequestModel(this, api.apiGateway)
+    //   }
+    // });
 
     // ***********************
     // Get song details and plays endpoint
@@ -458,8 +459,49 @@ export class ApiStack extends cdk.Stack {
     // Queue Management Resources
     // ***********************
 
-    const queueManagmentResource =
-      api.apiGateway.root.addResource('song-queue');
+    // ************************
+    // New stream-based endpoints
+    // ************************
+    const streamEndpointResource = api.apiGateway.root.addResource('streams');
+
+    // Start stream endpoints
+    const startStreamLambda = new lambda.NodejsFunction(this, 'StartStream', {
+      runtime: NODE_RUNTIME,
+      handler: 'handler',
+      entry: path.join(__dirname, '../../src/api/', 'start-stream.ts'),
+      bundling: {
+        minify: false,
+        externalModules: ['aws-sdk']
+      },
+      logRetention: logs.RetentionDays.ONE_WEEK,
+      environment: {
+        ...lambdaEnvironment,
+        ENVIRONMENT: props.environmentName,
+        STREAM_DATA_TABLE: database.tableName
+      },
+      timeout: cdk.Duration.minutes(1),
+      memorySize: 512,
+      architecture: ARCHITECTURE
+    });
+
+    database.grantReadWriteData(startStreamLambda);
+
+    streamEndpointResource.addMethod(
+      'POST',
+      new apiGateway.LambdaIntegration(startStreamLambda),
+      {
+        apiKeyRequired: true
+      }
+    );
+
+    // TODO Get active stream
+    // TODO Get stream by date
+    // TODO Delete/end stream
+
+    // Queue management endpoints
+    const queueEndpoint = streamEndpointResource
+      .addResource('current')
+      .addResource('queue');
 
     // ***********************
     // Request song resource
@@ -471,8 +513,6 @@ export class ApiStack extends cdk.Stack {
       licensedContentToggle,
       maxSongRequestsPerUser
     } = createSongRequestParameters(this, props.environmentName);
-
-    const requestSongResource = queueManagmentResource.addResource('request');
 
     const youtubeApiKeyParameter =
       ssm.StringParameter.fromSecureStringParameterAttributes(
@@ -486,11 +526,7 @@ export class ApiStack extends cdk.Stack {
     const songRequestLambda = new lambda.NodejsFunction(this, 'RequestSong', {
       runtime: NODE_RUNTIME,
       handler: 'handler',
-      entry: path.join(
-        __dirname,
-        '../../src/lambdas/rest-api/',
-        'queue-management/request-song.ts'
-      ),
+      entry: path.join(__dirname, '../../src/api/request-song.ts'),
       bundling: {
         minify: false,
         externalModules: ['aws-sdk']
@@ -506,7 +542,8 @@ export class ApiStack extends cdk.Stack {
         MAX_SONGS_PER_USER: maxSongRequestsPerUser.parameterName,
         STREAM_DATA_TABLE: database.tableName,
         WEBSOCKET_API_ID: webSocketApi.apiId,
-        WEB_SOCKET_STAGE: webSocketApiStage
+        WEB_SOCKET_STAGE: webSocketApiStage,
+        EVENT_BUS_NAME: eventBus.bus.eventBusName
       },
       timeout: cdk.Duration.minutes(1),
       memorySize: 512,
@@ -520,8 +557,10 @@ export class ApiStack extends cdk.Stack {
     youtubeApiKeyParameter.grantRead(songRequestLambda);
     maxSongRequestsPerUser.grantRead(songRequestLambda);
     database.grantReadWriteData(songRequestLambda);
+    eventBus.bus.grantPutEventsTo(songRequestLambda);
 
-    requestSongResource.addMethod(
+    const requestSongEndpoint = queueEndpoint.addResource('request-song');
+    requestSongEndpoint.addMethod(
       'POST',
       new apiGateway.LambdaIntegration(songRequestLambda),
       {
@@ -529,32 +568,60 @@ export class ApiStack extends cdk.Stack {
       }
     );
 
-    songRequestLambda.addToRolePolicy(
-      new iam.PolicyStatement({
-        effect: iam.Effect.ALLOW,
-        actions: ['execute-api:ManageConnections'],
-        resources: [
-          `arn:aws:execute-api:${props.env?.region}:${props.env?.account}:${webSocketApi.apiId}/*/*/@connections/*`
-        ]
-      })
+    /* Remove song from queue endpoint */
+    const removeRequestLambda = new lambda.NodejsFunction(
+      this,
+      'RemoveRequest',
+      {
+        runtime: NODE_RUNTIME,
+        handler: 'handler',
+        entry: path.join(__dirname, '../../src/api', 'remove-song.ts'),
+        bundling: {
+          minify: false,
+          externalModules: ['aws-sdk']
+        },
+        logRetention: logs.RetentionDays.ONE_WEEK,
+        environment: {
+          ...lambdaEnvironment,
+          ENVIRONMENT: props.environmentName,
+          STREAM_DATA_TABLE: database.tableName,
+          WEBSOCKET_API_ID: webSocketApi.apiId,
+          WEB_SOCKET_STAGE: webSocketApiStage,
+          EVENT_BUS_NAME: eventBus.bus.eventBusName
+        },
+        timeout: cdk.Duration.minutes(1),
+        memorySize: 512,
+        architecture: ARCHITECTURE
+      }
+    );
+
+    database.grantReadWriteData(removeRequestLambda);
+    eventBus.bus.grantPutEventsTo(removeRequestLambda);
+
+    const removeRequestResource = queueEndpoint
+      .addResource('remove-request')
+      .addResource('{songId}');
+
+    removeRequestResource.addMethod(
+      'DELETE',
+      new apiGateway.LambdaIntegration(removeRequestLambda),
+      {
+        apiKeyRequired: true
+      }
     );
 
     // ***********************
-    // Move song resource
+    // Move Request Endpoint
     // ***********************
 
-    const moveSongResource = queueManagmentResource
+    const moveSongResource = queueEndpoint
       .addResource('move-request')
       .addResource('{songId}');
 
     const moveRequestLambda = new lambda.NodejsFunction(this, 'MoveRequest', {
       runtime: NODE_RUNTIME,
       handler: 'handler',
-      entry: path.join(
-        __dirname,
-        '../../src/lambdas/rest-api/',
-        'queue-management/move-request.ts'
-      ),
+      entry: path.join(__dirname, '../../src/api/move-request.ts'),
       bundling: {
         minify: false,
         externalModules: ['aws-sdk']
@@ -564,8 +631,7 @@ export class ApiStack extends cdk.Stack {
         ...lambdaEnvironment,
         ENVIRONMENT: props.environmentName,
         STREAM_DATA_TABLE: database.tableName,
-        WEBSOCKET_API_ID: webSocketApi.apiId,
-        WEB_SOCKET_STAGE: webSocketApiStage
+        EVENT_BUS_NAME: eventBus.bus.eventBusName
       },
       timeout: cdk.Duration.minutes(1),
       memorySize: 512,
@@ -575,39 +641,53 @@ export class ApiStack extends cdk.Stack {
     database.grantReadWriteData(moveRequestLambda);
 
     moveSongResource.addMethod(
-      'POST',
+      'PATCH',
       new apiGateway.LambdaIntegration(moveRequestLambda),
       {
         apiKeyRequired: true
       }
     );
 
-    moveRequestLambda.addToRolePolicy(
-      new iam.PolicyStatement({
-        effect: iam.Effect.ALLOW,
-        actions: ['execute-api:ManageConnections'],
-        resources: [
-          `arn:aws:execute-api:${props.env?.region}:${props.env?.account}:${webSocketApi.apiId}/*/*/@connections/*`
-        ]
-      })
-    );
-
     // ***********************
     // Bump song resource
     // ***********************
 
-    const bumpSongResource = queueManagmentResource
-      .addResource('bump-request')
-      .addResource('{songId}');
-
-    const bumpSongLambda = new lambda.NodejsFunction(this, 'BumpRequest', {
+    const getQueueLambda = new lambda.NodejsFunction(this, 'GetQueue', {
       runtime: NODE_RUNTIME,
       handler: 'handler',
-      entry: path.join(
-        __dirname,
-        '../../src/lambdas/rest-api/',
-        'queue-management/bump-request.ts'
-      ),
+      entry: path.join(__dirname, '../../src/api/get-queue.ts'),
+      bundling: {
+        minify: false,
+        externalModules: ['aws-sdk']
+      },
+      logRetention: logs.RetentionDays.ONE_WEEK,
+      environment: {
+        ...lambdaEnvironment,
+        ENVIRONMENT: props.environmentName,
+        STREAM_DATA_TABLE: database.tableName
+      },
+      timeout: cdk.Duration.minutes(1),
+      memorySize: 512,
+      architecture: ARCHITECTURE
+    });
+
+    database.grantReadData(getQueueLambda);
+
+    queueEndpoint.addMethod(
+      'GET',
+      new apiGateway.LambdaIntegration(getQueueLambda)
+    );
+
+    // ***********************
+    // Shuffle endpoints
+    // ***********************
+
+    const shuffleResource = queueEndpoint.addResource('shuffle');
+
+    const enterShuffleLambda = new lambda.NodejsFunction(this, 'EnterShuffle', {
+      runtime: NODE_RUNTIME,
+      handler: 'handler',
+      entry: path.join(__dirname, '../../src/api/enter-shuffle.ts'),
       bundling: {
         minify: false,
         externalModules: ['aws-sdk']
@@ -617,50 +697,39 @@ export class ApiStack extends cdk.Stack {
         ...lambdaEnvironment,
         ENVIRONMENT: props.environmentName,
         STREAM_DATA_TABLE: database.tableName,
-        WEBSOCKET_API_ID: webSocketApi.apiId,
-        WEB_SOCKET_STAGE: webSocketApiStage
+        EVENT_BUS_NAME: eventBus.bus.eventBusName
       },
       timeout: cdk.Duration.minutes(1),
       memorySize: 512,
       architecture: ARCHITECTURE
     });
 
-    database.grantReadWriteData(bumpSongLambda);
+    database.grantReadWriteData(moveRequestLambda);
 
-    bumpSongResource.addMethod(
-      'POST',
-      new apiGateway.LambdaIntegration(bumpSongLambda),
+    const enterShuffleResource = shuffleResource.addResource('enter');
+
+    enterShuffleResource.addMethod(
+      'GET',
+      new apiGateway.LambdaIntegration(enterShuffleLambda),
       {
         apiKeyRequired: true
       }
     );
 
-    bumpSongLambda.addToRolePolicy(
-      new iam.PolicyStatement({
-        effect: iam.Effect.ALLOW,
-        actions: ['execute-api:ManageConnections'],
-        resources: [
-          `arn:aws:execute-api:${props.env?.region}:${props.env?.account}:${webSocketApi.apiId}/*/*/@connections/*`
-        ]
-      })
-    );
+    const openShuffleResource = shuffleResource.addResource('open');
+    const closeShuffleResource = shuffleResource.addResource('close');
 
-    // ***********************
-    // Delete request resource
-    // ***********************
+    /*  End of stream-based endpoints*/
 
-    const removeSongResource = queueManagmentResource.addResource('{songId}');
-
-    const removeRequestLambda = new lambda.NodejsFunction(
+    const streamEventHandler = new lambda.NodejsFunction(
       this,
-      'RemoveRequest',
+      'streamEventHandler',
       {
         runtime: NODE_RUNTIME,
         handler: 'handler',
         entry: path.join(
           __dirname,
-          '../../src/lambdas/rest-api/',
-          'queue-management/remove-request.ts'
+          '../../src/domains/stream/event-handlers/stream-event-handler.ts'
         ),
         bundling: {
           minify: false,
@@ -673,190 +742,33 @@ export class ApiStack extends cdk.Stack {
           STREAM_DATA_TABLE: database.tableName,
           WEBSOCKET_API_ID: webSocketApi.apiId,
           WEB_SOCKET_STAGE: webSocketApiStage
-        },
-        timeout: cdk.Duration.minutes(1),
-        memorySize: 512,
-        architecture: ARCHITECTURE
-      }
-    );
-
-    database.grantReadWriteData(removeRequestLambda);
-
-    removeSongResource.addMethod(
-      'DELETE',
-      new apiGateway.LambdaIntegration(removeRequestLambda),
-      {
-        apiKeyRequired: true
-      }
-    );
-
-    removeRequestLambda.addToRolePolicy(
-      new iam.PolicyStatement({
-        effect: iam.Effect.ALLOW,
-        actions: ['execute-api:ManageConnections'],
-        resources: [
-          `arn:aws:execute-api:${props.env?.region}:${props.env?.account}:${webSocketApi.apiId}/*/*/@connections/*`
-        ]
-      })
-    );
-
-    // ***********************
-    // Reset bump resource
-    // ***********************
-
-    const resetBumpsResource =
-      queueManagmentResource.addResource('reset-bumps');
-
-    // TODO Combine with the other lambda
-    const resetBumpsLambda = new lambda.NodejsFunction(this, 'ResetBumps', {
-      runtime: NODE_RUNTIME,
-      handler: 'handler',
-      entry: path.join(
-        __dirname,
-        '../../src/lambdas/rest-api/',
-        'queue-management/reset-bumps.ts'
-      ),
-      bundling: {
-        minify: false,
-        externalModules: ['aws-sdk']
-      },
-      logRetention: logs.RetentionDays.ONE_WEEK,
-      environment: {
-        ...lambdaEnvironment,
-        ENVIRONMENT: props.environmentName,
-        STREAM_DATA_TABLE: database.tableName
-      },
-      timeout: cdk.Duration.seconds(15),
-      architecture: ARCHITECTURE
-    });
-
-    database.grantReadWriteData(resetBumpsLambda);
-
-    resetBumpsResource.addMethod(
-      'POST',
-      new apiGateway.LambdaIntegration(resetBumpsLambda),
-      {
-        apiKeyRequired: true
-      }
-    );
-
-    // ***********************
-    // Toggle song requests resource
-    // ***********************
-    const openSongRequestsResource =
-      queueManagmentResource.addResource('open-requests');
-
-    const closeSongRequestsResource =
-      queueManagmentResource.addResource('close-requests');
-
-    const songRequestControlsLambda = new lambda.NodejsFunction(
-      this,
-      'SongRequestControls',
-      {
-        runtime: NODE_RUNTIME,
-        handler: 'handler',
-        entry: path.join(
-          __dirname,
-          '../../src/lambdas/rest-api/',
-          'queue-management/song-request-controls.ts'
-        ),
-        bundling: {
-          minify: false,
-          externalModules: ['aws-sdk']
-        },
-        logRetention: logs.RetentionDays.ONE_WEEK,
-        environment: {
-          ...lambdaEnvironment,
-          ENVIRONMENT: props.environmentName,
-          STREAM_DATA_TABLE: database.tableName,
-          WEBSOCKET_API_ID: webSocketApi.apiId,
-          WEB_SOCKET_STAGE: webSocketApiStage
-        },
-        timeout: cdk.Duration.seconds(15),
-        architecture: ARCHITECTURE
-      }
-    );
-
-    database.grantReadWriteData(songRequestControlsLambda);
-
-    openSongRequestsResource.addMethod(
-      'POST',
-      new apiGateway.LambdaIntegration(songRequestControlsLambda),
-      {
-        apiKeyRequired: true
-      }
-    );
-
-    closeSongRequestsResource.addMethod(
-      'POST',
-      new apiGateway.LambdaIntegration(songRequestControlsLambda),
-      {
-        apiKeyRequired: true
-      }
-    );
-
-    songRequestControlsLambda.addToRolePolicy(
-      new iam.PolicyStatement({
-        effect: iam.Effect.ALLOW,
-        actions: ['execute-api:ManageConnections'],
-        resources: [
-          `arn:aws:execute-api:${props.env?.region}:${props.env?.account}:${webSocketApi.apiId}/*/*/@connections/*`
-        ]
-      })
-    );
-
-    // ***********************
-    // Shuffle resource
-    // ***********************
-
-    const enterShuffleEndpoint = new WSSBroadcastRestEndpoint(
-      this,
-      'QueueShuffle',
-      {
-        id: 'enter-shuffle',
-
-        environmentName: props.environmentName,
-        apiProps: {
-          parentResource: queueManagmentResource,
-          resourcePath: 'enter-shuffle',
-          resourceMethod: 'POST',
-          requireApiKey: true
-        },
-        lambdaProps: {
-          source: 'queue-management/enter-shuffle.ts',
-          timeout: cdk.Duration.seconds(15),
-          memorySize: 256,
-          databaseName: database.tableName,
-          allowDatabaseWrite: true
-        },
-        webSocketProps: {
-          webSocketApiId: webSocketApiId,
-          webSocketApiStage: webSocketApiStage
         }
       }
     );
 
-    // ***********************
-    // TEst code for song queue
-    // ***********************
-    const queueTestLambda = new lambda.NodejsFunction(this, 'queueTest', {
-      runtime: NODE_RUNTIME,
-      handler: 'handler',
-      entry: path.join(__dirname, '../../src/test-code', 'queue-test.ts'),
-      bundling: {
-        minify: false,
-        externalModules: ['aws-sdk']
+    eventBus.addLambdaTarget(this, 'stream-event-event-rule', {
+      source: 'kentobot.streaming.system',
+      eventPattern: {
+        detailType: [
+          'song-added-to-queue',
+          'song-removed-from-queue',
+          'song-moved-in-queue',
+          'song-bumped-in-queue'
+        ]
       },
-      logRetention: logs.RetentionDays.ONE_WEEK,
-      environment: {
-        ENVIRONMENT: props.environmentName,
-        STREAM_DATA_TABLE: database.tableName
-      },
-      timeout: cdk.Duration.minutes(1),
-      memorySize: 512,
-      architecture: ARCHITECTURE
+      lambda: streamEventHandler
     });
 
-    database.grantReadWriteData(queueTestLambda);
+    database.grantReadData(streamEventHandler);
+
+    streamEventHandler.addToRolePolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        actions: ['execute-api:ManageConnections'],
+        resources: [
+          `arn:aws:execute-api:${props.env?.region}:${props.env?.account}:${webSocketApi.apiId}/*/*/@connections/*`
+        ]
+      })
+    );
   }
 }

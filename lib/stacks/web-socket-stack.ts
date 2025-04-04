@@ -97,6 +97,13 @@ export class WebSocketStack extends cdk.Stack {
       )
     });
 
+    webSocketApi.addRoute('songQueue', {
+      integration: new apiGatewayIntegrations.WebSocketLambdaIntegration(
+        'SongQueueRoute',
+        messageHandler
+      )
+    });
+
     messageHandler.addEnvironment('WEBSOCKET_API_ID', webSocketApi.apiId);
     messageHandler.addEnvironment('WEB_SOCKET_STAGE', stage.stageName);
 

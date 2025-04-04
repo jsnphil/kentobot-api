@@ -7,13 +7,9 @@ import {
 import { Code } from 'better-status-codes';
 import { MoveSongRequestSchema } from '../../../schemas/schema';
 import { MoveRequestData, ValidationResult } from '../../../types/song-request';
-import { SongQueue } from '../../../song-queue';
-import { WebSocketService } from '../../../services/web-socket-service';
-import { request } from 'http';
 import { getSongId } from '../../../utils/utilities';
 
 const logger = new Logger({ serviceName: 'requestSongLambda' });
-const webSocketService = new WebSocketService();
 
 export const handler = async (
   event: APIGatewayEvent
@@ -31,34 +27,12 @@ export const handler = async (
     };
   }
 
-  const moveRequestData = getMoveSongRequestData(event.body);
-
-  if (moveRequestData.success) {
-    const position = moveRequestData.data!.position;
-    const songQueue = await SongQueue.loadQueue();
-    songQueue.moveSong(songId, position);
-
-    await songQueue.save();
-
-    await webSocketService.broadcast(
-      JSON.stringify({ songQueue: songQueue.toArray() })
-    );
-
-    return {
-      statusCode: Code.OK,
-      body: JSON.stringify({
-        message: `Song moved to position [${position}]`
-      })
-    };
-  } else {
-    return {
-      statusCode: Code.BAD_REQUEST,
-      body: JSON.stringify({
-        code: Code.BAD_REQUEST,
-        message: moveRequestData.errors![0].message
-      })
-    };
-  }
+  return {
+    statusCode: Code.NOT_IMPLEMENTED,
+    body: JSON.stringify({
+      message: 'Endpoint not implemented'
+    })
+  };
 };
 
 export const getMoveSongRequestData = (

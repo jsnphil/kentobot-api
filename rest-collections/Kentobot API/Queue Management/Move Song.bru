@@ -4,10 +4,15 @@ meta {
   seq: 2
 }
 
-post {
-  url: https://{{aws.api.id}}.execute-api.us-east-1.amazonaws.com/{{stage}}/song-queue/move-request/songId
+patch {
+  url: https://{{aws.api.id}}.execute-api.us-east-1.amazonaws.com/{{stage}}/streams/:stream/queue/move-request/:songId
   body: json
   auth: apikey
+}
+
+params:path {
+  songId: hIVsoWD-V5U
+  stream: current
 }
 
 auth:apikey {
@@ -18,7 +23,6 @@ auth:apikey {
 
 body:json {
   {
-    "youtubeId": "Lv32mtW4p-k",
-    "requestedBy": "jsnphil"
+    position: 2
   }
 }

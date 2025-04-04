@@ -6,7 +6,8 @@ import {
   PutEventsCommand
 } from '@aws-sdk/client-eventbridge';
 import { Logger } from '@aws-lambda-powertools/logger';
-import { YouTubeService } from '../../services/youtube-service';
+import { YouTubeService } from '../../common/services/youtube-service';
+// import { YouTubeService } from '../../services/youtube-service';
 
 const eventBusClient = new EventBridgeClient({ region: 'us-east-1' });
 const logger = new Logger({ serviceName: 'processSongHistoryRequest' });
@@ -17,12 +18,12 @@ export const handler = async (event: SQSEvent) => {
   for (const record of event.Records) {
     const songHistoryItem: SongHistoryRequest = JSON.parse(record.body);
 
-    console.log(`Processing song request: ${songHistoryItem.title}`);
+    logger.info(`Processing song request: ${songHistoryItem.title}`);
 
     const songLength = await getSongLength(songHistoryItem.youtubeId);
 
     for (const play of songHistoryItem.plays) {
-      console.log(`Play by ${play.requester} on ${play.playDate}`);
+      logger.info(`Play by ${play.requester} on ${play.playDate}`);
 
       const songRequest: SongRequest = {
         youtubeId: songHistoryItem.youtubeId,
@@ -59,14 +60,10 @@ export const handler = async (event: SQSEvent) => {
 };
 
 const getSongLength = async (youtubeId: string) => {
-  if (!youtubeService) {
-    youtubeService = await YouTubeService.initialize();
-  }
+  const result = await YouTubeService.getVideo(youtubeId);
 
-  const result = await youtubeService.getVideo(youtubeId);
-
-  if (result.success && result.data) {
-    return toSeconds(parse(result.data.contentDetails.duration));
+  if (result) {
+    return result.duration;
   }
 
   return 0;

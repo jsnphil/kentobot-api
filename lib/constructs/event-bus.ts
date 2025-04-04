@@ -4,7 +4,6 @@ import * as sqs from 'aws-cdk-lib/aws-sqs';
 import * as eventsTargets from 'aws-cdk-lib/aws-events-targets';
 
 import { Construct } from 'constructs';
-import { Lambda } from 'aws-cdk-lib/aws-ses-actions';
 import { IFunction } from 'aws-cdk-lib/aws-lambda';
 
 export interface EventBusProps {

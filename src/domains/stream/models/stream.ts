@@ -182,6 +182,16 @@ export class Stream {
     return this.channelPointBumpsAvailable;
   }
 
+  public getShuffleEntries(): string[] {
+    return this.shuffleEntries;
+  }
+
+  public openShuffle() {
+    if (!this.shuffleOpened) {
+      this.shuffleOpened = true;
+    }
+  }
+
   public enterShuffle(user: string) {
     if (!this.shuffleOpened) {
       throw new Error('Shuffle is not open');

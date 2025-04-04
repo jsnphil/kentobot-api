@@ -179,4 +179,53 @@ describe('SongQueue', () => {
       expect(position).toBe(1);
     });
   });
+
+  describe('getSongRequestByUser', () => {
+    it('should return the song request for a user', () => {
+      songQueue.addSong(song1);
+      songQueue.addSong(song2);
+
+      const songRequest = songQueue.getSongRequestByUser('Vin');
+      expect(songRequest).toEqual(song1);
+    });
+
+    it('should return undefined if the user has no song request', () => {
+      songQueue.addSong(song1);
+      songQueue.addSong(song2);
+
+      const songRequest = songQueue.getSongRequestByUser('Elend');
+      expect(songRequest).toBeUndefined();
+    });
+  });
+
+  describe('enterShuffle', () => {
+    it('should mark a song as entered in the shuffle', () => {
+      songQueue.addSong(song1);
+      songQueue.addSong(song2);
+
+      songQueue.enterShuffle('Vin');
+      expect(songQueue.getSongRequestByUser('Vin')?.status).toBe(
+        SongRequestStatus.SHUFFLE_ENTERED
+      );
+    });
+
+    it('should throw an error if the user is already in the shuffle', () => {
+      songQueue.addSong(song1);
+      songQueue.addSong(song2);
+
+      songQueue.enterShuffle('Vin');
+      expect(() => songQueue.enterShuffle('Vin')).toThrow(
+        'User already entered shuffle'
+      );
+    });
+
+    it('should throw an error if the user does not have a song in the queue', () => {
+      songQueue.addSong(song1);
+      songQueue.addSong(song2);
+
+      expect(() => songQueue.enterShuffle('Elend')).toThrow(
+        'User does not have a song in the queue'
+      );
+    });
+  });
 });

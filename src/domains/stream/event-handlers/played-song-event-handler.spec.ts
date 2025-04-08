@@ -2,7 +2,7 @@ import { SongRepository } from '../../../repositories/song-repository';
 import { SongRequest } from '../../../types/song-request';
 
 import { Logger } from '@aws-lambda-powertools/logger';
-import { saveSongData } from './save-song-data';
+import { saveSongData } from './played-song-event-handler';
 
 jest.mock('../../../repositories/song-repository');
 jest.mock('@aws-lambda-powertools/logger');

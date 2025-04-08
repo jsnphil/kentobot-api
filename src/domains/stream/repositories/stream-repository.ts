@@ -29,6 +29,8 @@ export class StreamRepository {
 
     const { Item } = await this.ddbClient.send(command);
 
+    this.logger.info(`Item: ${JSON.stringify(Item)}`);
+
     if (!Item) {
       return undefined;
     } else {

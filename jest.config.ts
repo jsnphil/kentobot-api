@@ -3,7 +3,10 @@ module.exports = {
   testTimeout: 10000, // 10 seconds
   testEnvironment: 'node',
   roots: ['<rootDir>/src'],
-  testMatch: ['**/*.test.ts', '**/*.spec.ts'],
+  testMatch:
+    process.env.TEST_TYPE === 'integration'
+      ? ['**/integration-tests/*.test.ts']
+      : ['**/*.spec.ts'],
   transform: {
     '^.+\\.tsx?$': 'ts-jest'
   },

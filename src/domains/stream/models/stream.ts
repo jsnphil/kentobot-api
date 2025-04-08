@@ -4,13 +4,12 @@ import { Song } from './song';
 import { SongQueue } from './song-queue';
 import { SongMovedInQueueEvent } from '../events/song-moved-in-queue-event';
 import { SongRemovedFromQueue } from '../events/song-removed-from-queue-event';
-import { BumpType, SongRequestStatus } from '../../../types/song-request';
+import { BumpType } from '../../../types/song-request';
 import { BumpService } from '../services/bump-service';
 import { SongBumpedEvent } from '../events/song-bumped-event';
 import { SongAddedToQueueEvent } from '../events/song-added-to-queue-event';
 import { SongEnteredInShuffleEvent } from '../events/song-entered-in-shuffle-event';
 import { SongPlayedEvent } from '../events/song-played-event';
-// import { BumpCount } from './bump-count';
 
 export class Stream {
   private streamDate: string;
@@ -66,7 +65,7 @@ export class Stream {
     const songQueue = new SongQueue(songs);
 
     const shuffleUsers: string[] = [];
-    data.shuffleEntries.forEach((user: string) => {
+    data.shuffleEntries?.forEach((user: string) => {
       shuffleUsers.push(user);
     });
 
@@ -203,6 +202,20 @@ export class Stream {
     if (!this.shuffleOpened) {
       this.shuffleOpened = true;
     }
+  }
+
+  public closeShuffle() {
+    if (this.shuffleOpened) {
+      this.shuffleOpened = false;
+    }
+  }
+
+  public isShuffleOpened(): boolean {
+    return this.shuffleOpened;
+  }
+
+  public getShuffleMode(): boolean {
+    return this.shuffleMode;
   }
 
   public enterShuffle(user: string) {

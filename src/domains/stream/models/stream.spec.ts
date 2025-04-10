@@ -45,7 +45,23 @@ describe('Stream', () => {
           }
         ]
       },
-      shuffleEntries: ['Vin', 'Kelsier']
+      shuffleEntries: ['Vin', 'Kelsier'],
+      songHistory: [
+        {
+          id: '3',
+          requestedBy: 'Sazed',
+          title: 'Song 3',
+          status: SongRequestStatus.PLAYED,
+          duration: 180
+        },
+        {
+          id: '4',
+          requestedBy: 'Elend',
+          title: 'Song 4',
+          status: SongRequestStatus.PLAYED,
+          duration: 220
+        }
+      ]
     };
 
     const stream = Stream.load(data);
@@ -54,6 +70,8 @@ describe('Stream', () => {
     expect(stream.getStreamDate()).toBe(data.streamDate);
     expect(stream.getSongQueue().getSongs().length).toBe(2);
     expect(stream.getShuffleEntries()).toEqual(data.shuffleEntries);
+    expect(stream.getSongHistory().length).toBe(2);
+    expect(stream.getSongHistory()[0].id).toBe('3');
   });
 
   describe('moveSong', () => {
@@ -271,6 +289,37 @@ describe('Stream', () => {
 
       stream.enterShuffle('Vin');
       expect(stream.getShuffleEntries()).toContain('Vin');
+    });
+  });
+
+  describe('savePlayedSong', () => {
+    it('should save a played song to the song history', () => {
+      const streamDate = '2023-10-01';
+      const stream = Stream.create(streamDate);
+
+      const song = Song.load(
+        '1',
+        'Vin',
+        'Song 1',
+        SongRequestStatus.PLAYED,
+        300
+      );
+
+      stream.savePlayedSong(song);
+
+      const songHistory = stream.getSongHistory();
+      expect(songHistory.length).toBe(1);
+      expect(songHistory[0].id).toBe('1');
+      expect(songHistory[0].title).toBe('Song 1');
+      expect(songHistory[0].status).toBe(SongRequestStatus.PLAYED);
+    });
+
+    it('should not modify the song history if no song is saved', () => {
+      const streamDate = '2023-10-01';
+      const stream = Stream.create(streamDate);
+
+      const songHistory = stream.getSongHistory();
+      expect(songHistory.length).toBe(0);
     });
   });
 });

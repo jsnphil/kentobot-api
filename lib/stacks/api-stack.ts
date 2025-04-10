@@ -103,40 +103,40 @@ export class ApiStack extends cdk.Stack {
       }
     });
 
-    const playedSongEventLambda = new lambda.NodejsFunction(
-      this,
-      'playedSongEventHandler',
-      {
-        runtime: NODE_RUNTIME,
-        handler: 'handler',
-        entry: path.join(
-          __dirname,
-          '../../src/lambdas/rest-api/',
-          'song-request/save-song-data.ts'
-        ),
-        bundling: {
-          minify: false,
-          externalModules: ['aws-sdk']
-        },
-        logRetention: logs.RetentionDays.ONE_WEEK,
-        environment: {
-          ENVIRONMENT: props.environmentName,
-          STREAM_DATA_TABLE: database.tableName
-        },
-        timeout: cdk.Duration.minutes(1),
-        memorySize: 512,
-        architecture: ARCHITECTURE
-      }
-    );
+    // const playedSongEventLambda = new lambda.NodejsFunction(
+    //   this,
+    //   'playedSongEventHandler',
+    //   {
+    //     runtime: NODE_RUNTIME,
+    //     handler: 'handler',
+    //     entry: path.join(
+    //       __dirname,
+    //       '../../src/lambdas/rest-api/',
+    //       'song-request/save-song-data.ts'
+    //     ),
+    //     bundling: {
+    //       minify: false,
+    //       externalModules: ['aws-sdk']
+    //     },
+    //     logRetention: logs.RetentionDays.ONE_WEEK,
+    //     environment: {
+    //       ENVIRONMENT: props.environmentName,
+    //       STREAM_DATA_TABLE: database.tableName
+    //     },
+    //     timeout: cdk.Duration.minutes(1),
+    //     memorySize: 512,
+    //     architecture: ARCHITECTURE
+    //   }
+    // );
 
-    playedSongEventLambda.addEventSource(
-      new lambdaEventSources.SqsEventSource(saveSongQueue, {
-        batchSize: 1
-      })
-    );
+    // playedSongEventLambda.addEventSource(
+    //   new lambdaEventSources.SqsEventSource(saveSongQueue, {
+    //     batchSize: 1
+    //   })
+    // );
 
-    saveSongQueue.grantConsumeMessages(playedSongEventLambda);
-    database.grantReadWriteData(playedSongEventLambda);
+    // saveSongQueue.grantConsumeMessages(playedSongEventLambda);
+    // database.grantReadWriteData(playedSongEventLambda);
 
     eventBus.addQueueTarget(this, 'save-song-data-target', {
       source: 'kentobot-api',

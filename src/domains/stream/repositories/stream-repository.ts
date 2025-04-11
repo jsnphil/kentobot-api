@@ -7,7 +7,6 @@ import { Stream } from '../models/stream';
 
 import { Logger } from '@aws-lambda-powertools/logger';
 import { unmarshall } from '@aws-sdk/util-dynamodb';
-import { Song } from '../models/song';
 
 export class StreamRepository {
   private static ddbClient = new DynamoDB({
@@ -40,8 +39,7 @@ export class StreamRepository {
       return {
         ...unmarshalledItem,
         songQueue: JSON.parse(unmarshalledItem.songQueue),
-        songHistory: JSON.parse(unmarshalledItem.songHistory),
-        shuffleEntries: JSON.parse(unmarshalledItem.shuffleEntries)
+        songHistory: JSON.parse(unmarshalledItem.songHistory)
       };
     }
   }
@@ -63,15 +61,6 @@ export class StreamRepository {
           },
           songHistory: {
             S: JSON.stringify(stream.getSongHistory())
-          },
-          shuffleEntries: {
-            S: JSON.stringify(stream.getShuffleEntries())
-          },
-          shuffleMode: {
-            BOOL: stream.getShuffleMode()
-          },
-          shuffleOpened: {
-            BOOL: stream.isShuffleOpened()
           },
           beanBumpsAvailable: {
             N: stream.getAvailableBeanBumps().toString()

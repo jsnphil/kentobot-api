@@ -16,33 +16,17 @@ export class Stream {
   private songQueue: SongQueue;
   private beanBumpsAvailable: number;
   private channelPointBumpsAvailable: number;
-  private shuffleEntries: string[] = []; // List of users who have entered shuffle mode
-  private shuffleMode: boolean = false; // Flag to indicate if shuffle mode is active
-  private shuffleOpened: boolean = false; // Flag to indicate if shuffle mode is opened
   private songHistory: Song[]; // List of songs that have been played in the stream
   // private bumpCounts: BumpCount;
   // public bumpCounts: Map<string, number>; // Tracks how many bumps each user has used
 
   private bumpService;
 
-  private constructor(
-    streamDate: string,
-    songQueue: SongQueue,
-    shuffleEntries: string[] = [],
-    shuffleMode: boolean = true,
-    shuffleOpened: boolean = false,
-    songHistory: Song[] = []
-    // bumpCounts: BumpCount
-  ) {
+  private constructor(streamDate: string, songQueue: SongQueue) {
     this.streamDate = streamDate;
     this.songQueue = songQueue;
     this.beanBumpsAvailable = 3;
     this.channelPointBumpsAvailable = 3;
-    this.shuffleEntries = shuffleEntries;
-    this.shuffleMode = shuffleMode;
-    this.shuffleOpened = shuffleOpened;
-    this.songHistory = songHistory;
-    // this.bumpCounts = bumpCounts;
     this.bumpService = new BumpService();
   }
 
@@ -69,13 +53,9 @@ export class Stream {
       shuffleUsers.push(user);
     });
 
-    const stream = new Stream(
-      data.streamDate,
-      songQueue,
-      shuffleUsers,
-      data.shuffleOpened
-    );
+    const stream = new Stream(data.streamDate, songQueue);
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     data.songHistory.forEach((playedSongs: any) => {
       const song = Song.load(
         playedSongs.id,
@@ -192,44 +172,6 @@ export class Stream {
 
   public getAvailableChannelPointBumps(): number {
     return this.channelPointBumpsAvailable;
-  }
-
-  public getShuffleEntries(): string[] {
-    return this.shuffleEntries;
-  }
-
-  public openShuffle() {
-    if (!this.shuffleOpened) {
-      this.shuffleOpened = true;
-    }
-  }
-
-  public closeShuffle() {
-    if (this.shuffleOpened) {
-      this.shuffleOpened = false;
-    }
-  }
-
-  public isShuffleOpened(): boolean {
-    return this.shuffleOpened;
-  }
-
-  public getShuffleMode(): boolean {
-    return this.shuffleMode;
-  }
-
-  public enterShuffle(user: string) {
-    if (!this.shuffleOpened) {
-      throw new Error('Shuffle is not open');
-    }
-
-    const songId = this.songQueue.enterShuffle(user);
-    this.shuffleEntries.push(user);
-
-    EventPublisher.publishEvent(
-      new SongEnteredInShuffleEvent(songId, user),
-      StreamEvent.SONG_BUMPED
-    );
   }
 
   public getSongHistory(): Song[] {

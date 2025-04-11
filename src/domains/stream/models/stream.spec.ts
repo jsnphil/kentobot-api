@@ -6,7 +6,6 @@ import {
   PutEventsCommand
 } from '@aws-sdk/client-eventbridge';
 import { mockClient } from 'aws-sdk-client-mock';
-import { mock } from 'node:test';
 
 const mockEventBridgeClient = mockClient(EventBridgeClient);
 

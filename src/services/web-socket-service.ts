@@ -4,7 +4,6 @@ import {
   PostToConnectionCommand
 } from '@aws-sdk/client-apigatewaymanagementapi';
 import { WebSocketConnectionsRepository } from '../repositories/websocket-connections-repository';
-import { log } from 'console';
 
 const logger = new Logger({ serviceName: 'web-socket-service' });
 

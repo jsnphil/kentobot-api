@@ -8,7 +8,6 @@ import { BumpType } from '../../../types/song-request';
 import { BumpService } from '../services/bump-service';
 import { SongBumpedEvent } from '../events/song-bumped-event';
 import { SongAddedToQueueEvent } from '../events/song-added-to-queue-event';
-import { SongEnteredInShuffleEvent } from '../events/song-entered-in-shuffle-event';
 import { SongPlayedEvent } from '../events/song-played-event';
 
 export class Stream {
@@ -17,8 +16,6 @@ export class Stream {
   private beanBumpsAvailable: number;
   private channelPointBumpsAvailable: number;
   private songHistory: Song[]; // List of songs that have been played in the stream
-  // private bumpCounts: BumpCount;
-  // public bumpCounts: Map<string, number>; // Tracks how many bumps each user has used
 
   private bumpService;
 
@@ -28,6 +25,7 @@ export class Stream {
     this.beanBumpsAvailable = 3;
     this.channelPointBumpsAvailable = 3;
     this.bumpService = new BumpService();
+    this.songHistory = [];
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -47,11 +45,6 @@ export class Stream {
     });
 
     const songQueue = new SongQueue(songs);
-
-    const shuffleUsers: string[] = [];
-    data.shuffleEntries?.forEach((user: string) => {
-      shuffleUsers.push(user);
-    });
 
     const stream = new Stream(data.streamDate, songQueue);
 

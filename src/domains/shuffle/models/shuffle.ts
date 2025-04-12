@@ -16,29 +16,17 @@ export class Shuffle {
   private winner: ShuffleParticipant | null = null;
   private closed = false;
 
-  constructor(
-    streamId: StreamId,
-    openedAt: Date,
-    previousWinners: User[] = []
-  ) {
+  constructor(streamId: StreamId, openedAt: Date, previousWinners: User[]) {
     this.streamId = streamId;
     this.openedAt = openedAt;
     this.previousWinners = previousWinners;
   }
 
-  static start(
-    streamId: StreamId,
-    openedAt: Date,
-    previousWinners: User[] = []
-  ) {
+  static start(streamId: StreamId, openedAt: Date, previousWinners: User[]) {
     return new Shuffle(streamId, openedAt, previousWinners);
   }
 
   get isOpen(): boolean {
-    console.log(`Shuffle is open: ${!this.closed}`);
-    console.log(`Current time: ${Date.now()}`);
-    console.log(`Opened at: ${this.openedAt.getTime()}`);
-
     return (
       !this.closed && Date.now() < this.openedAt.getTime() + this.durationMs
     );

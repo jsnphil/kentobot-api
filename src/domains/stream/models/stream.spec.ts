@@ -68,7 +68,6 @@ describe('Stream', () => {
     expect(stream).toBeInstanceOf(Stream);
     expect(stream.getStreamDate()).toBe(data.streamDate);
     expect(stream.getSongQueue().getSongs().length).toBe(2);
-    expect(stream.getShuffleEntries()).toEqual(data.shuffleEntries);
     expect(stream.getSongHistory().length).toBe(2);
     expect(stream.getSongHistory()[0].id).toBe('3');
   });
@@ -257,37 +256,6 @@ describe('Stream', () => {
 
       expect(songQueue.getSongs().length).toBe(0);
       expect(() => stream.removeSongFromQueue('1')).toThrow('Queue is empty');
-    });
-  });
-
-  describe('enterShuffle', () => {
-    it('should throw an error if shuffle is not opened', () => {
-      const streamDate = '2023-10-01';
-      const stream = Stream.create(streamDate);
-
-      expect(() => stream.enterShuffle('user1')).toThrow('Shuffle is not open');
-    });
-
-    it('should add a user to the shuffle', async () => {
-      const streamDate = '2023-10-01';
-      const stream = Stream.create(streamDate);
-
-      const songs = [
-        Song.load('1', 'Vin', 'Song 1', SongRequestStatus.QUEUED, 300),
-        Song.load('2', 'Kelsier', 'Song 2', SongRequestStatus.QUEUED, 250),
-        Song.load('3', 'Sazed', 'Song 3', SongRequestStatus.QUEUED, 200),
-        Song.load('4', 'Elend', 'Song 4', SongRequestStatus.QUEUED, 180),
-        Song.load('5', 'Marsh', 'Song 5', SongRequestStatus.QUEUED, 220)
-      ];
-
-      for (const song of songs) {
-        await stream.addSongToQueue(song);
-      }
-
-      stream.openShuffle();
-
-      stream.enterShuffle('Vin');
-      expect(stream.getShuffleEntries()).toContain('Vin');
     });
   });
 

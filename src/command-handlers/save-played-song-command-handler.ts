@@ -1,8 +1,8 @@
-import { SongRequestStatus } from '../../../types/song-request';
+import { SongRequestStatus } from '../types/song-request';
 import { SavePlayedSongCommand } from '../commands/save-played-song-command';
-import { StreamFactory } from '../factories/stream-factory';
-import { Song } from '../models/song';
-import { StreamRepository } from '../repositories/stream-repository';
+import { StreamFactory } from '../domains/stream/factories/stream-factory';
+import { Song } from '../domains/stream/models/song';
+import { StreamRepository } from '../domains/stream/repositories/stream-repository';
 
 export class SavePlayedSongCommandHandler {
   public async execute(command: SavePlayedSongCommand): Promise<void> {

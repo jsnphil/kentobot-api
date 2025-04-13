@@ -53,14 +53,10 @@ export class Shuffle {
   }
 
   selectWinner(): ShuffleParticipant | null {
-    console.log('Selecting winner...');
-    console.log(`Is open: ${this.isOpen}`);
-
     if (this.isOpen) {
       this.close();
     }
 
-    console.log(`Is open after close: ${this.isOpen}`);
     if (this.participants.size === 0) {
       return null;
     }

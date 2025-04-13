@@ -1,13 +1,12 @@
-import { generateStreamDate } from '@utils/utilities';
-import { StreamRepository } from '../repositories/stream-repository';
-import { GetQueueRequestHandler } from './get-queue-query-handler';
-import { Stream } from '../models/stream';
+import { StreamRepository } from '../domains/stream/repositories/stream-repository';
+import { Stream } from '../domains/stream/models/stream';
 import { GetQueueRequest } from '../queries/get-queue-request';
-import { SongRequestStatus } from '../../../types/song-request';
-import { StreamFactory } from '../factories/stream-factory';
+import { SongRequestStatus } from '../types/song-request';
+import { StreamFactory } from '../domains/stream/factories/stream-factory';
+import { GetQueueRequestHandler } from './get-queue-query-handler';
 
-jest.mock('../repositories/stream-repository');
-jest.mock('../models/stream');
+jest.mock('../domains/stream/repositories/stream-repository');
+jest.mock('../domains/stream/models/stream');
 jest.mock('@utils/utilities');
 
 describe('GetQueryRequestHandler', () => {
@@ -26,23 +25,27 @@ describe('GetQueryRequestHandler', () => {
           title: 'Song 1',
           requestedBy: 'Vin',
           duration: 300,
-          status: SongRequestStatus.QUEUED,
+          status: SongRequestStatus.QUEUED
         },
         {
           id: '2',
           title: 'Song 2',
           requestedBy: 'Kelsier',
           duration: 300,
-          status: SongRequestStatus.QUEUED,
-        },
-      ]),
+          status: SongRequestStatus.QUEUED
+        }
+      ])
     };
 
-    const streamFactoryMock = jest.spyOn(StreamFactory, 'createStream').mockResolvedValue({
-      getSongQueue: jest.fn().mockReturnValue(mockSongQueue),
-    } as unknown as Stream);
+    const streamFactoryMock = jest
+      .spyOn(StreamFactory, 'createStream')
+      .mockResolvedValue({
+        getSongQueue: jest.fn().mockReturnValue(mockSongQueue)
+      } as unknown as Stream);
 
-    const songQueue = await getQueueRequestHandler.execute(new GetQueueRequest(mockStreamDate));
+    const songQueue = await getQueueRequestHandler.execute(
+      new GetQueueRequest(mockStreamDate)
+    );
 
     expect(songQueue).toBeDefined();
     expect(songQueue.getSongs().length).toEqual(2);
@@ -82,7 +85,6 @@ describe('GetQueryRequestHandler', () => {
   //   };
 
   //   const streamFactoryMock = jest.spyOn(StreamFactory, 'createStream');
-
 
   //   // (Stream.load as jest.Mock).mockReturnValue(mockStream);
 

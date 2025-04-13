@@ -1,15 +1,12 @@
-import { APIGatewayProxyEvent, Context } from 'aws-lambda';
+import { APIGatewayProxyEvent } from 'aws-lambda';
 import { handler } from './bump-request';
-import { BumpSongCommandHandler } from '../domains/stream/command-handlers/bump-song-command-handler';
-import { BumpSongCommand } from '../domains/stream/commands/bump-song-command';
+import { BumpSongCommandHandler } from '../command-handlers/bump-song-command-handler';
 import { Code } from 'better-status-codes';
-import { KentobotErrorCode } from '../types/types';
 
-jest.mock('../domains/stream/command-handlers/bump-song-command-handler');
+jest.mock('../command-handlers/bump-song-command-handler');
 
 describe('bumpSong', () => {
   const mockExecute = jest.fn();
-  const mockLoggerError = jest.fn();
 
   beforeAll(() => {
     (BumpSongCommandHandler as jest.Mock).mockImplementation(() => ({

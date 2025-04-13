@@ -1,9 +1,9 @@
 import { RequestSongCommand } from '../commands/request-song-command';
 
-import { Song } from '../models/song';
+import { Song } from '../domains/stream/models/song';
 import { generateStreamDate } from '@utils/utilities';
-import { StreamRepository } from '../repositories/stream-repository';
-import { Stream } from '../models/stream';
+import { StreamRepository } from '../domains/stream/repositories/stream-repository';
+import { Stream } from '../domains/stream/models/stream';
 
 export class RequestSongCommandHandler {
   constructor() {}

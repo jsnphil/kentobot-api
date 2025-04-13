@@ -1,8 +1,8 @@
 import { APIGatewayEvent } from 'aws-lambda';
 import { handler } from './remove-song';
-import { RemoveSongCommandHandler } from '../domains/stream/command-handlers/remove-song-command-handler';
+import { RemoveSongCommandHandler } from '../command-handlers/remove-song-command-handler';
 
-jest.mock('../domains/stream/command-handlers/remove-song-command-handler');
+jest.mock('../command-handlers/remove-song-command-handler');
 
 describe('remove-song handler', () => {
   let mockRemoveSongCommandHandler: jest.Mocked<RemoveSongCommandHandler>;

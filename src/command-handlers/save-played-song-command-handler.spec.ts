@@ -1,13 +1,13 @@
 import { SavePlayedSongCommandHandler } from './save-played-song-command-handler';
 import { SavePlayedSongCommand } from '../commands/save-played-song-command';
-import { StreamFactory } from '../factories/stream-factory';
-import { StreamRepository } from '../repositories/stream-repository';
-import { Song } from '../models/song';
-import { SongRequestStatus } from '../../../types/song-request';
+import { StreamFactory } from '../domains/stream/factories/stream-factory';
+import { StreamRepository } from '../domains/stream/repositories/stream-repository';
+import { Song } from '../domains/stream/models/song';
+import { SongRequestStatus } from '../types/song-request';
 
-jest.mock('../factories/stream-factory');
-jest.mock('../repositories/stream-repository');
-jest.mock('../models/song');
+jest.mock('../domains/stream/factories/stream-factory');
+jest.mock('../domains/stream/repositories/stream-repository');
+jest.mock('../domains/stream/models/song');
 
 describe('SavePlayedSongCommandHandler', () => {
   let commandHandler: SavePlayedSongCommandHandler;

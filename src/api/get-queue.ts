@@ -1,7 +1,7 @@
 import { Logger } from '@aws-lambda-powertools/logger';
 import { APIGatewayEvent } from 'aws-lambda';
-import { GetQueueRequestHandler } from '../domains/stream/request-handlers/get-queue-query-handler';
-import { GetQueueRequest } from '../domains/stream/queries/get-queue-request';
+import { GetQueueRequestHandler } from '../query-handlers/get-queue-query-handler';
+import { GetQueueRequest } from '../queries/get-queue-request';
 import { Code } from 'better-status-codes';
 
 const logger = new Logger({ serviceName: 'get-queue-lambda' });

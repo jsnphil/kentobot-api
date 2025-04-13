@@ -1,6 +1,6 @@
 import { BumpSongCommand } from '../commands/bump-song-command';
-import { StreamFactory } from '../factories/stream-factory';
-import { StreamRepository } from '../repositories/stream-repository';
+import { StreamFactory } from '../domains/stream/factories/stream-factory';
+import { StreamRepository } from '../domains/stream/repositories/stream-repository';
 
 export class BumpSongCommandHandler {
   public async execute(command: BumpSongCommand): Promise<void> {

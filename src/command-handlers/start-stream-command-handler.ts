@@ -1,6 +1,6 @@
 import { StartStreamCommand } from '../commands/start-stream-command';
-import { StreamRepository } from '../repositories/stream-repository';
-import { Stream } from '../models/stream';
+import { StreamRepository } from '../domains/stream/repositories/stream-repository';
+import { Stream } from '../domains/stream/models/stream';
 import { Logger } from '@aws-lambda-powertools/logger';
 
 export class StartStreamCommandHandler {

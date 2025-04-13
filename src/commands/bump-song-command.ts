@@ -1,4 +1,4 @@
-import { BumpType } from '../../../types/song-request';
+import { BumpType } from '../types/song-request';
 
 export class BumpSongCommand {
   public readonly bumpType: BumpType;

@@ -1,4 +1,4 @@
-import { StreamFactory } from '../factories/stream-factory';
+import { StreamFactory } from '../domains/stream/factories/stream-factory';
 import { GetQueueRequest } from '../queries/get-queue-request';
 
 export class GetQueueRequestHandler {

@@ -3,7 +3,7 @@ import { apiLambdaWrapper } from '../common/api-lambda-wrapper';
 import { SavePlayedSongCommandHandler } from '../command-handlers/save-played-song-command-handler';
 import { SavePlayedSongCommand } from '../commands/save-played-song-command';
 
-export const handler = apiLambdaWrapper(async (event: APIGatewayEvent) => {
+export const handler = async (event: APIGatewayEvent) => {
   // Parse the event to get the song details
   // TODO Type check this with zod
   const body = JSON.parse(event.body || '{}');
@@ -34,4 +34,4 @@ export const handler = apiLambdaWrapper(async (event: APIGatewayEvent) => {
     statusCode: 201,
     body: ''
   };
-});
+};

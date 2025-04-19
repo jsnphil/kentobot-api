@@ -684,10 +684,10 @@ export class ApiStack extends cdk.Stack {
 
     const shuffleResource = queueEndpoint.addResource('shuffle');
 
-    const enterShuffleLambda = new lambda.NodejsFunction(this, 'EnterShuffle', {
+    const shuffleLambda = new lambda.NodejsFunction(this, 'Shuffle', {
       runtime: NODE_RUNTIME,
       handler: 'handler',
-      entry: path.join(__dirname, '../../src/api/enter-shuffle.ts'),
+      entry: path.join(__dirname, '../../src/api/shuffle.ts'),
       bundling: {
         minify: false,
         externalModules: ['aws-sdk']
@@ -704,20 +704,17 @@ export class ApiStack extends cdk.Stack {
       architecture: ARCHITECTURE
     });
 
-    database.grantReadWriteData(moveRequestLambda);
+    database.grantReadWriteData(shuffleLambda);
 
-    const enterShuffleResource = shuffleResource.addResource('enter');
+    const toggleShuffleResource = shuffleResource.addResource('toggle');
 
-    enterShuffleResource.addMethod(
-      'GET',
-      new apiGateway.LambdaIntegration(enterShuffleLambda),
+    toggleShuffleResource.addMethod(
+      'POST',
+      new apiGateway.LambdaIntegration(shuffleLambda),
       {
         apiKeyRequired: true
       }
     );
-
-    const openShuffleResource = shuffleResource.addResource('open');
-    const closeShuffleResource = shuffleResource.addResource('close');
 
     /*  End of stream-based endpoints*/
 

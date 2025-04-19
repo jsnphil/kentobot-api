@@ -4,7 +4,7 @@ import { MoveSongCommand } from '../commands/move-song-command';
 import { Code } from 'better-status-codes';
 import { apiLambdaWrapper } from '../common/api-lambda-wrapper';
 
-export const handler = apiLambdaWrapper(async (event: APIGatewayEvent) => {
+export const handler = async (event: APIGatewayEvent) => {
   const songId = event.pathParameters?.songId;
 
   const body = JSON.parse(event.body || '{}');
@@ -29,4 +29,4 @@ export const handler = apiLambdaWrapper(async (event: APIGatewayEvent) => {
     statusCode: Code.OK,
     body: JSON.stringify({})
   };
-});
+};

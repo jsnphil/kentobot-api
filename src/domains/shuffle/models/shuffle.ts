@@ -8,28 +8,46 @@ interface ShuffleParticipant {
 
 export class Shuffle {
   private readonly streamId: StreamId;
-  private readonly openedAt: Date;
+  private openedAt: Date;
   private durationMs: number = 60000;
 
   private participants: Map<User, ShuffleParticipant> = new Map();
   private previousWinners: User[] = [];
   private winner: ShuffleParticipant | null = null;
-  private closed = false;
+  private open = false;
 
-  constructor(streamId: StreamId, openedAt: Date, previousWinners: User[]) {
+  constructor(streamId: StreamId, openedAt: Date) {
     this.streamId = streamId;
     this.openedAt = openedAt;
-    this.previousWinners = previousWinners;
   }
 
-  static start(streamId: StreamId, openedAt: Date, previousWinners: User[]) {
-    return new Shuffle(streamId, openedAt, previousWinners);
+  static create(streamId: StreamId, openedAt: Date) {
+    return new Shuffle(streamId, openedAt);
+  }
+
+  static load(
+    streamId: StreamId,
+    openedAt: Date,
+    participants: Map<User, ShuffleParticipant>,
+    isOpen: boolean = false
+  ) {
+    const shuffle = new Shuffle(streamId, openedAt);
+    shuffle.participants = participants;
+    shuffle.open = isOpen;
+    return shuffle;
+  }
+
+  start(): void {
+    if (this.isOpen) {
+      throw new Error('Shuffle is already open.');
+    }
+
+    this.open = true;
+    this.openedAt = new Date();
   }
 
   get isOpen(): boolean {
-    return (
-      !this.closed && Date.now() < this.openedAt.getTime() + this.durationMs
-    );
+    return this.open && Date.now() < this.openedAt.getTime() + this.durationMs;
   }
 
   join(user: User, songId: string): void {
@@ -49,7 +67,7 @@ export class Shuffle {
   }
 
   close(): void {
-    this.closed = true;
+    this.open = false;
   }
 
   selectWinner(): ShuffleParticipant | null {
@@ -86,5 +104,13 @@ export class Shuffle {
 
   getStreamId(): StreamId {
     return this.streamId;
+  }
+
+  getOpenedAt(): Date {
+    return this.openedAt;
+  }
+
+  getPreviousWinners(): User[] {
+    return this.previousWinners;
   }
 }

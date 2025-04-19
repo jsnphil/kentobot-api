@@ -1,7 +1,7 @@
 import { APIGatewayEvent } from 'aws-lambda';
 import { apiLambdaWrapper } from '../common/api-lambda-wrapper';
 import { Code } from 'better-status-codes';
-import { EnterShuffleCommandHandler } from '../command-handlers/enter-shuffle-command-handler';
+import { EnterShuffleCommandHandler } from '../command-handlers/shuffle-command-handler';
 import { EnterShuffleCommand } from '../commands/enter-shuffle-command';
 
 export const handler = apiLambdaWrapper(async (event: APIGatewayEvent) => {

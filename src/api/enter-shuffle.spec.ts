@@ -1,7 +1,7 @@
 import { handler } from './enter-shuffle';
 import { APIGatewayEvent } from 'aws-lambda';
 import { Code } from 'better-status-codes';
-import { EnterShuffleCommandHandler } from '../command-handlers/enter-shuffle-command-handler';
+import { EnterShuffleCommandHandler } from '../command-handlers/shuffle-command-handler';
 
 jest.mock('../command-handlers/enter-shuffle-command-handler');
 

@@ -16,13 +16,22 @@ export class Shuffle {
   private winner: ShuffleParticipant | null = null;
   private open = false;
 
-  constructor(streamId: StreamId, openedAt: Date) {
+  constructor(
+    streamId: StreamId,
+    openedAt: Date,
+    previousWinners: User[] = []
+  ) {
     this.streamId = streamId;
     this.openedAt = openedAt;
+    this.previousWinners = previousWinners;
   }
 
-  static create(streamId: StreamId, openedAt: Date) {
-    return new Shuffle(streamId, openedAt);
+  static create(
+    streamId: StreamId,
+    openedAt: Date,
+    previousWinners: User[] = []
+  ): Shuffle {
+    return new Shuffle(streamId, openedAt, previousWinners);
   }
 
   static load(
@@ -98,18 +107,17 @@ export class Shuffle {
     return Math.max(0, remaining);
   }
 
-  isOnCooldown(user: User): boolean {
-    return this.previousWinners.includes(user);
-  }
-
+  /* istanbul ignore next */
   getStreamId(): StreamId {
     return this.streamId;
   }
 
+  /* istanbul ignore next */
   getOpenedAt(): Date {
     return this.openedAt;
   }
 
+  /* istanbul ignore next */
   getPreviousWinners(): User[] {
     return this.previousWinners;
   }

@@ -45,7 +45,7 @@
     "@aws-lambda-powertools/parser": "^2.15.0",
     "@aws-sdk/client-apigatewaymanagementapi": "^3.787.0",
     "@aws-sdk/client-dynamodb": "^3.788.0",
-    "@aws-sdk/client-eventbridge": "^3.787.0",
+    "@aws-sdk/client-eventbridge": "^3.790.0",
     "@aws-sdk/client-s3": "^3.787.0",
     "@aws-sdk/client-sqs": "^3.787.0",
     "@aws-sdk/client-ssm": "^3.787.0",

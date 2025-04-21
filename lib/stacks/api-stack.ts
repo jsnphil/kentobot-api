@@ -716,6 +716,16 @@ export class ApiStack extends cdk.Stack {
       }
     );
 
+    const enterShuffleResource = shuffleResource.addResource('enter');
+
+    enterShuffleResource.addMethod(
+      'POST',
+      new apiGateway.LambdaIntegration(shuffleLambda),
+      {
+        apiKeyRequired: true
+      }
+    );
+
     /*  End of stream-based endpoints*/
 
     const streamEventHandler = new lambda.NodejsFunction(

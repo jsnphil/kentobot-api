@@ -1,6 +1,7 @@
 type User = string;
 type StreamId = string;
 
+// TODO Turn this into a model
 interface ShuffleParticipant {
   user: User;
   songId: string;
@@ -98,8 +99,8 @@ export class Shuffle {
     return this.winner;
   }
 
-  getAllParticipants(): ShuffleParticipant[] {
-    return Array.from(this.participants.values());
+  getAllParticipants() {
+    return this.participants;
   }
 
   getCountdownRemaining(): number {

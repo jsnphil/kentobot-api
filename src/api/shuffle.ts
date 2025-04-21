@@ -5,20 +5,17 @@ import { Code } from 'better-status-codes';
 import { ToggleShuffleCommand } from '../commands/toggle-shuffle-command';
 import { ShuffleCommandHandler } from '../command-handlers/shuffle-command-handler';
 import { Command } from '../commands/command';
+import { EnterShuffleCommand } from '../commands/enter-shuffle-command';
 
 export const handler = async (event: APIGatewayEvent) => {
-  console.log('Event: ', JSON.stringify(event, null, 2));
+  const body = JSON.parse(event.body || '{}');
 
   const commandHandler = new ShuffleCommandHandler();
   let command: Command;
 
-  console.log('Event path: ', event.path);
-  if (event.path.endsWith('/queue/shuffle/toggle')) {
-    console.log('Toggle shuffle command received');
-    const body = JSON.parse(event.body || '{}');
+  if (event.path.endsWith('/toggle')) {
+    // TODO Type check this with zod
     const { status } = body;
-
-    console.log('Status: ', status);
 
     if (status !== 'open' && status !== 'close') {
       return {
@@ -28,6 +25,19 @@ export const handler = async (event: APIGatewayEvent) => {
     }
 
     command = new ToggleShuffleCommand(status);
+  }
+
+  if (event.path.endsWith('/enter')) {
+    // TODO Type check this with zod
+    const { user } = body;
+    if (!user) {
+      return {
+        statusCode: Code.BAD_REQUEST,
+        body: JSON.stringify({ message: 'Missing user' })
+      };
+    }
+
+    command = new EnterShuffleCommand(user);
   }
 
   // TODO Ensure this is defined when the others commands are implemented

@@ -1,10 +1,10 @@
 import { Shuffle } from '../../shuffle/models/shuffle';
-import { DynamoDBClient, GetItemCommand } from '@aws-sdk/client-dynamodb';
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import {
   DynamoDBDocumentClient,
   GetCommand,
   PutCommand
-} from '@aws-sdk/lib-dynamodb'; // ES6 import
+} from '@aws-sdk/lib-dynamodb';
 import { Logger } from '@aws-lambda-powertools/logger';
 
 export class ShuffleRepository {
@@ -20,8 +20,6 @@ export class ShuffleRepository {
   private static readonly TABLE_NAME = process.env.STREAM_DATA_TABLE!;
 
   public static async getShuffle(streamDate: string): Promise<Shuffle | null> {
-    // TODO Implement this method to retrieve the current shuffle from the database
-
     this.logger.info('Retrieving current shuffle...');
 
     const { Item } = await this.ddbDocClient.send(
@@ -34,7 +32,7 @@ export class ShuffleRepository {
       })
     );
 
-    this.logger.info(`Item: ${JSON.stringify(Item)}`);
+    this.logger.debug(`Item: ${JSON.stringify(Item)}`);
 
     if (!Item) {
       this.logger.info('No active shuffle found.');
@@ -50,8 +48,6 @@ export class ShuffleRepository {
       unmarshalledItem.participants,
       unmarshalledItem.isOpen
     );
-
-    console.log('Unmarshalled item:', unmarshalledItem);
 
     return shuffle;
   }

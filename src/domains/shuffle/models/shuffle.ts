@@ -1,3 +1,5 @@
+import { ShuffleEntry } from './shuffle-entry';
+
 type User = string;
 type StreamId = string;
 
@@ -12,7 +14,7 @@ export class Shuffle {
   private openedAt: Date;
   private durationMs: number = 60000;
 
-  private participants: Map<User, ShuffleParticipant> = new Map();
+  private entries: ShuffleEntry[] = [];
   private previousWinners: User[] = [];
   private winner: ShuffleParticipant | null = null;
   private open = false;
@@ -38,11 +40,11 @@ export class Shuffle {
   static load(
     streamId: StreamId,
     openedAt: Date,
-    participants: Map<User, ShuffleParticipant>,
-    isOpen: boolean = false
+    entries: ShuffleEntry[],
+    isOpen: boolean
   ) {
     const shuffle = new Shuffle(streamId, openedAt);
-    shuffle.participants = participants;
+    shuffle.entries = entries;
     shuffle.open = isOpen;
     return shuffle;
   }
@@ -69,29 +71,39 @@ export class Shuffle {
       throw new Error('User is on cooldown.');
     }
 
-    if (this.participants.has(user)) {
+    const existingEntry = this.entries.find(
+      (entry) => entry.getUser() === user
+    );
+
+    if (existingEntry) {
       throw new Error('User already entered.');
     }
 
-    this.participants.set(user, { user, songId });
+    this.entries.push(new ShuffleEntry(user, songId));
   }
 
   close(): void {
     this.open = false;
   }
 
-  selectWinner(): ShuffleParticipant | null {
+  selectWinner(): ShuffleEntry | null {
     if (this.isOpen) {
       this.close();
     }
 
-    if (this.participants.size === 0) {
+    if (this.entries.length === 0) {
       return null;
     }
 
-    const entries = Array.from(this.participants.values());
-    const winner = entries[Math.floor(Math.random() * entries.length)];
-    this.winner = winner;
+    console.log('Selecting winner from entries:', this.entries);
+
+    const winner =
+      this.entries[Math.floor(Math.random() * this.entries.length)];
+
+    this.previousWinners.push(winner.getUser());
+
+    console.log('Winner selected:', winner);
+
     return winner;
   }
 
@@ -99,8 +111,8 @@ export class Shuffle {
     return this.winner;
   }
 
-  getAllParticipants() {
-    return this.participants;
+  getEntries() {
+    return this.entries;
   }
 
   getCountdownRemaining(): number {

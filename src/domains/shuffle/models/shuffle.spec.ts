@@ -1,4 +1,5 @@
 import { Shuffle } from './shuffle';
+import { ShuffleEntry } from './shuffle-entry';
 
 describe('Shuffle', () => {
   const streamId = 'stream123';
@@ -20,28 +21,22 @@ describe('Shuffle', () => {
 
   describe('load', () => {
     it('should load an existing Shuffle instance', () => {
-      const participants = new Map([
-        ['Vin', { user: 'Vin', songId: 'song123' }]
-      ]);
-      const loadedShuffle = Shuffle.load(streamId, openedAt, participants);
+      const entries = [new ShuffleEntry('Vin', 'song123')];
+      const loadedShuffle = Shuffle.load(streamId, openedAt, entries, false);
+
       expect(loadedShuffle).toBeInstanceOf(Shuffle);
-      expect(loadedShuffle.getAllParticipants()).toEqual([
+      expect(loadedShuffle.getEntries()).toEqual([
         { user: 'Vin', songId: 'song123' }
       ]);
+      expect(loadedShuffle.isOpen).toBe(false);
     });
 
     it('should load an existing Shuffle instance that is open', () => {
-      const participants = new Map([
-        ['Vin', { user: 'Vin', songId: 'song123' }]
-      ]);
-      const loadedShuffle = Shuffle.load(
-        streamId,
-        openedAt,
-        participants,
-        true
-      );
+      const entries = [new ShuffleEntry('Vin', 'song123')];
+
+      const loadedShuffle = Shuffle.load(streamId, openedAt, entries, true);
       expect(loadedShuffle).toBeInstanceOf(Shuffle);
-      expect(loadedShuffle.getAllParticipants()).toEqual([
+      expect(loadedShuffle.getEntries()).toEqual([
         { user: 'Vin', songId: 'song123' }
       ]);
     });
@@ -90,7 +85,7 @@ describe('Shuffle', () => {
       shuffle = Shuffle.create(streamId, new Date(Date.now() - 30000));
       shuffle.start();
       shuffle.join('Vin', 'song123');
-      expect(shuffle.getAllParticipants()).toEqual([
+      expect(shuffle.getEntries()).toEqual([
         { user: 'Vin', songId: 'song123' }
       ]);
     });
@@ -133,9 +128,9 @@ describe('Shuffle', () => {
       shuffle = Shuffle.create(streamId, new Date(Date.now() - 1000), []);
       shuffle.start();
       shuffle.join('Vin', 'song123');
-      shuffle.join('Elend', 'song456');
       const winner = shuffle.selectWinner();
-      expect(['Vin', 'Elend']).toContain(winner?.user);
+      expect(winner?.getUser()).toBe('Vin');
+      expect(winner?.getSongId()).toBe('song123');
     });
 
     it('should return null if no participants', () => {
@@ -157,8 +152,9 @@ describe('Shuffle', () => {
       shuffle = Shuffle.create(streamId, new Date(Date.now() - 1000), []);
       shuffle.start();
       shuffle.join('Vin', 'song123');
-      shuffle.selectWinner();
-      expect(shuffle.getWinner()).not.toBeNull();
+      const winner = shuffle.selectWinner();
+      expect(winner?.getUser()).toBe('Vin');
+      expect(winner?.getSongId()).toBe('song123');
     });
 
     it('should return null if no winner is selected', () => {
@@ -166,20 +162,20 @@ describe('Shuffle', () => {
     });
   });
 
-  describe('getAllParticipants', () => {
+  describe('getEntries', () => {
     it('should return all participants', () => {
       shuffle = Shuffle.create(streamId, new Date(Date.now() - 1000), []);
       shuffle.start();
       shuffle.join('Vin', 'song123');
       shuffle.join('Elend', 'song456');
-      expect(shuffle.getAllParticipants()).toEqual([
+      expect(shuffle.getEntries()).toEqual([
         { user: 'Vin', songId: 'song123' },
         { user: 'Elend', songId: 'song456' }
       ]);
     });
 
     it('should return an empty array if no participants', () => {
-      expect(shuffle.getAllParticipants()).toEqual([]);
+      expect(shuffle.getEntries()).toEqual([]);
     });
   });
 

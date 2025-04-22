@@ -12,7 +12,13 @@ export class ShuffleRepository {
     region: process.env.AWS_REGION
   });
   private static ddbDocClient = DynamoDBDocumentClient.from(
-    ShuffleRepository.client
+    ShuffleRepository.client,
+    {
+      marshallOptions: {
+        removeUndefinedValues: true,
+        convertClassInstanceToMap: true
+      }
+    }
   );
 
   private static logger = new Logger({ serviceName: 'shuffle-repository' });
@@ -45,7 +51,7 @@ export class ShuffleRepository {
     const shuffle = Shuffle.load(
       unmarshalledItem.streamId,
       new Date(unmarshalledItem.openedAt),
-      unmarshalledItem.participants,
+      unmarshalledItem.entries,
       unmarshalledItem.isOpen
     );
 
@@ -63,7 +69,7 @@ export class ShuffleRepository {
           id: '1',
           streamId: shuffle.getStreamId(),
           openedAt: shuffle.getOpenedAt().toISOString(),
-          participants: shuffle.getAllParticipants(),
+          entries: shuffle.getEntries(),
           previousWinners: shuffle.getPreviousWinners(),
           isOpen: shuffle.isOpen
         }

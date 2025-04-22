@@ -45,9 +45,6 @@ export class ShuffleCommandHandler {
   private async handleEnterShuffleCommand(
     command: EnterShuffleCommand
   ): Promise<void> {
-    if (!(command instanceof EnterShuffleCommand)) {
-      throw new Error('Invalid command type');
-    }
     // TODO Throw an error if there is no stream
     const stream = await StreamFactory.createStream();
 

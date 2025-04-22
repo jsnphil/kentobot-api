@@ -7,6 +7,7 @@ import { Shuffle } from '../domains/shuffle/models/shuffle';
 import { mockClient } from 'aws-sdk-client-mock';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { PutCommand } from '@aws-sdk/lib-dynamodb';
+import { EnterShuffleCommand } from '../commands/enter-shuffle-command';
 
 const mockDynamoDB = mockClient(DynamoDBClient);
 
@@ -67,6 +68,135 @@ describe('shuffle-command-handler', () => {
 
       expect(mockShuffle.isOpen).toBe(false);
       expect(saveShuffleSpy).toHaveBeenCalledWith(mockShuffle);
+    });
+  });
+
+  describe('enter-shuffle', () => {
+    it('should enter a user in the shuffle', async () => {
+      const commandHandler = new ShuffleCommandHandler();
+
+      mockDynamoDB.on(PutCommand).resolves({});
+
+      const mockStream = Stream.load({
+        id: 'stream1',
+        songQueue: {
+          songs: [
+            { id: 'song1', title: 'Song 1', requestedBy: 'Vin' },
+            { id: 'song2', title: 'Song 2', requestedBy: 'Kaladin' }
+          ]
+        },
+        songHistory: []
+      });
+      const shuffle = Shuffle.create('stream1', new Date());
+
+      jest.spyOn(StreamFactory, 'createStream').mockResolvedValue(mockStream);
+      jest.spyOn(ShuffleRepository, 'getShuffle').mockResolvedValue(shuffle);
+
+      const saveShuffleSpy = jest.spyOn(ShuffleRepository, 'save');
+
+      const command = new EnterShuffleCommand('Vin');
+
+      shuffle.start(); // Start the shuffle first
+      await commandHandler.execute(command);
+
+      expect(shuffle.isOpen).toBe(true);
+      expect(saveShuffleSpy).toHaveBeenCalledWith(shuffle);
+    });
+
+    it('should deny a user without a song in the queue', async () => {
+      const commandHandler = new ShuffleCommandHandler();
+
+      mockDynamoDB.on(PutCommand).resolves({});
+
+      const mockStream = Stream.load({
+        id: 'stream1',
+        songQueue: {
+          songs: [
+            { id: 'song1', title: 'Song 1', requestedBy: 'Vin' },
+            { id: 'song2', title: 'Song 2', requestedBy: 'Kaladin' }
+          ]
+        },
+        songHistory: []
+      });
+      const shuffle = Shuffle.create('stream1', new Date());
+
+      jest.spyOn(StreamFactory, 'createStream').mockResolvedValue(mockStream);
+      jest.spyOn(ShuffleRepository, 'getShuffle').mockResolvedValue(shuffle);
+
+      const saveShuffleSpy = jest.spyOn(ShuffleRepository, 'save');
+
+      const command = new EnterShuffleCommand('Adolin');
+
+      shuffle.start(); // Start the shuffle first
+      await expect(commandHandler.execute(command)).rejects.toThrow(
+        'No song found for user: Adolin'
+      );
+
+      expect(saveShuffleSpy).not.toHaveBeenCalledWith();
+    });
+
+    it('should deny a user who is in cooldown', async () => {
+      const commandHandler = new ShuffleCommandHandler();
+
+      mockDynamoDB.on(PutCommand).resolves({});
+
+      const mockStream = Stream.load({
+        id: 'stream1',
+        songQueue: {
+          songs: [
+            { id: 'song1', title: 'Song 1', requestedBy: 'Vin' },
+            { id: 'song2', title: 'Song 2', requestedBy: 'Kaladin' }
+          ]
+        },
+        songHistory: []
+      });
+      const shuffle = Shuffle.create('stream1', new Date(), ['Vin']);
+
+      jest.spyOn(StreamFactory, 'createStream').mockResolvedValue(mockStream);
+      jest.spyOn(ShuffleRepository, 'getShuffle').mockResolvedValue(shuffle);
+
+      const saveShuffleSpy = jest.spyOn(ShuffleRepository, 'save');
+
+      const command = new EnterShuffleCommand('Vin');
+
+      shuffle.start(); // Start the shuffle first
+
+      await expect(commandHandler.execute(command)).rejects.toThrow(
+        'User is on cooldown'
+      );
+
+      expect(saveShuffleSpy).not.toHaveBeenCalledWith();
+    });
+
+    it('should deny a user when there is no shuffle open', async () => {
+      const commandHandler = new ShuffleCommandHandler();
+
+      mockDynamoDB.on(PutCommand).resolves({});
+
+      const mockStream = Stream.load({
+        id: 'stream1',
+        songQueue: {
+          songs: [
+            { id: 'song1', title: 'Song 1', requestedBy: 'Vin' },
+            { id: 'song2', title: 'Song 2', requestedBy: 'Kaladin' }
+          ]
+        },
+        songHistory: []
+      });
+      const shuffle = Shuffle.create('stream1', new Date(), ['Vin']);
+
+      jest.spyOn(StreamFactory, 'createStream').mockResolvedValue(mockStream);
+      jest.spyOn(ShuffleRepository, 'getShuffle').mockResolvedValue(shuffle);
+
+      const saveShuffleSpy = jest.spyOn(ShuffleRepository, 'save');
+
+      const command = new EnterShuffleCommand('Vin');
+
+      await expect(commandHandler.execute(command)).rejects.toThrow(
+        'Shuffle is not open'
+      );
+
+      expect(saveShuffleSpy).not.toHaveBeenCalledWith();
     });
   });
 

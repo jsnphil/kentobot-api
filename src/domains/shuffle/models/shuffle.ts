@@ -95,14 +95,10 @@ export class Shuffle {
       return null;
     }
 
-    console.log('Selecting winner from entries:', this.entries);
-
     const winner =
       this.entries[Math.floor(Math.random() * this.entries.length)];
 
     this.previousWinners.push(winner.getUser());
-
-    console.log('Winner selected:', winner);
 
     return winner;
   }

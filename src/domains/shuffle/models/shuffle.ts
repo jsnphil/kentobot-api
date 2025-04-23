@@ -41,9 +41,10 @@ export class Shuffle {
     streamId: StreamId,
     openedAt: Date,
     entries: ShuffleEntry[],
-    isOpen: boolean
+    isOpen: boolean,
+    previousWinners: User[]
   ) {
-    const shuffle = new Shuffle(streamId, openedAt);
+    const shuffle = new Shuffle(streamId, openedAt, previousWinners);
     shuffle.entries = entries;
     shuffle.open = isOpen;
     return shuffle;

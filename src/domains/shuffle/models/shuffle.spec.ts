@@ -22,7 +22,13 @@ describe('Shuffle', () => {
   describe('load', () => {
     it('should load an existing Shuffle instance', () => {
       const entries = [new ShuffleEntry('Vin', 'song123')];
-      const loadedShuffle = Shuffle.load(streamId, openedAt, entries, false);
+      const loadedShuffle = Shuffle.load(
+        streamId,
+        openedAt,
+        entries,
+        false,
+        []
+      );
 
       expect(loadedShuffle).toBeInstanceOf(Shuffle);
       expect(loadedShuffle.getEntries()).toEqual([
@@ -34,7 +40,7 @@ describe('Shuffle', () => {
     it('should load an existing Shuffle instance that is open', () => {
       const entries = [new ShuffleEntry('Vin', 'song123')];
 
-      const loadedShuffle = Shuffle.load(streamId, openedAt, entries, true);
+      const loadedShuffle = Shuffle.load(streamId, openedAt, entries, true, []);
       expect(loadedShuffle).toBeInstanceOf(Shuffle);
       expect(loadedShuffle.getEntries()).toEqual([
         { user: 'Vin', songId: 'song123' }

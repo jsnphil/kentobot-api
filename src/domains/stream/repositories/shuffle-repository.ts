@@ -48,11 +48,18 @@ export class ShuffleRepository {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const unmarshalledItem = Item as any; // Adjust the type as needed
 
+    console.log('Unmarshalled Item:', unmarshalledItem);
+
+    const previousWinners = unmarshalledItem.previousWinners.L.map(
+      (winner: { S: string }) => winner.S
+    );
+
     const shuffle = Shuffle.load(
-      unmarshalledItem.streamId,
-      new Date(unmarshalledItem.openedAt),
+      unmarshalledItem.streamId.S,
+      new Date(unmarshalledItem.openedAt.S),
       unmarshalledItem.entries,
-      unmarshalledItem.isOpen
+      unmarshalledItem.isOpen.BOOL,
+      previousWinners
     );
 
     return shuffle;

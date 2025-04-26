@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { http, HttpResponse } from 'msw';
 
 export const handlers = [
@@ -450,6 +451,9 @@ export const handlers = [
     }
   }),
   http.post('https://events.us-east-1.amazonaws.com/', ({ request }) => {
+    return new HttpResponse(null, { status: 200 });
+  }),
+  http.post('https://dynamodb.us-east-1.amazonaws.com/', ({ request }) => {
     return new HttpResponse(null, { status: 200 });
   })
 ];

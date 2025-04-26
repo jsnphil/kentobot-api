@@ -1,10 +1,10 @@
 import { APIGatewayEvent } from 'aws-lambda';
-import { MoveSongCommandHandler } from '../domains/stream/command-handlers/move-song-command-handler';
-import { MoveSongCommand } from '../domains/stream/commands/move-song-command';
+import { MoveSongCommandHandler } from '../command-handlers/move-song-command-handler';
+import { MoveSongCommand } from '../commands/move-song-command';
 import { Code } from 'better-status-codes';
 import { apiLambdaWrapper } from '../common/api-lambda-wrapper';
 
-export const handler = apiLambdaWrapper(async (event: APIGatewayEvent) => {
+export const handler = async (event: APIGatewayEvent) => {
   const songId = event.pathParameters?.songId;
 
   const body = JSON.parse(event.body || '{}');
@@ -29,4 +29,4 @@ export const handler = apiLambdaWrapper(async (event: APIGatewayEvent) => {
     statusCode: Code.OK,
     body: JSON.stringify({})
   };
-});
+};

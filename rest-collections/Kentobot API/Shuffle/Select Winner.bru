@@ -1,0 +1,28 @@
+meta {
+  name: Select Winner
+  type: http
+  seq: 3
+}
+
+post {
+  url: https://{{aws.api.id}}.execute-api.us-east-1.amazonaws.com/:stage/streams/:stream/queue/shuffle/select-winner
+  body: json
+  auth: apikey
+}
+
+params:path {
+  stage: dev
+  stream: current
+}
+
+auth:apikey {
+  key: X-API-Key
+  value: {{kentobot.api.key}}
+  placement: header
+}
+
+body:json {
+  {
+    "user": "Shallan"
+  }
+}

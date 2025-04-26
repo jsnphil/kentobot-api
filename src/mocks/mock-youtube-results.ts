@@ -29,4 +29,4 @@ export const mockMultipleResults = [
       duration: 'PT2M'
     }
   }
-] as any as VideoListItem[];
+] as VideoListItem[];

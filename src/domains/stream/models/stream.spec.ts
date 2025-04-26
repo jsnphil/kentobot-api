@@ -6,7 +6,6 @@ import {
   PutEventsCommand
 } from '@aws-sdk/client-eventbridge';
 import { mockClient } from 'aws-sdk-client-mock';
-import { mock } from 'node:test';
 
 const mockEventBridgeClient = mockClient(EventBridgeClient);
 
@@ -69,7 +68,6 @@ describe('Stream', () => {
     expect(stream).toBeInstanceOf(Stream);
     expect(stream.getStreamDate()).toBe(data.streamDate);
     expect(stream.getSongQueue().getSongs().length).toBe(2);
-    expect(stream.getShuffleEntries()).toEqual(data.shuffleEntries);
     expect(stream.getSongHistory().length).toBe(2);
     expect(stream.getSongHistory()[0].id).toBe('3');
   });
@@ -261,37 +259,6 @@ describe('Stream', () => {
     });
   });
 
-  describe('enterShuffle', () => {
-    it('should throw an error if shuffle is not opened', () => {
-      const streamDate = '2023-10-01';
-      const stream = Stream.create(streamDate);
-
-      expect(() => stream.enterShuffle('user1')).toThrow('Shuffle is not open');
-    });
-
-    it('should add a user to the shuffle', async () => {
-      const streamDate = '2023-10-01';
-      const stream = Stream.create(streamDate);
-
-      const songs = [
-        Song.load('1', 'Vin', 'Song 1', SongRequestStatus.QUEUED, 300),
-        Song.load('2', 'Kelsier', 'Song 2', SongRequestStatus.QUEUED, 250),
-        Song.load('3', 'Sazed', 'Song 3', SongRequestStatus.QUEUED, 200),
-        Song.load('4', 'Elend', 'Song 4', SongRequestStatus.QUEUED, 180),
-        Song.load('5', 'Marsh', 'Song 5', SongRequestStatus.QUEUED, 220)
-      ];
-
-      for (const song of songs) {
-        await stream.addSongToQueue(song);
-      }
-
-      stream.openShuffle();
-
-      stream.enterShuffle('Vin');
-      expect(stream.getShuffleEntries()).toContain('Vin');
-    });
-  });
-
   describe('savePlayedSong', () => {
     it('should save a played song to the song history', () => {
       const streamDate = '2023-10-01';
@@ -320,6 +287,56 @@ describe('Stream', () => {
 
       const songHistory = stream.getSongHistory();
       expect(songHistory.length).toBe(0);
+    });
+  });
+
+  describe('bumpShuffleWinner', () => {
+    it('should bump the shuffle winner', async () => {
+      const streamDate = '2023-10-01';
+      const stream = Stream.create(streamDate);
+
+      const songs = [
+        Song.load('1', 'Vin', 'Song 1', SongRequestStatus.QUEUED, 300),
+        Song.load('2', 'Kelsier', 'Song 2', SongRequestStatus.QUEUED, 250),
+        Song.load('3', 'Sazed', 'Song 3', SongRequestStatus.QUEUED, 200),
+        Song.load('4', 'Elend', 'Song 4', SongRequestStatus.QUEUED, 180),
+        Song.load('5', 'Marsh', 'Song 5', SongRequestStatus.QUEUED, 220)
+      ];
+
+      for (const song of songs) {
+        await stream.addSongToQueue(song);
+      }
+
+      stream.bumpShuffleWinner('Elend');
+
+      const songQueue = stream.getSongQueue();
+      console.log(songQueue);
+
+      expect(songQueue.getSongs()[0].id).toBe('4');
+      expect(songQueue.getSongs()[0].status).toBe(
+        SongRequestStatus.SHUFFLE_WINNER
+      );
+    });
+
+    it('should throw an error if the song is not in the queue', () => {
+      const streamDate = '2023-10-01';
+      const stream = Stream.create(streamDate);
+
+      const songs = [
+        Song.load('1', 'Vin', 'Song 1', SongRequestStatus.QUEUED, 300),
+        Song.load('2', 'Kelsier', 'Song 2', SongRequestStatus.QUEUED, 250),
+        Song.load('3', 'Sazed', 'Song 3', SongRequestStatus.QUEUED, 200),
+        Song.load('4', 'Elend', 'Song 4', SongRequestStatus.QUEUED, 180),
+        Song.load('5', 'Marsh', 'Song 5', SongRequestStatus.QUEUED, 220)
+      ];
+
+      for (const song of songs) {
+        stream.addSongToQueue(song);
+      }
+
+      expect(() => stream.bumpShuffleWinner('NonExistentSong')).toThrow(
+        'No song found for user: NonExistentSong'
+      );
     });
   });
 });

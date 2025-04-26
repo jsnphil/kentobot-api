@@ -11,6 +11,7 @@ export class SongPlayedEvent extends DomainEvent {
     super('song-played');
   }
 
+  // TODO Is there a type that can be used here instead of any?
   protected serialize(): Record<string, any> {
     return {
       songId: this.songId,

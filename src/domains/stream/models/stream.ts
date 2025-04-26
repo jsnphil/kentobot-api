@@ -4,46 +4,28 @@ import { Song } from './song';
 import { SongQueue } from './song-queue';
 import { SongMovedInQueueEvent } from '../events/song-moved-in-queue-event';
 import { SongRemovedFromQueue } from '../events/song-removed-from-queue-event';
-import { BumpType } from '../../../types/song-request';
-import { BumpService } from '../services/bump-service';
+import { BumpType, SongRequestStatus } from '../../../types/song-request';
 import { SongBumpedEvent } from '../events/song-bumped-event';
 import { SongAddedToQueueEvent } from '../events/song-added-to-queue-event';
-import { SongEnteredInShuffleEvent } from '../events/song-entered-in-shuffle-event';
 import { SongPlayedEvent } from '../events/song-played-event';
+import { BumpService } from '@services/bump-service';
 
 export class Stream {
   private streamDate: string;
   private songQueue: SongQueue;
   private beanBumpsAvailable: number;
   private channelPointBumpsAvailable: number;
-  private shuffleEntries: string[] = []; // List of users who have entered shuffle mode
-  private shuffleMode: boolean = false; // Flag to indicate if shuffle mode is active
-  private shuffleOpened: boolean = false; // Flag to indicate if shuffle mode is opened
   private songHistory: Song[]; // List of songs that have been played in the stream
-  // private bumpCounts: BumpCount;
-  // public bumpCounts: Map<string, number>; // Tracks how many bumps each user has used
 
   private bumpService;
 
-  private constructor(
-    streamDate: string,
-    songQueue: SongQueue,
-    shuffleEntries: string[] = [],
-    shuffleMode: boolean = true,
-    shuffleOpened: boolean = false,
-    songHistory: Song[] = []
-    // bumpCounts: BumpCount
-  ) {
+  private constructor(streamDate: string, songQueue: SongQueue) {
     this.streamDate = streamDate;
     this.songQueue = songQueue;
     this.beanBumpsAvailable = 3;
     this.channelPointBumpsAvailable = 3;
-    this.shuffleEntries = shuffleEntries;
-    this.shuffleMode = shuffleMode;
-    this.shuffleOpened = shuffleOpened;
-    this.songHistory = songHistory;
-    // this.bumpCounts = bumpCounts;
     this.bumpService = new BumpService();
+    this.songHistory = [];
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -64,18 +46,9 @@ export class Stream {
 
     const songQueue = new SongQueue(songs);
 
-    const shuffleUsers: string[] = [];
-    data.shuffleEntries?.forEach((user: string) => {
-      shuffleUsers.push(user);
-    });
+    const stream = new Stream(data.streamDate, songQueue);
 
-    const stream = new Stream(
-      data.streamDate,
-      songQueue,
-      shuffleUsers,
-      data.shuffleOpened
-    );
-
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     data.songHistory.forEach((playedSongs: any) => {
       const song = Song.load(
         playedSongs.id,
@@ -97,7 +70,7 @@ export class Stream {
   }
 
   public async addSongToQueue(song: Song) {
-    await this.songQueue.addSong(song);
+    this.songQueue.addSong(song);
 
     await EventPublisher.publishEvent(
       new SongAddedToQueueEvent(song),
@@ -194,44 +167,6 @@ export class Stream {
     return this.channelPointBumpsAvailable;
   }
 
-  public getShuffleEntries(): string[] {
-    return this.shuffleEntries;
-  }
-
-  public openShuffle() {
-    if (!this.shuffleOpened) {
-      this.shuffleOpened = true;
-    }
-  }
-
-  public closeShuffle() {
-    if (this.shuffleOpened) {
-      this.shuffleOpened = false;
-    }
-  }
-
-  public isShuffleOpened(): boolean {
-    return this.shuffleOpened;
-  }
-
-  public getShuffleMode(): boolean {
-    return this.shuffleMode;
-  }
-
-  public enterShuffle(user: string) {
-    if (!this.shuffleOpened) {
-      throw new Error('Shuffle is not open');
-    }
-
-    const songId = this.songQueue.enterShuffle(user);
-    this.shuffleEntries.push(user);
-
-    EventPublisher.publishEvent(
-      new SongEnteredInShuffleEvent(songId, user),
-      StreamEvent.SONG_BUMPED
-    );
-  }
-
   public getSongHistory(): Song[] {
     return this.songHistory;
   }
@@ -248,6 +183,22 @@ export class Stream {
         new Date()
       ),
       StreamEvent.SONG_PLAYED
+    );
+  }
+
+  public bumpShuffleWinner(shuffleWinner: string) {
+    const song = this.songQueue.getSongRequestByUser(shuffleWinner);
+    if (!song) {
+      throw new Error(`No song found for user: ${shuffleWinner}`);
+    }
+
+    song.status = SongRequestStatus.SHUFFLE_WINNER;
+
+    this.songQueue.moveSong(song.id, 0);
+
+    EventPublisher.publishEvent(
+      new SongBumpedEvent(song.id, 0),
+      StreamEvent.SONG_BUMPED
     );
   }
 }

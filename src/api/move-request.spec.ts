@@ -1,11 +1,9 @@
 import { handler } from './move-request';
-import { APIGatewayEvent, Context } from 'aws-lambda';
+import { APIGatewayEvent } from 'aws-lambda';
 import { jest } from '@jest/globals';
-import { MoveSongCommandHandler } from '../domains/stream/command-handlers/move-song-command-handler';
-import { Stream } from '../domains/stream/models/stream';
-import { StreamRepository } from '../domains/stream/repositories/stream-repository';
+import { MoveSongCommandHandler } from '../command-handlers/move-song-command-handler';
 
-jest.mock('../domains/stream/command-handlers/move-song-command-handler');
+jest.mock('../command-handlers/move-song-command-handler');
 
 describe('move-request handler', () => {
   let mockExecute: jest.Mock;

@@ -5,10 +5,10 @@ import { SongQueue } from './song-queue';
 import { SongMovedInQueueEvent } from '../events/song-moved-in-queue-event';
 import { SongRemovedFromQueue } from '../events/song-removed-from-queue-event';
 import { BumpType, SongRequestStatus } from '../../../types/song-request';
-import { BumpService } from '../services/bump-service';
 import { SongBumpedEvent } from '../events/song-bumped-event';
 import { SongAddedToQueueEvent } from '../events/song-added-to-queue-event';
 import { SongPlayedEvent } from '../events/song-played-event';
+import { BumpService } from '@services/bump-service';
 
 export class Stream {
   private streamDate: string;

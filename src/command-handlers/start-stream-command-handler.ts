@@ -1,5 +1,5 @@
 import { StartStreamCommand } from '../commands/start-stream-command';
-import { StreamRepository } from '../domains/stream/repositories/stream-repository';
+import { StreamRepository } from '../repositories/stream-repository';
 import { Stream } from '../domains/stream/models/stream';
 import { Logger } from '@aws-lambda-powertools/logger';
 

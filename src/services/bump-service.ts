@@ -1,5 +1,5 @@
-import { BumpType } from '../../../types/song-request';
-import { BumpRepository } from '../repositories/bump-repository';
+import { BumpRepository } from '@repositories/bump-repository';
+import { BumpType } from '../types/song-request';
 
 export class BumpService {
   public async isUserEligible(user: string, bumpType: BumpType) {

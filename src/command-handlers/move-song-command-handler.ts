@@ -1,5 +1,5 @@
 import { generateStreamDate } from '@utils/utilities';
-import { StreamRepository } from '../domains/stream/repositories/stream-repository';
+import { StreamRepository } from '../repositories/stream-repository';
 import { Stream } from '../domains/stream/models/stream';
 import { MoveSongCommand } from '../commands/move-song-command';
 

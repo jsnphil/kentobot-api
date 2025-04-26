@@ -1,11 +1,11 @@
 import { BumpSongCommandHandler } from './bump-song-command-handler';
 import { BumpSongCommand } from '../commands/bump-song-command';
 import { StreamFactory } from '../domains/stream/factories/stream-factory';
-import { StreamRepository } from '../domains/stream/repositories/stream-repository';
+import { StreamRepository } from '@repositories/stream-repository';
 import { BumpType } from '../types/song-request';
 
 jest.mock('../domains/stream/factories/stream-factory');
-jest.mock('../domains/stream/repositories/stream-repository');
+jest.mock('@repositories/stream-repository');
 
 describe('BumpSongCommandHandler', () => {
   let handler: BumpSongCommandHandler;

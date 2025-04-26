@@ -1,5 +1,5 @@
 import { handler } from './move-request';
-import { APIGatewayEvent, Context } from 'aws-lambda';
+import { APIGatewayEvent } from 'aws-lambda';
 import { jest } from '@jest/globals';
 import { MoveSongCommandHandler } from '../command-handlers/move-song-command-handler';
 

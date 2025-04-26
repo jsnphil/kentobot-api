@@ -1,5 +1,5 @@
 import { StreamRepository } from './stream-repository';
-import { Stream } from '../models/stream';
+import { Stream } from '../domains/stream/models/stream';
 import { Logger } from '@aws-lambda-powertools/logger';
 import {
   DynamoDBClient,
@@ -8,9 +8,9 @@ import {
 } from '@aws-sdk/client-dynamodb';
 import { mockClient } from 'aws-sdk-client-mock';
 
-jest.mock('../models/stream');
-jest.mock('../models/song');
-jest.mock('../models/song-queue');
+// jest.mock('../models/stream');
+// jest.mock('../models/song');
+// jest.mock('../models/song-queue');
 jest.mock('@aws-lambda-powertools/logger');
 
 const mockDynamoDB = mockClient(DynamoDBClient);

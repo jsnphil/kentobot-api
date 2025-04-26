@@ -4,9 +4,9 @@ import { EnterShuffleCommand } from '../commands/enter-shuffle-command';
 import { ToggleShuffleCommand } from '../commands/toggle-shuffle-command';
 import { Shuffle } from '../domains/shuffle/models/shuffle';
 import { StreamFactory } from '../domains/stream/factories/stream-factory';
-import { ShuffleRepository } from '../domains/stream/repositories/shuffle-repository';
+import { ShuffleRepository } from '../repositories/shuffle-repository';
 import { SelectWinnerCommand } from '../commands/shuffle/select-winner-command';
-import { StreamRepository } from '../domains/stream/repositories/stream-repository';
+import { StreamRepository } from '../repositories/stream-repository';
 
 export class ShuffleCommandHandler {
   private logger = new Logger({

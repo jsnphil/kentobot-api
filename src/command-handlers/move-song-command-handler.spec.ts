@@ -1,10 +1,10 @@
 import { MoveSongCommandHandler } from './move-song-command-handler';
 import { MoveSongCommand } from '../commands/move-song-command';
-import { StreamRepository } from '../domains/stream/repositories/stream-repository';
+import { StreamRepository } from '@repositories/stream-repository';
 import { Stream } from '../domains/stream/models/stream';
 import { generateStreamDate } from '@utils/utilities';
 
-jest.mock('../domains/stream/repositories/stream-repository');
+jest.mock('@repositories/stream-repository');
 jest.mock('../domains/stream/models/stream');
 jest.mock('@utils/utilities');
 

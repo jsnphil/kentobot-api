@@ -1,4 +1,4 @@
-import { Shuffle } from '../../shuffle/models/shuffle';
+import { Shuffle } from '../domains/shuffle/models/shuffle';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import {
   DynamoDBDocumentClient,
@@ -6,7 +6,7 @@ import {
   PutCommand
 } from '@aws-sdk/lib-dynamodb';
 import { Logger } from '@aws-lambda-powertools/logger';
-import { ShuffleEntry } from '../../shuffle/models/shuffle-entry';
+import { ShuffleEntry } from '../domains/shuffle/models/shuffle-entry';
 
 export class ShuffleRepository {
   private static client = new DynamoDBClient({

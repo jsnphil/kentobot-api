@@ -1,11 +1,11 @@
 import { RequestSongCommandHandler } from './request-song-command-handler';
 import { RequestSongCommand } from '../commands/request-song-command';
-import { StreamRepository } from '../domains/stream/repositories/stream-repository';
+import { StreamRepository } from '@repositories/stream-repository';
 import { Song } from '../domains/stream/models/song';
 import { Stream } from '../domains/stream/models/stream';
 import { generateStreamDate } from '@utils/utilities';
 
-jest.mock('../domains/stream/repositories/stream-repository');
+jest.mock('@repositories/stream-repository');
 jest.mock('../domains/stream/models/song');
 jest.mock('../domains/stream/models/stream');
 jest.mock('@utils/utilities');

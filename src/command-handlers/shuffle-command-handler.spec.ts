@@ -2,7 +2,7 @@ import { Stream } from '../domains/stream/models/stream';
 import { ToggleShuffleCommand } from '../commands/toggle-shuffle-command';
 import { StreamFactory } from '../domains/stream/factories/stream-factory';
 import { ShuffleCommandHandler } from './shuffle-command-handler';
-import { ShuffleRepository } from '../domains/stream/repositories/shuffle-repository';
+import { ShuffleRepository } from '../repositories/shuffle-repository';
 import { Shuffle } from '../domains/shuffle/models/shuffle';
 import { mockClient } from 'aws-sdk-client-mock';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';

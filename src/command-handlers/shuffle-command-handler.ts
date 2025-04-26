@@ -6,6 +6,7 @@ import { Shuffle } from '../domains/shuffle/models/shuffle';
 import { StreamFactory } from '../domains/stream/factories/stream-factory';
 import { ShuffleRepository } from '../domains/stream/repositories/shuffle-repository';
 import { SelectWinnerCommand } from '../commands/shuffle/select-winner-command';
+import { StreamRepository } from '../domains/stream/repositories/stream-repository';
 
 export class ShuffleCommandHandler {
   private logger = new Logger({
@@ -13,13 +14,13 @@ export class ShuffleCommandHandler {
   });
   constructor() {}
 
-  public async execute(command: Command): Promise<void> {
+  public async execute(command: Command): Promise<string | void> {
     if (command instanceof ToggleShuffleCommand) {
       await this.handleToggleShuffleCommand(command);
     } else if (command instanceof EnterShuffleCommand) {
       await this.handleEnterShuffleCommand(command);
     } else if (command instanceof SelectWinnerCommand) {
-      await this.selectShuffleWinner();
+      return await this.selectShuffleWinner();
     } else {
       throw new Error('Invalid command');
     }
@@ -72,7 +73,7 @@ export class ShuffleCommandHandler {
     // TODO Trigger event to notify the stream about the new participant
   }
 
-  private async selectShuffleWinner(): Promise<void> {
+  private async selectShuffleWinner(): Promise<string> {
     // TODO Throw an error if there is no stream
     const stream = await StreamFactory.createStream();
     const shuffle = await ShuffleRepository.getShuffle(stream.getStreamDate());
@@ -83,10 +84,18 @@ export class ShuffleCommandHandler {
 
     const winner = shuffle.selectWinner();
 
-    // TODO Move the winner up in the song queue
+    if (!winner) {
+      throw new Error('No winner selected');
+    }
+    this.logger.info(`Winner selected: ${winner.getUser()}`);
+
+    stream.bumpShuffleWinner(winner.getUser());
 
     await ShuffleRepository.save(shuffle);
+    await StreamRepository.saveStream(stream);
 
     // TODO Trigger event to notify the stream about the winner
+
+    return winner.getUser();
   }
 }

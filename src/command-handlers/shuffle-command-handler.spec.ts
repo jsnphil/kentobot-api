@@ -150,7 +150,17 @@ describe('shuffle-command-handler', () => {
         },
         songHistory: []
       });
-      const shuffle = Shuffle.create('stream1', new Date(), ['Vin']);
+
+      const shuffle = Shuffle.load(
+        'stream1',
+        new Date(Date.now() - 1000),
+        [],
+        true,
+        new Map([
+          ['Vin', 2],
+          ['Kaladin', 2]
+        ])
+      );
 
       jest.spyOn(StreamFactory, 'createStream').mockResolvedValue(mockStream);
       jest.spyOn(ShuffleRepository, 'getShuffle').mockResolvedValue(shuffle);
@@ -158,8 +168,6 @@ describe('shuffle-command-handler', () => {
       const saveShuffleSpy = jest.spyOn(ShuffleRepository, 'save');
 
       const command = new EnterShuffleCommand('Vin');
-
-      shuffle.start(); // Start the shuffle first
 
       await expect(commandHandler.execute(command)).rejects.toThrow(
         'User is on cooldown'
@@ -183,7 +191,7 @@ describe('shuffle-command-handler', () => {
         },
         songHistory: []
       });
-      const shuffle = Shuffle.create('stream1', new Date(), ['Vin']);
+      const shuffle = Shuffle.create('stream1', new Date());
 
       jest.spyOn(StreamFactory, 'createStream').mockResolvedValue(mockStream);
       jest.spyOn(ShuffleRepository, 'getShuffle').mockResolvedValue(shuffle);

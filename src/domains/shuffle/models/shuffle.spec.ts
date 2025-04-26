@@ -4,12 +4,14 @@ import { ShuffleEntry } from './shuffle-entry';
 describe('Shuffle', () => {
   const streamId = 'stream123';
   const openedAt = new Date();
-  const previousWinners = ['Kelsier'];
+
+  const winnerCooldowns = new Map<string, number>();
 
   let shuffle: Shuffle;
 
   beforeEach(() => {
     shuffle = new Shuffle(streamId, openedAt);
+    winnerCooldowns.set('Vin', 2);
   });
 
   describe('create', () => {
@@ -27,7 +29,7 @@ describe('Shuffle', () => {
         openedAt,
         entries,
         false,
-        []
+        new Map<string, number>()
       );
 
       expect(loadedShuffle).toBeInstanceOf(Shuffle);
@@ -40,7 +42,13 @@ describe('Shuffle', () => {
     it('should load an existing Shuffle instance that is open', () => {
       const entries = [new ShuffleEntry('Vin', 'song123')];
 
-      const loadedShuffle = Shuffle.load(streamId, openedAt, entries, true, []);
+      const loadedShuffle = Shuffle.load(
+        streamId,
+        openedAt,
+        entries,
+        true,
+        new Map<string, number>()
+      );
       expect(loadedShuffle).toBeInstanceOf(Shuffle);
       expect(loadedShuffle.getEntries()).toEqual([
         { user: 'Vin', songId: 'song123' }
@@ -97,12 +105,17 @@ describe('Shuffle', () => {
     });
 
     it('should throw an error if user is on cooldown', () => {
-      shuffle = Shuffle.create(
+      const winnerCooldowns = new Map<string, number>();
+
+      winnerCooldowns.set('Kelsier', 2);
+      shuffle = Shuffle.load(
         streamId,
         new Date(Date.now() - 1000),
-        previousWinners
+        [],
+        true,
+        winnerCooldowns
       );
-      shuffle.start();
+
       expect(() => shuffle.join('Kelsier', 'song123')).toThrow(
         'User is on cooldown.'
       );
@@ -131,7 +144,7 @@ describe('Shuffle', () => {
 
   describe('selectWinner', () => {
     it('should select a winner from participants', () => {
-      shuffle = Shuffle.create(streamId, new Date(Date.now() - 1000), []);
+      shuffle = Shuffle.create(streamId, new Date(Date.now() - 1000));
       shuffle.start();
       shuffle.join('Vin', 'song123');
       const winner = shuffle.selectWinner();
@@ -142,22 +155,42 @@ describe('Shuffle', () => {
     });
 
     it('should return null if no participants', () => {
-      shuffle = Shuffle.create(streamId, new Date(Date.now() - 1000), []);
+      shuffle = Shuffle.create(streamId, new Date(Date.now() - 1000));
       shuffle.start();
       const winner = shuffle.selectWinner();
       expect(winner).toBeNull();
     });
 
     it('should close the shuffle if it is open', () => {
-      shuffle = Shuffle.create(streamId, new Date(Date.now() - 1000), []);
+      shuffle = Shuffle.create(streamId, new Date(Date.now() - 1000));
       shuffle.selectWinner();
       expect(shuffle.isOpen).toBe(false);
+    });
+
+    it('should update the cooldowns after selecting a winner', () => {
+      shuffle = Shuffle.load(
+        streamId,
+        new Date(Date.now() - 1000),
+        [],
+        true,
+        new Map([
+          ['Kelsier', 2],
+          ['Dalinar', 1]
+        ])
+      );
+
+      shuffle.join('Vin', 'song123');
+      const winner = shuffle.selectWinner();
+      expect(winner?.getUser()).toBe('Vin');
+      expect(shuffle.getCooldowns().get('Vin')).toBe(2);
+      expect(shuffle.getCooldowns().get('Kelsier')).toBe(1);
+      expect(shuffle.getCooldowns().get('Dalinar')).toBeUndefined();
     });
   });
 
   describe('getEntries', () => {
     it('should return all participants', () => {
-      shuffle = Shuffle.create(streamId, new Date(Date.now() - 1000), []);
+      shuffle = Shuffle.create(streamId, new Date(Date.now() - 1000));
       shuffle.start();
       shuffle.join('Vin', 'song123');
       shuffle.join('Elend', 'song456');
@@ -174,13 +207,13 @@ describe('Shuffle', () => {
 
   describe('getCountdownRemaining', () => {
     it('should return the remaining time in milliseconds', () => {
-      shuffle = Shuffle.create(streamId, new Date(Date.now() - 1000), []);
+      shuffle = Shuffle.create(streamId, new Date(Date.now() - 1000));
       shuffle.start();
       expect(shuffle.getCountdownRemaining()).toBeGreaterThan(0);
     });
 
     it('should return 0 if duration has passed', () => {
-      shuffle = Shuffle.create(streamId, new Date(Date.now() - 60001), []);
+      shuffle = Shuffle.create(streamId, new Date(Date.now() - 60001));
       expect(shuffle.getCountdownRemaining()).toBe(0);
     });
   });

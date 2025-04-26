@@ -24,7 +24,11 @@ describe('shuffle-repository', () => {
           isOpen: true,
           sk: 'streamDate#2025-24-04',
           openedAt: openedAt.toISOString(),
-          previousWinners: ['Vin', 'Kelsier', 'Kaladin'],
+          winnerCooldowns: new Map([
+            ['Vin', 2],
+            ['Kelsier', 2],
+            ['Elend', 1]
+          ]),
           entries: [{ user: 'Jasnah', songId: 'USGMvV1O-IE' }],
           pk: 'shuffle',
           id: '1',
@@ -40,11 +44,15 @@ describe('shuffle-repository', () => {
       expect(shuffle?.isOpen).toBe(true);
       expect(shuffle?.getStreamId()).toBe('2025-24-04');
       expect(shuffle?.getOpenedAt()).toEqual(openedAt);
-      expect(shuffle?.getPreviousWinners()).toEqual([
-        'Vin',
-        'Kelsier',
-        'Kaladin'
-      ]);
+
+      const cooldowns = shuffle?.getCooldowns() as Map<string, number>;
+
+      console.log('Cooldowns:', cooldowns);
+
+      expect(cooldowns.get('Vin')).toBe(2);
+      expect(cooldowns.get('Kelsier')).toBe(2);
+      expect(cooldowns.get('Elend')).toBe(1);
+
       expect(shuffle?.getEntries()).toEqual([
         {
           user: 'Jasnah',
@@ -61,7 +69,11 @@ describe('shuffle-repository', () => {
           isOpen: true,
           sk: 'streamDate#2025-24-04',
           openedAt: openedAt.toISOString(),
-          previousWinners: ['Vin', 'Kelsier', 'Kaladin'],
+          winnerCooldowns: new Map([
+            ['Vin', 2],
+            ['Kelsier', 2],
+            ['Elend', 1]
+          ]),
           pk: 'shuffle',
           id: '1',
           streamId: '2025-24-04'
@@ -76,11 +88,13 @@ describe('shuffle-repository', () => {
       expect(shuffle?.isOpen).toBe(true);
       expect(shuffle?.getStreamId()).toBe('2025-24-04');
       expect(shuffle?.getOpenedAt()).toEqual(openedAt);
-      expect(shuffle?.getPreviousWinners()).toEqual([
-        'Vin',
-        'Kelsier',
-        'Kaladin'
-      ]);
+
+      const cooldowns = shuffle?.getCooldowns() as Map<string, number>;
+
+      expect(cooldowns.get('Vin')).toBe(2);
+      expect(cooldowns.get('Kelsier')).toBe(2);
+      expect(cooldowns.get('Elend')).toBe(1);
+
       expect(shuffle?.getEntries()).toEqual([]);
     });
   });

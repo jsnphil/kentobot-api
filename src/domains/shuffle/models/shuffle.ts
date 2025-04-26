@@ -3,38 +3,26 @@ import { ShuffleEntry } from './shuffle-entry';
 type User = string;
 type StreamId = string;
 
-// TODO Turn this into a model
-interface ShuffleParticipant {
-  user: User;
-  songId: string;
-}
-
 export class Shuffle {
   private readonly streamId: StreamId;
   private openedAt: Date;
   private durationMs: number = 60000;
 
   private entries: ShuffleEntry[] = [];
-  private previousWinners: User[] = [];
-  private winner: ShuffleParticipant | null = null;
+  // private previousWinners: User[] = [];
   private open = false;
 
-  constructor(
-    streamId: StreamId,
-    openedAt: Date,
-    previousWinners: User[] = []
-  ) {
+  private winnerCooldowns: Map<string, number> = new Map();
+
+  constructor(streamId: StreamId, openedAt: Date) {
     this.streamId = streamId;
     this.openedAt = openedAt;
-    this.previousWinners = previousWinners;
+    // this.previousWinners = previousWinners;
+    this.winnerCooldowns = new Map<string, number>();
   }
 
-  static create(
-    streamId: StreamId,
-    openedAt: Date,
-    previousWinners: User[] = []
-  ): Shuffle {
-    return new Shuffle(streamId, openedAt, previousWinners);
+  static create(streamId: StreamId, openedAt: Date): Shuffle {
+    return new Shuffle(streamId, openedAt);
   }
 
   static load(
@@ -42,11 +30,12 @@ export class Shuffle {
     openedAt: Date,
     entries: ShuffleEntry[],
     isOpen: boolean,
-    previousWinners: User[]
+    winnerCooldowns: Map<string, number>
   ) {
-    const shuffle = new Shuffle(streamId, openedAt, previousWinners);
+    const shuffle = new Shuffle(streamId, openedAt);
     shuffle.entries = entries;
     shuffle.open = isOpen;
+    shuffle.winnerCooldowns = winnerCooldowns;
     return shuffle;
   }
 
@@ -68,7 +57,7 @@ export class Shuffle {
       throw new Error('Shuffle is not open.');
     }
 
-    if (this.previousWinners.includes(user)) {
+    if (this.winnerCooldowns.has(user)) {
       throw new Error('User is on cooldown.');
     }
 
@@ -100,7 +89,9 @@ export class Shuffle {
     const winner =
       this.entries[Math.floor(Math.random() * this.entries.length)];
 
-    this.previousWinners.push(winner.getUser());
+    this.updateCooldowns();
+    this.winnerCooldowns.set(winner.getUser(), 2);
+
     this.entries = [];
 
     return winner;
@@ -125,8 +116,17 @@ export class Shuffle {
     return this.openedAt;
   }
 
-  /* istanbul ignore next */
-  getPreviousWinners(): User[] {
-    return this.previousWinners;
+  private updateCooldowns(): void {
+    this.winnerCooldowns.forEach((winner, user) => {
+      if (winner <= 1) {
+        this.winnerCooldowns.delete(user);
+      } else {
+        this.winnerCooldowns.set(user, winner - 1);
+      }
+    });
+  }
+
+  getCooldowns(): Map<string, number> {
+    return this.winnerCooldowns;
   }
 }

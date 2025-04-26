@@ -6,6 +6,7 @@ import { ToggleShuffleCommand } from '../commands/toggle-shuffle-command';
 import { ShuffleCommandHandler } from '../command-handlers/shuffle-command-handler';
 import { Command } from '../commands/command';
 import { EnterShuffleCommand } from '../commands/enter-shuffle-command';
+import { SelectWinnerCommand } from '../commands/shuffle/select-winner-command';
 
 export const handler = async (event: APIGatewayEvent) => {
   const body = JSON.parse(event.body || '{}');
@@ -38,6 +39,16 @@ export const handler = async (event: APIGatewayEvent) => {
     }
 
     command = new EnterShuffleCommand(user);
+  }
+
+  if (event.path.endsWith('/select-winner')) {
+    command = new SelectWinnerCommand();
+    const winner = await commandHandler.execute(command!);
+
+    return {
+      statusCode: Code.OK,
+      body: JSON.stringify({ winner })
+    };
   }
 
   // TODO Ensure this is defined when the others commands are implemented

@@ -61,13 +61,32 @@ export class ShuffleRepository {
       entries = [];
     }
 
+    const cooldowns: Map<string, number> = new Map<string, number>();
+    if (unmarshalledItem.winnerCooldowns) {
+      console.log('Unmarshalling winner cooldowns...');
+
+      unmarshalledItem.winnerCooldowns.forEach((value: number, key: string) => {
+        cooldowns.set(key, value as number);
+      });
+
+      console.log(Object.entries(unmarshalledItem.winnerCooldowns));
+      for (const [key, value] of Object.entries(
+        unmarshalledItem.winnerCooldowns
+      )) {
+        console.log(`Key: ${key}, Value: ${value}`);
+        cooldowns.set(key, value as number);
+      }
+    }
+
     const shuffle = Shuffle.load(
       unmarshalledItem.streamId,
       new Date(unmarshalledItem.openedAt),
       entries,
       unmarshalledItem.isOpen,
-      unmarshalledItem.previousWinners
+      cooldowns
     );
+
+    console.log('Loaded Shuffle:', shuffle);
 
     return shuffle;
   }
@@ -84,7 +103,7 @@ export class ShuffleRepository {
           streamId: shuffle.getStreamId(),
           openedAt: shuffle.getOpenedAt().toISOString(),
           entries: shuffle.getEntries(),
-          previousWinners: shuffle.getPreviousWinners(),
+          winnerCooldowns: shuffle.getCooldowns(),
           isOpen: shuffle.isOpen
         }
       })

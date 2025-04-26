@@ -137,6 +137,8 @@ describe('Shuffle', () => {
       const winner = shuffle.selectWinner();
       expect(winner?.getUser()).toBe('Vin');
       expect(winner?.getSongId()).toBe('song123');
+      expect(shuffle.isOpen).toBe(false);
+      expect(shuffle.getEntries()).toEqual([]);
     });
 
     it('should return null if no participants', () => {
@@ -150,21 +152,6 @@ describe('Shuffle', () => {
       shuffle = Shuffle.create(streamId, new Date(Date.now() - 1000), []);
       shuffle.selectWinner();
       expect(shuffle.isOpen).toBe(false);
-    });
-  });
-
-  describe('getWinner', () => {
-    it('should return the selected winner', () => {
-      shuffle = Shuffle.create(streamId, new Date(Date.now() - 1000), []);
-      shuffle.start();
-      shuffle.join('Vin', 'song123');
-      const winner = shuffle.selectWinner();
-      expect(winner?.getUser()).toBe('Vin');
-      expect(winner?.getSongId()).toBe('song123');
-    });
-
-    it('should return null if no winner is selected', () => {
-      expect(shuffle.getWinner()).toBeNull();
     });
   });
 

@@ -72,6 +72,7 @@ export class Shuffle {
       throw new Error('User is on cooldown.');
     }
 
+    console.log(`Entries: ${JSON.stringify(this.entries)}`);
     const existingEntry = this.entries.find(
       (entry) => entry.getUser() === user
     );
@@ -100,12 +101,9 @@ export class Shuffle {
       this.entries[Math.floor(Math.random() * this.entries.length)];
 
     this.previousWinners.push(winner.getUser());
+    this.entries = [];
 
     return winner;
-  }
-
-  getWinner(): ShuffleParticipant | null {
-    return this.winner;
   }
 
   getEntries() {

@@ -5,6 +5,7 @@ import { ToggleShuffleCommand } from '../commands/toggle-shuffle-command';
 import { Shuffle } from '../domains/shuffle/models/shuffle';
 import { StreamFactory } from '../domains/stream/factories/stream-factory';
 import { ShuffleRepository } from '../domains/stream/repositories/shuffle-repository';
+import { SelectWinnerCommand } from '../commands/shuffle/select-winner-command';
 
 export class ShuffleCommandHandler {
   private logger = new Logger({
@@ -17,6 +18,8 @@ export class ShuffleCommandHandler {
       await this.handleToggleShuffleCommand(command);
     } else if (command instanceof EnterShuffleCommand) {
       await this.handleEnterShuffleCommand(command);
+    } else if (command instanceof SelectWinnerCommand) {
+      await this.selectShuffleWinner();
     } else {
       throw new Error('Invalid command');
     }
@@ -67,5 +70,23 @@ export class ShuffleCommandHandler {
     await ShuffleRepository.save(shuffle);
 
     // TODO Trigger event to notify the stream about the new participant
+  }
+
+  private async selectShuffleWinner(): Promise<void> {
+    // TODO Throw an error if there is no stream
+    const stream = await StreamFactory.createStream();
+    const shuffle = await ShuffleRepository.getShuffle(stream.getStreamDate());
+
+    if (!shuffle) {
+      throw new Error('No active shuffle');
+    }
+
+    const winner = shuffle.selectWinner();
+
+    // TODO Move the winner up in the song queue
+
+    await ShuffleRepository.save(shuffle);
+
+    // TODO Trigger event to notify the stream about the winner
   }
 }

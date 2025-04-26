@@ -6,6 +6,7 @@ import {
   PutCommand
 } from '@aws-sdk/lib-dynamodb';
 import { Logger } from '@aws-lambda-powertools/logger';
+import { ShuffleEntry } from '../../shuffle/models/shuffle-entry';
 
 export class ShuffleRepository {
   private static client = new DynamoDBClient({
@@ -50,16 +51,22 @@ export class ShuffleRepository {
 
     console.log('Unmarshalled Item:', unmarshalledItem);
 
-    const previousWinners = unmarshalledItem.previousWinners.L.map(
-      (winner: { S: string }) => winner.S
-    );
+    let entries: ShuffleEntry[];
+
+    if (unmarshalledItem.entries) {
+      entries = unmarshalledItem.entries.map((entry: any) => {
+        return new ShuffleEntry(entry.user, entry.songId);
+      });
+    } else {
+      entries = [];
+    }
 
     const shuffle = Shuffle.load(
-      unmarshalledItem.streamId.S,
-      new Date(unmarshalledItem.openedAt.S),
-      unmarshalledItem.entries,
-      unmarshalledItem.isOpen.BOOL,
-      previousWinners
+      unmarshalledItem.streamId,
+      new Date(unmarshalledItem.openedAt),
+      entries,
+      unmarshalledItem.isOpen,
+      unmarshalledItem.previousWinners
     );
 
     return shuffle;

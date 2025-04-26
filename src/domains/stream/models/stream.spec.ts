@@ -289,4 +289,54 @@ describe('Stream', () => {
       expect(songHistory.length).toBe(0);
     });
   });
+
+  describe('bumpShuffleWinner', () => {
+    it('should bump the shuffle winner', async () => {
+      const streamDate = '2023-10-01';
+      const stream = Stream.create(streamDate);
+
+      const songs = [
+        Song.load('1', 'Vin', 'Song 1', SongRequestStatus.QUEUED, 300),
+        Song.load('2', 'Kelsier', 'Song 2', SongRequestStatus.QUEUED, 250),
+        Song.load('3', 'Sazed', 'Song 3', SongRequestStatus.QUEUED, 200),
+        Song.load('4', 'Elend', 'Song 4', SongRequestStatus.QUEUED, 180),
+        Song.load('5', 'Marsh', 'Song 5', SongRequestStatus.QUEUED, 220)
+      ];
+
+      for (const song of songs) {
+        await stream.addSongToQueue(song);
+      }
+
+      stream.bumpShuffleWinner('Elend');
+
+      const songQueue = stream.getSongQueue();
+      console.log(songQueue);
+
+      expect(songQueue.getSongs()[0].id).toBe('4');
+      expect(songQueue.getSongs()[0].status).toBe(
+        SongRequestStatus.SHUFFLE_WINNER
+      );
+    });
+
+    it('should throw an error if the song is not in the queue', () => {
+      const streamDate = '2023-10-01';
+      const stream = Stream.create(streamDate);
+
+      const songs = [
+        Song.load('1', 'Vin', 'Song 1', SongRequestStatus.QUEUED, 300),
+        Song.load('2', 'Kelsier', 'Song 2', SongRequestStatus.QUEUED, 250),
+        Song.load('3', 'Sazed', 'Song 3', SongRequestStatus.QUEUED, 200),
+        Song.load('4', 'Elend', 'Song 4', SongRequestStatus.QUEUED, 180),
+        Song.load('5', 'Marsh', 'Song 5', SongRequestStatus.QUEUED, 220)
+      ];
+
+      for (const song of songs) {
+        stream.addSongToQueue(song);
+      }
+
+      expect(() => stream.bumpShuffleWinner('NonExistentSong')).toThrow(
+        'No song found for user: NonExistentSong'
+      );
+    });
+  });
 });

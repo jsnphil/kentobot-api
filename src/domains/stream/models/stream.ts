@@ -4,7 +4,7 @@ import { Song } from './song';
 import { SongQueue } from './song-queue';
 import { SongMovedInQueueEvent } from '../events/song-moved-in-queue-event';
 import { SongRemovedFromQueue } from '../events/song-removed-from-queue-event';
-import { BumpType } from '../../../types/song-request';
+import { BumpType, SongRequestStatus } from '../../../types/song-request';
 import { BumpService } from '../services/bump-service';
 import { SongBumpedEvent } from '../events/song-bumped-event';
 import { SongAddedToQueueEvent } from '../events/song-added-to-queue-event';
@@ -70,7 +70,7 @@ export class Stream {
   }
 
   public async addSongToQueue(song: Song) {
-    await this.songQueue.addSong(song);
+    this.songQueue.addSong(song);
 
     await EventPublisher.publishEvent(
       new SongAddedToQueueEvent(song),
@@ -183,6 +183,22 @@ export class Stream {
         new Date()
       ),
       StreamEvent.SONG_PLAYED
+    );
+  }
+
+  public bumpShuffleWinner(shuffleWinner: string) {
+    const song = this.songQueue.getSongRequestByUser(shuffleWinner);
+    if (!song) {
+      throw new Error(`No song found for user: ${shuffleWinner}`);
+    }
+
+    song.status = SongRequestStatus.SHUFFLE_WINNER;
+
+    this.songQueue.moveSong(song.id, 0);
+
+    EventPublisher.publishEvent(
+      new SongBumpedEvent(song.id, 0),
+      StreamEvent.SONG_BUMPED
     );
   }
 }

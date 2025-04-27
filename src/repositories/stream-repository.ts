@@ -3,7 +3,7 @@ import {
   GetItemCommand,
   PutItemCommand
 } from '@aws-sdk/client-dynamodb';
-import { Stream } from '../domains/stream/models/stream';
+import { Stream } from '@domains/stream/models/stream';
 
 import { Logger } from '@aws-lambda-powertools/logger';
 import { unmarshall } from '@aws-sdk/util-dynamodb';

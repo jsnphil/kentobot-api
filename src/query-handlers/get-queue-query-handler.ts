@@ -1,5 +1,5 @@
-import { StreamFactory } from '../domains/stream/factories/stream-factory';
-import { GetQueueRequest } from '../queries/get-queue-request';
+import { StreamFactory } from '@domains/stream/factories/stream-factory';
+import { GetQueueRequest } from '@queries/get-queue-request';
 
 export class GetQueueRequestHandler {
   public async execute(query: GetQueueRequest) {

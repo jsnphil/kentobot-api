@@ -1,4 +1,4 @@
-import { YouTubeVideoResult } from '../../../common/services/youtube-service';
+import { YouTubeVideoResult } from '../../../services/youtube-service';
 import { SongValidator } from './song-validator';
 
 describe('SongValidator', () => {

@@ -49,6 +49,7 @@ module.exports = {
     '^@commands/(.*)': '<rootDir>/src/commands/$1',
     '^@command-handlers/(.*)': '<rootDir>/src/command-handlers/$1',
     '^@query-handlers/(.*)': '<rootDir>/src/query-handlers/$1',
-    '^@queries/(.*)': '<rootDir>/src/queries/$1'
+    '^@queries/(.*)': '<rootDir>/src/queries/$1',
+    '^@common/(.*)': '<rootDir>/src/common/$1'
   }
 };

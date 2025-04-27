@@ -8,9 +8,6 @@ import {
 } from '@aws-sdk/client-dynamodb';
 import { mockClient } from 'aws-sdk-client-mock';
 
-// jest.mock('../models/stream');
-// jest.mock('../models/song');
-// jest.mock('../models/song-queue');
 jest.mock('@aws-lambda-powertools/logger');
 
 const mockDynamoDB = mockClient(DynamoDBClient);

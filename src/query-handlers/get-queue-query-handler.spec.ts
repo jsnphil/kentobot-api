@@ -1,8 +1,8 @@
 import { StreamRepository } from '@repositories/stream-repository';
-import { Stream } from '../domains/stream/models/stream';
-import { GetQueueRequest } from '../queries/get-queue-request';
+import { Stream } from '@domains/stream/models/stream';
+import { GetQueueRequest } from '@queries/get-queue-request';
 import { SongRequestStatus } from '../types/song-request';
-import { StreamFactory } from '../domains/stream/factories/stream-factory';
+import { StreamFactory } from '@domains/stream/factories/stream-factory';
 import { GetQueueRequestHandler } from './get-queue-query-handler';
 
 jest.mock('@repositories/stream-repository');

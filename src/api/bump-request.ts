@@ -2,8 +2,8 @@ import { Logger } from '@aws-lambda-powertools/logger';
 import { APIGatewayEvent } from 'aws-lambda';
 import { KentobotErrorCode } from '../types/types';
 import { Code } from 'better-status-codes';
-import { BumpSongCommandHandler } from '../command-handlers/bump-song-command-handler';
-import { BumpSongCommand } from '../commands/bump-song-command';
+import { BumpSongCommandHandler } from '@command-handlers/bump-song-command-handler';
+import { BumpSongCommand } from '@commands/bump-song-command';
 
 const logger = new Logger({ serviceName: 'bump-song-lambda' });
 

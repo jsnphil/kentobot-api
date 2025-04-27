@@ -2,10 +2,10 @@ import { handler } from './start-stream';
 import { APIGatewayEvent } from 'aws-lambda';
 import { Code } from 'better-status-codes';
 import { KentobotErrorCode } from '../types/types';
-import { StartStreamCommandHandler } from '../command-handlers/start-stream-command-handler';
+import { StartStreamCommandHandler } from '@command-handlers/start-stream-command-handler';
 import { generateStreamDate } from '@utils/utilities';
 
-jest.mock('../command-handlers/start-stream-command-handler');
+jest.mock('@command-handlers/start-stream-command-handler');
 jest.mock('@utils/utilities');
 
 describe('start-stream handler', () => {

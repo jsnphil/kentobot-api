@@ -1,7 +1,7 @@
 import { APIGatewayEvent } from 'aws-lambda';
-import { apiLambdaWrapper } from '../common/api-lambda-wrapper';
-import { SavePlayedSongCommandHandler } from '../command-handlers/save-played-song-command-handler';
-import { SavePlayedSongCommand } from '../commands/save-played-song-command';
+import { apiLambdaWrapper } from '@common/api-lambda-wrapper';
+import { SavePlayedSongCommandHandler } from '@command-handlers/save-played-song-command-handler';
+import { SavePlayedSongCommand } from '@commands/save-played-song-command';
 
 export const handler = async (event: APIGatewayEvent) => {
   // Parse the event to get the song details

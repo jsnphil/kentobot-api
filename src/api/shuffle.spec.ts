@@ -2,10 +2,10 @@ import request from 'supertest';
 import { handler } from './shuffle';
 import { APIGatewayEvent } from 'aws-lambda';
 import { Code } from 'better-status-codes';
-import { ShuffleCommandHandler } from '../command-handlers/shuffle-command-handler';
-import { SelectWinnerCommand } from '../commands/shuffle/select-winner-command';
+import { ShuffleCommandHandler } from '@command-handlers/shuffle-command-handler';
+import { SelectWinnerCommand } from '@commands/shuffle/select-winner-command';
 
-jest.mock('../command-handlers/shuffle-command-handler');
+jest.mock('@command-handlers/shuffle-command-handler');
 
 describe('Shuffle API Handler', () => {
   let mockExecute: jest.Mock;

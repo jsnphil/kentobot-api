@@ -24,8 +24,13 @@
       "@repositories/*": ["./src/repositories/*"],
       "@schemas/*": ["./src/schemas/*"],
       "@utils/*": ["./src/utils/*"],
-      "@song-queue": ["./src/song-queue"],
-      "@types": ["./src/types"]
+      "@types/*": ["./src/types/*"],
+      "@domains/*": ["./src/domains/*"],
+      "@commands/*": ["./src/commands/*"],
+      "@command-handlers/*": ["./src/command-handlers/*"],
+      "@query-handlers/*": ["./src/queries/*"],
+      "@queries/*": ["./src/queries/*"],
+      "@common/*": ["./src/common/*"]
     }
   },
   "exclude": ["node_modules", "cdk.out"]

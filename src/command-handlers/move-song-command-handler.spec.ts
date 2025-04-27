@@ -1,11 +1,11 @@
 import { MoveSongCommandHandler } from './move-song-command-handler';
-import { MoveSongCommand } from '../commands/move-song-command';
+import { MoveSongCommand } from '@commands/move-song-command';
 import { StreamRepository } from '@repositories/stream-repository';
-import { Stream } from '../domains/stream/models/stream';
+import { Stream } from '@domains/stream/models/stream';
 import { generateStreamDate } from '@utils/utilities';
 
 jest.mock('@repositories/stream-repository');
-jest.mock('../domains/stream/models/stream');
+jest.mock('@domains/stream/models/stream');
 jest.mock('@utils/utilities');
 
 describe('MoveSongCommandHandler', () => {

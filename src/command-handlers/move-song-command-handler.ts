@@ -1,7 +1,7 @@
 import { generateStreamDate } from '@utils/utilities';
-import { StreamRepository } from '../repositories/stream-repository';
-import { Stream } from '../domains/stream/models/stream';
-import { MoveSongCommand } from '../commands/move-song-command';
+import { StreamRepository } from '@repositories/stream-repository';
+import { Stream } from '@domains/stream/models/stream';
+import { MoveSongCommand } from '@commands/move-song-command';
 
 export class MoveSongCommandHandler {
   public async execute(command: MoveSongCommand) {

@@ -1,11 +1,11 @@
 import { StartStreamCommandHandler } from './start-stream-command-handler';
-import { StartStreamCommand } from '../commands/start-stream-command';
+import { StartStreamCommand } from '@commands/start-stream-command';
 import { StreamRepository } from '@repositories/stream-repository';
-import { Stream } from '../domains/stream/models/stream';
+import { Stream } from '@domains/stream/models/stream';
 import { Logger } from '@aws-lambda-powertools/logger';
 
 jest.mock('@repositories/stream-repository');
-jest.mock('../domains/stream/models/stream');
+jest.mock('@domains/stream/models/stream');
 
 describe('StartStreamCommandHandler', () => {
   let handler: StartStreamCommandHandler;

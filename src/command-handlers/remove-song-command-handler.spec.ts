@@ -1,9 +1,9 @@
 import { RemoveSongCommandHandler } from './remove-song-command-handler';
 import { StreamRepository } from '@repositories/stream-repository';
-import { Stream } from '../domains/stream/models/stream';
+import { Stream } from '@domains/stream/models/stream';
 
 jest.mock('@repositories/stream-repository');
-jest.mock('../domains/stream/models/stream');
+jest.mock('@domains/stream/models/stream');
 
 describe('RemoveSongCommandHandler', () => {
   let removeSongCommandHandler: RemoveSongCommandHandler;

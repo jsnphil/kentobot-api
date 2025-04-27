@@ -44,7 +44,12 @@ module.exports = {
     '^@services/(.*)': '<rootDir>/src/services/$1',
     '^@repositories/(.*)': '<rootDir>/src/repositories/$1',
     '^@utils/(.*)': '<rootDir>/src/utils/$1',
-    '^@song-queue': '<rootDir>/src/song-queue',
-    '^@types/(.*)': '<rootDir>/src/types/$1'
+    '^@types/(.*)': '<rootDir>/src/types/$1',
+    '^@domains/(.*)': '<rootDir>/src/domains/$1',
+    '^@commands/(.*)': '<rootDir>/src/commands/$1',
+    '^@command-handlers/(.*)': '<rootDir>/src/command-handlers/$1',
+    '^@query-handlers/(.*)': '<rootDir>/src/query-handlers/$1',
+    '^@queries/(.*)': '<rootDir>/src/queries/$1',
+    '^@common/(.*)': '<rootDir>/src/common/$1'
   }
 };

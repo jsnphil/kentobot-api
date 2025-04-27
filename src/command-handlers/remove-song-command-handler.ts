@@ -1,6 +1,6 @@
 import { generateStreamDate } from '@utils/utilities';
-import { StreamRepository } from '../repositories/stream-repository';
-import { Stream } from '../domains/stream/models/stream';
+import { StreamRepository } from '@repositories/stream-repository';
+import { Stream } from '@domains/stream/models/stream';
 
 export class RemoveSongCommandHandler {
   public async execute(command: {

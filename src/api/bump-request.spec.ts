@@ -1,9 +1,9 @@
 import { APIGatewayProxyEvent } from 'aws-lambda';
 import { handler } from './bump-request';
-import { BumpSongCommandHandler } from '../command-handlers/bump-song-command-handler';
+import { BumpSongCommandHandler } from '@command-handlers/bump-song-command-handler';
 import { Code } from 'better-status-codes';
 
-jest.mock('../command-handlers/bump-song-command-handler');
+jest.mock('@command-handlers/bump-song-command-handler');
 
 describe('bumpSong', () => {
   const mockExecute = jest.fn();

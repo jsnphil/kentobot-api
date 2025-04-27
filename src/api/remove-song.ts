@@ -1,8 +1,8 @@
 import { APIGatewayEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { RemoveSongCommand } from '../commands/remove-song-command';
-import { RemoveSongCommandHandler } from '../command-handlers/remove-song-command-handler';
-import { KentobotErrorCode } from '../types/types';
+import { RemoveSongCommand } from '@commands/remove-song-command';
+import { RemoveSongCommandHandler } from '@command-handlers/remove-song-command-handler';
 import { Code } from 'better-status-codes';
+import { KentobotErrorCode } from '../types/types';
 
 export const handler = async (
   event: APIGatewayEvent

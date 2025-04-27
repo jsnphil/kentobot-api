@@ -3,7 +3,10 @@ import { Code } from 'better-status-codes';
 
 export function apiLambdaWrapper<
   T extends (event: APIGatewayEvent) => Promise<APIGatewayProxyResult>
->(p0: (event: APIGatewayEvent) => Promise<{ statusCode: 200; body: string; }>, handle: T) {
+>(
+  p0: (event: APIGatewayEvent) => Promise<{ statusCode: 200; body: string }>,
+  handle: T
+) {
   return async (event: APIGatewayEvent): Promise<APIGatewayProxyResult> => {
     try {
       const result = await handle(event);

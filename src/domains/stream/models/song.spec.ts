@@ -1,9 +1,9 @@
 import { Song } from './song';
-import { YouTubeService } from '../../../common/services/youtube-service';
+import { YouTubeService } from '@services/youtube-service';
 import { SongValidator } from '../validators/song-validator';
 import { SongRequestStatus } from '../../../types/song-request';
 
-jest.mock('../../../common/services/youtube-service');
+jest.mock('@services/youtube-service');
 jest.mock('../validators/song-validator');
 
 describe('Song', () => {

@@ -1,4 +1,4 @@
-import { YouTubeVideoResult } from '../../../common/services/youtube-service';
+import { YouTubeVideoResult } from '../../../services/youtube-service';
 
 export class SongValidator {
   public static validate(songMetadata: YouTubeVideoResult): void {

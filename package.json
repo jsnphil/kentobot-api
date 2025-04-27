@@ -11,8 +11,8 @@
     "test:ui": "vitest --ui",
     "cdk": "cdk",
     "deploy-dev": "cdk deploy Dev/* --require-approval never",
-    "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
-    "lint:ci": "eslint . --ext .js,.jsx,.ts,.tsx --max-warnings 0"
+    "lint": "eslint . --ext .ts",
+    "lint:ci": "eslint . --ext .ts --max-warnings 0"
   },
   "devDependencies": {
     "@eslint/js": "^9.22.0",

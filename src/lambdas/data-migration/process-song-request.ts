@@ -5,7 +5,7 @@ import {
   PutEventsCommand
 } from '@aws-sdk/client-eventbridge';
 import { Logger } from '@aws-lambda-powertools/logger';
-import { YouTubeService } from '../../common/services/youtube-service';
+import { YouTubeService } from '../../services/youtube-service';
 
 const eventBusClient = new EventBridgeClient({ region: 'us-east-1' });
 const logger = new Logger({ serviceName: 'processSongHistoryRequest' });

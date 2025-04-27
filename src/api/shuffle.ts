@@ -2,11 +2,11 @@ import { APIGatewayEvent } from 'aws-lambda';
 import { apiLambdaWrapper } from '../common/api-lambda-wrapper';
 import { Code } from 'better-status-codes';
 
-import { ToggleShuffleCommand } from '../commands/toggle-shuffle-command';
-import { ShuffleCommandHandler } from '../command-handlers/shuffle-command-handler';
-import { Command } from '../commands/command';
-import { EnterShuffleCommand } from '../commands/enter-shuffle-command';
-import { SelectWinnerCommand } from '../commands/shuffle/select-winner-command';
+import { ToggleShuffleCommand } from '@commands/toggle-shuffle-command';
+import { ShuffleCommandHandler } from '@command-handlers/shuffle-command-handler';
+import { Command } from '@commands/command';
+import { EnterShuffleCommand } from '@commands/enter-shuffle-command';
+import { SelectWinnerCommand } from '@commands/shuffle/select-winner-command';
 
 export const handler = async (event: APIGatewayEvent) => {
   const body = JSON.parse(event.body || '{}');

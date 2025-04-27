@@ -1,8 +1,8 @@
 import { APIGatewayEvent } from 'aws-lambda';
 import { handler } from './request-song';
-import { RequestSongCommandHandler } from '../command-handlers/request-song-command-handler';
+import { RequestSongCommandHandler } from '@command-handlers/request-song-command-handler';
 
-jest.mock('../command-handlers/request-song-command-handler');
+jest.mock('@command-handlers/request-song-command-handler');
 
 describe('request-song handler', () => {
   let mockExecute: jest.Mock;

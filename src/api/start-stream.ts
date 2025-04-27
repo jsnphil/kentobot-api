@@ -1,6 +1,6 @@
 import { generateStreamDate } from '@utils/utilities';
-import { StartStreamCommand } from '../commands/start-stream-command';
-import { StartStreamCommandHandler } from '../command-handlers/start-stream-command-handler';
+import { StartStreamCommand } from '@commands/start-stream-command';
+import { StartStreamCommandHandler } from '@command-handlers/start-stream-command-handler';
 import { APIGatewayEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { Code } from 'better-status-codes';
 import { KentobotErrorCode } from '../types/types';

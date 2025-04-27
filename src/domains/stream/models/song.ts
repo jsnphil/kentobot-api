@@ -1,4 +1,4 @@
-import { YouTubeService } from '../../../common/services/youtube-service';
+import { YouTubeService } from '../../../services/youtube-service';
 import { SongRequestStatus } from '../../../types/song-request';
 import { SongValidator } from '../validators/song-validator';
 

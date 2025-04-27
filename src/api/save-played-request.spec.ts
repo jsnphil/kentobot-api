@@ -1,9 +1,9 @@
 import { handler } from './save-played-request';
 import { APIGatewayEvent, APIGatewayProxyEvent } from 'aws-lambda';
-import { SavePlayedSongCommandHandler } from '../command-handlers/save-played-song-command-handler';
-import { SavePlayedSongCommand } from '../commands/save-played-song-command';
+import { SavePlayedSongCommandHandler } from '@command-handlers/save-played-song-command-handler';
+import { SavePlayedSongCommand } from '@commands/save-played-song-command';
 
-jest.mock('../command-handlers/save-played-song-command-handler');
+jest.mock('@command-handlers/save-played-song-command-handler');
 
 const createEvent = (body: any): APIGatewayProxyEvent =>
   ({

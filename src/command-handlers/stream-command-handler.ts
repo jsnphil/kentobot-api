@@ -1,5 +1,4 @@
 import { Command } from '@commands/command';
-import { AddSongToHistoryCommand } from '@commands/stream/add-song-to-history-command';
 import { StreamFactory } from '@domains/stream/factories/stream-factory';
 import { Song } from '@domains/stream/models/song';
 import { StreamRepository } from '@repositories/stream-repository';
@@ -11,28 +10,9 @@ export class StreamCommandHandler {
     serviceName: 'stream-command-handler'
   });
 
-  public async execute(command: Command): Promise<string | void> {
-    if (command instanceof AddSongToHistoryCommand) {
-      await this.handleAddSongToHistoryCommand(command);
-    }
-  }
+  public async execute(command: Command): Promise<string | void> {}
 
-  private async handleAddSongToHistoryCommand(
-    command: AddSongToHistoryCommand
-  ): Promise<void> {
-    // TODO Change to a loadStream and throw error if not found
-    const stream = await StreamFactory.createStream();
-
-    const { songId, songTitle, requestedBy, duration } = command;
-    const song = Song.load(
-      songId,
-      requestedBy,
-      songTitle,
-      SongRequestStatus.PLAYED,
-      duration
-    );
-
-    stream.addSongToHistory(song);
-    await StreamRepository.saveStream(stream);
+  private async handleAddSongToHistoryCommand(): Promise<void> {
+    // TODO Implement this method
   }
 }

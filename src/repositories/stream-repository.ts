@@ -45,6 +45,7 @@ export class StreamRepository {
   }
 
   // Save a stream
+  // TODO Rename to just save
   public static async saveStream(stream: Stream): Promise<void> {
     try {
       const command = new PutItemCommand({

@@ -17,10 +17,12 @@ export class WebSocketStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: WebSocketStackProps) {
     super(scope, id, props);
 
-    const tableArn = cdk.Fn.importValue(`table-arn-${props.environmentName}`);
-    const database = ddb.Table.fromTableAttributes(
+    const tableArn = cdk.Fn.importValue(
+      `stream-data-table-arn-${props.environmentName}`
+    );
+    const streamDataTable = ddb.Table.fromTableAttributes(
       this,
-      `stream-data-${props.environmentName}`,
+      `stream-data-table-arn-${props.environmentName}`,
       {
         tableArn: tableArn
       }
@@ -43,11 +45,11 @@ export class WebSocketStack extends cdk.Stack {
       memorySize: 512,
       architecture: ARCHITECTURE,
       environment: {
-        STREAM_DATA_TABLE: database.tableName
+        STREAM_DATA_TABLE: streamDataTable.tableName
       }
     });
 
-    database.grantReadWriteData(messageHandler);
+    streamDataTable.grantReadWriteData(messageHandler);
 
     const webSocketApi = new apiGateway.WebSocketApi(this, 'Kentobot-WSS', {
       apiName: `KentobotWSS-${props.environmentName}`,

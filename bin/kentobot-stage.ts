@@ -16,22 +16,22 @@ export class KentobotStage extends cdk.Stage {
     // Add both stacks to the stage
     const dataStack = new DataStack(this, 'DatabaseStack', props);
     const apiStack = new ApiStack(this, 'ApiStack', props);
-    const dataMigration = new DataMigrationStack(
-      this,
-      'DataMigrationStack',
-      props
-    );
+    // const dataMigration = new DataMigrationStack(
+    //   this,
+    //   'DataMigrationStack',
+    //   props
+    // );
 
     const webSocketStack = new WebSocketStack(this, 'WebSocketStack', props);
 
     apiStack.addDependency(dataStack);
-    dataMigration.addDependency(dataStack);
-    dataMigration.addDependency(apiStack);
+    // dataMigration.addDependency(dataStack);
+    // dataMigration.addDependency(apiStack);
     webSocketStack.addDependency(dataStack);
     apiStack.addDependency(webSocketStack);
 
     cdk.Tags.of(this).add('environment', props.environmentName);
     cdk.Tags.of(apiStack).add('system', 'api');
-    cdk.Tags.of(dataMigration).add('system', 'data-migration');
+    // cdk.Tags.of(dataMigration).add('system', 'data-migration');
   }
 }

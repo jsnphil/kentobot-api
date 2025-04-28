@@ -39,18 +39,32 @@ export class ApiStack extends cdk.Stack {
     // ***********************
     // Import shared resources
     // ***********************
-    const tableArn = cdk.Fn.importValue(`table-arn-${props.environmentName}`);
-
-    const tableStreamArn = cdk.Fn.importValue(
-      `database-stream-arn-${props.environmentName}`
+    const streamDataTableArn = cdk.Fn.importValue(
+      `stream-data-table-arn-${props.environmentName}`
     );
 
-    const database = ddb.Table.fromTableAttributes(
+    const streamDataTableStreamArn = cdk.Fn.importValue(
+      `stream-data-table-stream-arn-${props.environmentName}`
+    );
+
+    const streamDataTable = ddb.Table.fromTableAttributes(
       this,
-      `stream-data-${props.environmentName}`,
+      `stream-data-table-${props.environmentName}`,
       {
-        tableArn: tableArn,
-        tableStreamArn: tableStreamArn
+        tableArn: streamDataTableArn,
+        tableStreamArn: streamDataTableStreamArn
+      }
+    );
+
+    const songHistoryTableArn = cdk.Fn.importValue(
+      `song-history-table-arn-${props.environmentName}`
+    );
+
+    const songHistoryTable = ddb.Table.fromTableAttributes(
+      this,
+      `song-history-table-${props.environmentName}`,
+      {
+        tableArn: songHistoryTableArn
       }
     );
 
@@ -244,7 +258,7 @@ export class ApiStack extends cdk.Stack {
           new iam.PolicyStatement({
             actions: ['dynamodb:GetItem', 'dynamodb:Query'],
             effect: iam.Effect.ALLOW,
-            resources: [database.tableArn]
+            resources: [streamDataTable.tableArn]
           })
         ]
       })
@@ -304,7 +318,7 @@ export class ApiStack extends cdk.Stack {
                 "S": "songInfo"
               }
             },
-            "TableName": "${database.tableName}"
+            "TableName": "${streamDataTable.tableName}"
           }`
         }
       }
@@ -381,7 +395,7 @@ export class ApiStack extends cdk.Stack {
         ],
         requestTemplates: {
           'application/json': `{
-            "TableName": "${database.tableName}",
+            "TableName": "${streamDataTable.tableName}",
             "KeyConditionExpression": "pk = :pk AND begins_with(sk, :sk)",
             "ExpressionAttributeValues": {
               ":pk": {
@@ -433,7 +447,7 @@ export class ApiStack extends cdk.Stack {
         },
         logRetention: logs.RetentionDays.ONE_WEEK,
         environment: {
-          STREAM_DATA_TABLE: database.tableName
+          STREAM_DATA_TABLE: streamDataTable.tableName
         },
         timeout: cdk.Duration.seconds(30),
         memorySize: 2048,
@@ -441,12 +455,12 @@ export class ApiStack extends cdk.Stack {
       }
     );
 
-    database.grantReadData(getAllSongRequestsLambda);
+    streamDataTable.grantReadData(getAllSongRequestsLambda);
 
     getAllSongRequestsLambda.addToRolePolicy(
       new iam.PolicyStatement({
         actions: ['dynamodb:Query'],
-        resources: [`${database.tableArn}/index/gsi1`]
+        resources: [`${streamDataTable.tableArn}/index/gsi1`]
       })
     );
 
@@ -477,14 +491,14 @@ export class ApiStack extends cdk.Stack {
       environment: {
         ...lambdaEnvironment,
         ENVIRONMENT: props.environmentName,
-        STREAM_DATA_TABLE: database.tableName
+        STREAM_DATA_TABLE: streamDataTable.tableName
       },
       timeout: cdk.Duration.minutes(1),
       memorySize: 512,
       architecture: ARCHITECTURE
     });
 
-    database.grantReadWriteData(startStreamLambda);
+    streamDataTable.grantReadWriteData(startStreamLambda);
 
     streamEndpointResource.addMethod(
       'POST',
@@ -540,7 +554,7 @@ export class ApiStack extends cdk.Stack {
         DJ_HOUR_REQUEST_DURATION_NAME: djRequestDurationLimit.parameterName,
         LICENSED_VIDEO_TOGGLE_NAME: licensedContentToggle.parameterName,
         MAX_SONGS_PER_USER: maxSongRequestsPerUser.parameterName,
-        STREAM_DATA_TABLE: database.tableName,
+        STREAM_DATA_TABLE: streamDataTable.tableName,
         WEBSOCKET_API_ID: webSocketApi.apiId,
         WEB_SOCKET_STAGE: webSocketApiStage,
         EVENT_BUS_NAME: eventBus.bus.eventBusName
@@ -556,7 +570,7 @@ export class ApiStack extends cdk.Stack {
     licensedContentToggle.grantRead(songRequestLambda);
     youtubeApiKeyParameter.grantRead(songRequestLambda);
     maxSongRequestsPerUser.grantRead(songRequestLambda);
-    database.grantReadWriteData(songRequestLambda);
+    streamDataTable.grantReadWriteData(songRequestLambda);
     eventBus.bus.grantPutEventsTo(songRequestLambda);
 
     const requestSongEndpoint = queueEndpoint.addResource('request-song');
@@ -584,7 +598,7 @@ export class ApiStack extends cdk.Stack {
         environment: {
           ...lambdaEnvironment,
           ENVIRONMENT: props.environmentName,
-          STREAM_DATA_TABLE: database.tableName,
+          STREAM_DATA_TABLE: streamDataTable.tableName,
           WEBSOCKET_API_ID: webSocketApi.apiId,
           WEB_SOCKET_STAGE: webSocketApiStage,
           EVENT_BUS_NAME: eventBus.bus.eventBusName
@@ -595,7 +609,7 @@ export class ApiStack extends cdk.Stack {
       }
     );
 
-    database.grantReadWriteData(removeRequestLambda);
+    streamDataTable.grantReadWriteData(removeRequestLambda);
     eventBus.bus.grantPutEventsTo(removeRequestLambda);
 
     const removeRequestResource = queueEndpoint
@@ -630,7 +644,7 @@ export class ApiStack extends cdk.Stack {
       environment: {
         ...lambdaEnvironment,
         ENVIRONMENT: props.environmentName,
-        STREAM_DATA_TABLE: database.tableName,
+        STREAM_DATA_TABLE: streamDataTable.tableName,
         EVENT_BUS_NAME: eventBus.bus.eventBusName
       },
       timeout: cdk.Duration.minutes(1),
@@ -638,7 +652,7 @@ export class ApiStack extends cdk.Stack {
       architecture: ARCHITECTURE
     });
 
-    database.grantReadWriteData(moveRequestLambda);
+    streamDataTable.grantReadWriteData(moveRequestLambda);
 
     moveSongResource.addMethod(
       'PATCH',
@@ -664,14 +678,14 @@ export class ApiStack extends cdk.Stack {
       environment: {
         ...lambdaEnvironment,
         ENVIRONMENT: props.environmentName,
-        STREAM_DATA_TABLE: database.tableName
+        STREAM_DATA_TABLE: streamDataTable.tableName
       },
       timeout: cdk.Duration.minutes(1),
       memorySize: 512,
       architecture: ARCHITECTURE
     });
 
-    database.grantReadData(getQueueLambda);
+    streamDataTable.grantReadData(getQueueLambda);
 
     queueEndpoint.addMethod(
       'GET',
@@ -696,7 +710,7 @@ export class ApiStack extends cdk.Stack {
       environment: {
         ...lambdaEnvironment,
         ENVIRONMENT: props.environmentName,
-        STREAM_DATA_TABLE: database.tableName,
+        STREAM_DATA_TABLE: streamDataTable.tableName,
         EVENT_BUS_NAME: eventBus.bus.eventBusName
       },
       timeout: cdk.Duration.minutes(1),
@@ -704,7 +718,7 @@ export class ApiStack extends cdk.Stack {
       architecture: ARCHITECTURE
     });
 
-    database.grantReadWriteData(shuffleLambda);
+    streamDataTable.grantReadWriteData(shuffleLambda);
 
     const toggleShuffleResource = shuffleResource.addResource('toggle');
 
@@ -759,7 +773,7 @@ export class ApiStack extends cdk.Stack {
         environment: {
           ...lambdaEnvironment,
           ENVIRONMENT: props.environmentName,
-          STREAM_DATA_TABLE: database.tableName,
+          STREAM_DATA_TABLE: streamDataTable.tableName,
           WEBSOCKET_API_ID: webSocketApi.apiId,
           WEB_SOCKET_STAGE: webSocketApiStage
         }
@@ -779,7 +793,7 @@ export class ApiStack extends cdk.Stack {
       lambda: streamEventHandler
     });
 
-    database.grantReadData(streamEventHandler);
+    streamDataTable.grantReadData(streamEventHandler);
 
     streamEventHandler.addToRolePolicy(
       new iam.PolicyStatement({

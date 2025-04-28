@@ -28,7 +28,7 @@
       "@domains/*": ["./src/domains/*"],
       "@commands/*": ["./src/commands/*"],
       "@command-handlers/*": ["./src/command-handlers/*"],
-      "@query-handlers/*": ["./src/queries/*"],
+      "@query-handlers/*": ["./src/query-handlers/*"],
       "@queries/*": ["./src/queries/*"],
       "@common/*": ["./src/common/*"]
     }

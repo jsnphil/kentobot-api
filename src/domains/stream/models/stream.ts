@@ -201,4 +201,8 @@ export class Stream {
       StreamEvent.SONG_BUMPED
     );
   }
+
+  public addSongToHistory(song: Song) {
+    this.songHistory.push(song);
+  }
 }

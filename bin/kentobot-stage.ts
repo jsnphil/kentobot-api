@@ -4,6 +4,7 @@ import { DataStack } from '../lib/stacks/data-stack';
 import { ApiStack } from '../lib/stacks/api-stack';
 import { DataMigrationStack } from '../lib/stacks/data-migration-stack';
 import { WebSocketStack } from '../lib/stacks/web-socket-stack';
+import { EventSubscriptionStack } from '../lib/stacks/event-subscription-stack';
 
 export interface KentobotProps extends cdk.StageProps {
   readonly environmentName: string;
@@ -16,6 +17,12 @@ export class KentobotStage extends cdk.Stage {
     // Add both stacks to the stage
     const dataStack = new DataStack(this, 'DatabaseStack', props);
     const apiStack = new ApiStack(this, 'ApiStack', props);
+    const eventSubscriptionStack = new EventSubscriptionStack(
+      this,
+      'EventSubscriptionStack',
+      props
+    );
+    // const dataMigrationStack = new DataMigrationStack(this, 'DataMigrationStack', props);
     // const dataMigration = new DataMigrationStack(
     //   this,
     //   'DataMigrationStack',

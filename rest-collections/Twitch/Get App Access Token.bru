@@ -4,8 +4,22 @@ meta {
   seq: 2
 }
 
-get {
+post {
   url: https://id.twitch.tv/oauth2/token
-  body: none
+  body: formUrlEncoded
   auth: none
+}
+
+body:text {
+  client_id=hof5gwx0su6owfnys0yan9c87zr6t&client_secret=41vpdji4e9gif29md0ouet6fktd2&grant_type=client_credentials
+}
+
+body:form-urlencoded {
+  client_id: zn7bzocvwf97qg8pt6e3jaqscfmip7
+  client_secret: 6v7ffgvogj3too8uj8njdvo4vvjfgd
+  grant_type: client_credentials
+}
+
+body:multipart-form {
+  : 
 }

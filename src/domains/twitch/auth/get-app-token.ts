@@ -5,9 +5,9 @@ import {
 } from '@aws-sdk/client-dynamodb';
 import fetch from 'node-fetch';
 
-const TWITCH_CLIENT_ID = process.env.TWITCH_CLIENT_ID || '';
-const TWITCH_CLIENT_SECRET = process.env.TWITCH_CLIENT_SECRET || '';
-const DYNAMODB_TABLE_NAME = process.env.DYNAMODB_TABLE_NAME || 'TwitchTokens';
+const TWITCH_CLIENT_ID = process.env.TWITCH_CLIENT_ID!;
+const TWITCH_CLIENT_SECRET = process.env.TWITCH_CLIENT_SECRET!;
+const DYNAMODB_TABLE_NAME = process.env.TABLE_NAME!;
 
 class TwitchTokenService {
   private dynamoDBClient: DynamoDBClient;

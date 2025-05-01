@@ -4,7 +4,8 @@ import * as lambda from 'aws-cdk-lib/aws-lambda-nodejs';
 import * as apiGateway from 'aws-cdk-lib/aws-apigateway';
 import { Construct } from 'constructs';
 import { ARCHITECTURE, NODE_RUNTIME } from '../CDKConstants';
-import { Api } from '../constructs/api';
+import * as ssm from 'aws-cdk-lib/aws-ssm';
+import * as ddb from 'aws-cdk-lib/aws-dynamodb';
 
 export interface EventSubscriptionStackProps extends cdk.StackProps {
   environmentName: string;
@@ -17,6 +18,18 @@ export class EventSubscriptionStack extends cdk.Stack {
     props: EventSubscriptionStackProps
   ) {
     super(scope, id, props);
+
+    const streamDataTableArn = cdk.Fn.importValue(
+      `stream-data-table-arn-${props.environmentName}`
+    );
+
+    const streamDataTable = ddb.Table.fromTableAttributes(
+      this,
+      `stream-data-table-${props.environmentName}`,
+      {
+        tableArn: streamDataTableArn
+      }
+    );
 
     // const eventBus = new events.EventBus(this, 'EventBus', {
     // eventBusName: 'EventBus',
@@ -70,6 +83,49 @@ export class EventSubscriptionStack extends cdk.Stack {
     twitchResource.addResource('events').addMethod(
       'POST',
       new apiGateway.LambdaIntegration(twitchWebHook, {
+        proxy: true,
+        allowTestInvoke: true
+      })
+    );
+
+    const twitchClientId =
+      ssm.StringParameter.fromSecureStringParameterAttributes(
+        this,
+        'TwitchClientId',
+        {
+          parameterName: '/dev/twitch/client-id', // Replace with your parameter name
+          version: 1
+        }
+      );
+
+    const twitchClientSecret =
+      ssm.StringParameter.fromSecureStringParameterAttributes(
+        this,
+        'TwitchClientSecret',
+        {
+          parameterName: '/dev/twitch/client-secret', // Replace with your parameter name
+          version: 1
+        }
+      );
+
+    const appTokenLambda = new lambda.NodejsFunction(this, 'TwitchAppToken', {
+      runtime: NODE_RUNTIME,
+      entry: 'src/api/twitch/get-app-token.ts',
+      handler: 'handler',
+      environment: {
+        TWITCH_CLIENT_ID: twitchClientId.stringValue,
+        TWITCH_CLIENT_SECRET: twitchClientSecret.stringValue,
+        TABLE_NAME: streamDataTable.tableName
+      },
+      architecture: ARCHITECTURE
+    });
+
+    streamDataTable.grantReadWriteData(appTokenLambda);
+
+    // TODO Add API key
+    twitchResource.addResource('app-token').addMethod(
+      'GET',
+      new apiGateway.LambdaIntegration(appTokenLambda, {
         proxy: true,
         allowTestInvoke: true
       })

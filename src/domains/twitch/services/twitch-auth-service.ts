@@ -12,6 +12,8 @@ export class TwitchAuthService {
   async getValidAppToken(): Promise<string> {
     const token = await this.tokenStore.loadAppToken();
 
+    // TOOD Verify token with /validate endpoint
+
     if (token && !this.isExpiring(token.expiresAt)) {
       return token.accessToken;
     }

@@ -5,6 +5,7 @@ import {
   GetCommand,
   PutCommand
 } from '@aws-sdk/lib-dynamodb';
+import { skip } from 'node:test';
 
 const TABLE_NAME = process.env.TABLE_NAME;
 
@@ -21,7 +22,7 @@ export class TwitchTokenStore {
     const result = await this.docClient.send(
       new GetCommand({
         TableName: TABLE_NAME,
-        Key: { tokenType: 'app' }
+        Key: { pk: 'twitch', sk: 'appToken' }
       })
     );
     return (result.Item as AppTokenRecord) ?? null;
@@ -37,7 +38,8 @@ export class TwitchTokenStore {
       new PutCommand({
         TableName: TABLE_NAME,
         Item: {
-          tokenType: 'app',
+          pk: 'twitch',
+          sk: 'appToken',
           accessToken: token.accessToken,
           expiresAt
         }

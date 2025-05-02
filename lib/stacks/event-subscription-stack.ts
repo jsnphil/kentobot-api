@@ -69,8 +69,8 @@ export class EventSubscriptionStack extends cdk.Stack {
       entry: 'src/lambdas/twitch/twitch-webhook.ts',
       handler: 'handler',
       environment: {
-        TWITCH_CLIENT_ID: process.env.TWITCH_CLIENT_ID || '',
-        TWITCH_CLIENT_SECRET: process.env.TWITCH_CLIENT_SECRET || '',
+        // TWITCH_CLIENT_ID: process.env.TWITCH_CLIENT_ID || '',
+        // TWITCH_CLIENT_SECRET: process.env.TWITCH_CLIENT_SECRET || '',
         TWITCH_SECRET: 'secret key',
         TWITCH_WEBHOOK_CALLBACK_URL:
           process.env.TWITCH_WEBHOOK_CALLBACK_URL || '',
@@ -88,33 +88,33 @@ export class EventSubscriptionStack extends cdk.Stack {
       })
     );
 
-    const twitchClientId =
-      ssm.StringParameter.fromSecureStringParameterAttributes(
-        this,
-        'TwitchClientId',
-        {
-          parameterName: '/dev/twitch/client-id', // Replace with your parameter name
-          version: 1
-        }
-      );
+    // const twitchClientId =
+    //   ssm.StringParameter.fromSecureStringParameterAttributes(
+    //     this,
+    //     'TwitchClientId',
+    //     {
+    //       parameterName: '/dev/twitch/client-id', // Replace with your parameter name
+    //       version: 1
+    //     }
+    //   );
 
-    const twitchClientSecret =
-      ssm.StringParameter.fromSecureStringParameterAttributes(
-        this,
-        'TwitchClientSecret',
-        {
-          parameterName: '/dev/twitch/client-secret', // Replace with your parameter name
-          version: 1
-        }
-      );
+    // const twitchClientSecret =
+    //   ssm.StringParameter.fromSecureStringParameterAttributes(
+    //     this,
+    //     'TwitchClientSecret',
+    //     {
+    //       parameterName: '/dev/twitch/client-secret', // Replace with your parameter name
+    //       version: 1
+    //     }
+    //   );
 
     const appTokenLambda = new lambda.NodejsFunction(this, 'TwitchAppToken', {
       runtime: NODE_RUNTIME,
       entry: 'src/api/twitch/get-app-token.ts',
       handler: 'handler',
       environment: {
-        TWITCH_CLIENT_ID: twitchClientId.stringValue,
-        TWITCH_CLIENT_SECRET: twitchClientSecret.stringValue,
+        // TWITCH_CLIENT_ID: twitchClientId.stringValue,
+        // TWITCH_CLIENT_SECRET: twitchClientSecret.stringValue,
         TABLE_NAME: streamDataTable.tableName
       },
       architecture: ARCHITECTURE

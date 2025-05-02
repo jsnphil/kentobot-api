@@ -1,7 +1,9 @@
 // src/domains/twitch/infra/twitch-auth-client.ts
 
-const clientId = process.env.TWITCH_CLIENT_ID!;
-const clientSecret = process.env.TWITCH_CLIENT_SECRET!;
+// const clientId = process.env.TWITCH_CLIENT_ID!;
+const clientId = 'zn7bzocvwf97qg8pt6e3jaqscfmip7';
+const clientSecret = '6v7ffgvogj3too8uj8njdvo4vvjfgd';
+// const clientSecret = process.env.TWITCH_CLIENT_SECRET!;
 const tokenEndpoint = 'https://id.twitch.tv/oauth2/token';
 
 export class TwitchAuthClient {
@@ -32,5 +34,19 @@ export class TwitchAuthClient {
       accessToken: data.access_token,
       expiresIn: data.expires_in
     };
+  }
+
+  async validateToken(token: string): Promise<boolean> {
+    const response = await fetch(`https://id.twitch.tv/oauth2/validate`, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+
+    if (response.status !== 200) {
+      throw new Error(`Failed to validate token: ${response.statusText}`);
+    }
+
+    return true;
   }
 }

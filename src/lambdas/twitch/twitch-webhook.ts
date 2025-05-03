@@ -6,12 +6,10 @@ import crypto from 'crypto';
 const TWITCH_SECRET = process.env.TWITCH_SECRET || '';
 
 // Notification request headers
-const TWITCH_MESSAGE_ID = 'Twitch-Eventsub-Message-Id'.toLowerCase();
-const TWITCH_MESSAGE_TIMESTAMP =
-  'Twitch-Eventsub-Message-Timestamp'.toLowerCase();
-const TWITCH_MESSAGE_SIGNATURE =
-  'Twitch-Eventsub-Message-Signature'.toLowerCase();
-const MESSAGE_TYPE = 'Twitch-Eventsub-Message-Type'.toLowerCase();
+const TWITCH_MESSAGE_ID = 'Twitch-Eventsub-Message-Id';
+const TWITCH_MESSAGE_TIMESTAMP = 'Twitch-Eventsub-Message-Timestamp';
+const TWITCH_MESSAGE_SIGNATURE = 'Twitch-Eventsub-Message-Signature';
+const MESSAGE_TYPE = 'Twitch-Eventsub-Message-Type';
 
 // Notification message types
 const MESSAGE_TYPE_VERIFICATION = 'webhook_callback_verification';
@@ -31,9 +29,9 @@ export const handler = async (
     // TODO Put this in an authorizer
 
     // Validate the request signature
-    const messageId = event.headers[TWITCH_MESSAGE_ID]?.toLowerCase();
-    const timestamp = event.headers[TWITCH_MESSAGE_TIMESTAMP]?.toLowerCase();
-    const signature = event.headers[TWITCH_MESSAGE_SIGNATURE]?.toLowerCase();
+    const messageId = event.headers[TWITCH_MESSAGE_ID];
+    const timestamp = event.headers[TWITCH_MESSAGE_TIMESTAMP];
+    const signature = event.headers[TWITCH_MESSAGE_SIGNATURE];
     const body = event.body || '';
 
     const notification = JSON.parse(body);

@@ -46,7 +46,7 @@ export const handler = async (
     }
 
     const secret = getSecret();
-    const message = `${messageId}${timestamp}${body}`;
+    const message = `${messageId}${timestamp}${event.body}`;
     const hmac = HMAC_PREFIX + getHmac(secret, message);
 
     logger.debug(`Message: ${message}`);

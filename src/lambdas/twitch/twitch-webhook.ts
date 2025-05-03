@@ -6,10 +6,12 @@ import crypto from 'crypto';
 const TWITCH_SECRET = process.env.TWITCH_SECRET || '';
 
 // Notification request headers
-const TWITCH_MESSAGE_ID = 'Twitch-Eventsub-Message-Id';
-const TWITCH_MESSAGE_TIMESTAMP = 'Twitch-Eventsub-Message-Timestamp';
-const TWITCH_MESSAGE_SIGNATURE = 'Twitch-Eventsub-Message-Signature';
-const MESSAGE_TYPE = 'Twitch-Eventsub-Message-Type';
+const TWITCH_MESSAGE_ID = 'Twitch-Eventsub-Message-Id'.toLowerCase();
+const TWITCH_MESSAGE_TIMESTAMP =
+  'Twitch-Eventsub-Message-Timestamp'.toLowerCase();
+const TWITCH_MESSAGE_SIGNATURE =
+  'Twitch-Eventsub-Message-Signature'.toLowerCase();
+const MESSAGE_TYPE = 'Twitch-Eventsub-Message-Type'.toLowerCase();
 
 // Notification message types
 const MESSAGE_TYPE_VERIFICATION = 'webhook_callback_verification';
@@ -19,92 +21,61 @@ const MESSAGE_TYPE_REVOCATION = 'revocation';
 // Prepend this string to the HMAC that's created from the message
 const HMAC_PREFIX = 'sha256=';
 
-const logger = new Logger();
+const logger = new Logger({ serviceName: 'twitch-event-webhook' });
+
+// interface TwitchEvent {
+//   subscription: {
+//     id: string;
+//     status: string;
+//     type: string;
+//     version: string;
+//     condition: Record<string, any>;
+//     created_at: string;
+//     transport: {
+//       method: string;
+//       callback: string;
+//     };
+//     cost: number;
+//   };
+//   event: Record<string, any>;
+// }
 
 export const handler = async (
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> => {
-  logger.logEventIfEnabled(event); //
+  logger.logEventIfEnabled(event);
+
   try {
-    // TODO Put this in an authorizer
-
-    // Validate the request signature
-    const messageId = event.headers[TWITCH_MESSAGE_ID];
-    const timestamp = event.headers[TWITCH_MESSAGE_TIMESTAMP];
-    const signature = event.headers[TWITCH_MESSAGE_SIGNATURE];
-    const body = event.body || '';
-
-    const notification = JSON.parse(body);
-
-    if (!messageId || !timestamp || !signature) {
-      return {
-        statusCode: 400,
-        body: 'Missing required headers'
-      };
-    }
-
-    const secret = getSecret();
-    const message = `${messageId}${timestamp}${event.body}`;
-    const hmac = HMAC_PREFIX + getHmac(secret, message);
-
-    logger.debug(`Message: ${message}`);
-    logger.debug(`Signature: ${signature}`);
-    logger.debug(`HMAC Prefix: ${HMAC_PREFIX}`);
-    logger.debug(`Secret: ${TWITCH_SECRET}`);
-    logger.debug(`HMAC: ${hmac}`);
-    logger.debug(`Valid Signature: ${validSignature(hmac, signature)}`);
-
-    if (!validSignature(hmac, signature)) {
-      logger.warn(
-        `Invalid signature for messageId: ${messageId}, timestamp: ${timestamp}`
-      );
-
+    if (!validRequest(event.headers, event.body)) {
       return {
         statusCode: 403,
-        body: 'Invalid signature'
+        body: 'Invalid request'
       };
     }
 
-    logger.info(`Valid signature for messageId: ${messageId}`);
-
-    // Handle the event
-    const parsedBody = JSON.parse(body);
+    const notification = JSON.parse(event.body!);
 
     if (event.headers[MESSAGE_TYPE] === MESSAGE_TYPE_VERIFICATION) {
-      // Respond to the verification challenge
       return {
         statusCode: Code.OK,
-        body: notification.challenge,
+        body: notification!.challenge,
         headers: {
           'Content-Type': 'text/plain'
         }
       };
     } else if (event.headers[MESSAGE_TYPE] === MESSAGE_TYPE_REVOCATION) {
-      // Handle revocation event
-      console.log('Revocation event:', parsedBody);
-
-      console.log(`${notification.subscription.type} notifications revoked!`);
-      console.log(`reason: ${notification.subscription.status}`);
-      console.log(
-        `condition: ${JSON.stringify(
-          notification.subscription.condition,
-          null,
-          4
-        )}`
-      );
+      logger.debug(`${notification.subscription.type} notifications revoked!`);
+      logger.debug(`Revocation reason: ${notification.subscription.status}`);
 
       return {
         statusCode: Code.NO_CONTENT,
-        body: parsedBody.challenge,
+        body: notification.challenge,
         headers: {
           'Content-Type': 'text/plain'
         }
       };
     } else if (event.headers[MESSAGE_TYPE] === MESSAGE_TYPE_NOTIFICATION) {
-      // TODO Handle event
-
-      // Handle notification event
-      console.log('Notification event:', notification);
+      logger.debug('Notification event:', notification);
 
       return {
         statusCode: Code.NO_CONTENT,
@@ -117,7 +88,7 @@ export const handler = async (
       };
     }
   } catch (error) {
-    console.error('Error handling Twitch webhook:', error);
+    logger.error(`Error handling Twitch webhook: ${error}`);
 
     return {
       statusCode: 500,
@@ -125,6 +96,37 @@ export const handler = async (
     };
   }
 };
+
+function validRequest(
+  headers: Record<string, string | undefined>,
+  body: string | null
+): boolean {
+  if (!headers || !body) {
+    return false;
+  }
+
+  const messageId = headers[TWITCH_MESSAGE_ID];
+  const timestamp = headers[TWITCH_MESSAGE_TIMESTAMP];
+  const signature = headers[TWITCH_MESSAGE_SIGNATURE];
+
+  if (!messageId || !timestamp || !signature) {
+    return false;
+  }
+
+  const secret = getSecret();
+  const message = `${messageId}${timestamp}${body}`;
+  const hmac = HMAC_PREFIX + getHmac(secret, message);
+
+  if (validSignature(hmac, signature)) {
+    logger.debug('Valid signature');
+    return true;
+  } else {
+    logger.warn(
+      `Invalid signature for messageId: ${messageId}, timestamp: ${timestamp}`
+    );
+    return false;
+  }
+}
 
 function getSecret() {
   // TODO - Use a secret manager to get the secret

@@ -1,3 +1,4 @@
+import { Logger } from '@aws-lambda-powertools/logger';
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { Code } from 'better-status-codes';
 import crypto from 'crypto';
@@ -17,15 +18,18 @@ const MESSAGE_TYPE_VERIFICATION = 'webhook_callback_verification';
 const MESSAGE_TYPE_NOTIFICATION = 'notification';
 const MESSAGE_TYPE_REVOCATION = 'revocation';
 
-
-
 // Prepend this string to the HMAC that's created from the message
 const HMAC_PREFIX = 'sha256=';
+
+const logger = new Logger();
 
 export const handler = async (
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> => {
+  logger.logEventIfEnabled(event); //
   try {
+    // TODO Put this in an authorizer
+
     // Validate the request signature
     const messageId = event.headers[TWITCH_MESSAGE_ID]?.toLowerCase();
     const timestamp = event.headers[TWITCH_MESSAGE_TIMESTAMP]?.toLowerCase();
@@ -41,19 +45,29 @@ export const handler = async (
       };
     }
 
+    const secret = getSecret();
     const message = `${messageId}${timestamp}${body}`;
-    const hmac = crypto
-      .createHmac('sha256', TWITCH_SECRET)
-      .update(message)
-      .digest('hex');
-    const expectedSignature = `sha256=${hmac}`;
+    const hmac = HMAC_PREFIX + getHmac(secret, message);
 
-    if (signature !== expectedSignature) {
+    logger.debug(`Message: ${message}`);
+    logger.debug(`Signature: ${signature}`);
+    logger.debug(`HMAC Prefix: ${HMAC_PREFIX}`);
+    logger.debug(`Secret: ${TWITCH_SECRET}`);
+    logger.debug(`HMAC: ${hmac}`);
+    logger.debug(`Valid Signature: ${validSignature(hmac, signature)}`);
+
+    if (!validSignature(hmac, signature)) {
+      logger.warn(
+        `Invalid signature for messageId: ${messageId}, timestamp: ${timestamp}`
+      );
+
       return {
         statusCode: 403,
         body: 'Invalid signature'
       };
     }
+
+    logger.info(`Valid signature for messageId: ${messageId}`);
 
     // Handle the event
     const parsedBody = JSON.parse(body);
@@ -113,3 +127,19 @@ export const handler = async (
     };
   }
 };
+
+function getSecret() {
+  // TODO - Use a secret manager to get the secret
+  if (!TWITCH_SECRET) {
+    throw new Error('TWITCH_SECRET is not set');
+  }
+  return TWITCH_SECRET;
+}
+
+function getHmac(secret: string, message: string) {
+  return crypto.createHmac('sha256', secret).update(message).digest('hex');
+}
+
+function validSignature(hmac: string, signature: string) {
+  return crypto.timingSafeEqual(Buffer.from(hmac), Buffer.from(signature));
+}

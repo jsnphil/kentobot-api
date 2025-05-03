@@ -71,11 +71,13 @@ export class EventSubscriptionStack extends cdk.Stack {
       environment: {
         // TWITCH_CLIENT_ID: process.env.TWITCH_CLIENT_ID || '',
         // TWITCH_CLIENT_SECRET: process.env.TWITCH_CLIENT_SECRET || '',
-        TWITCH_SECRET: 'secret key',
+        TWITCH_SECRET: 'secret-key',
         TWITCH_WEBHOOK_CALLBACK_URL:
           process.env.TWITCH_WEBHOOK_CALLBACK_URL || '',
         TWITCH_WEBHOOK_CALLBACK_PORT:
-          process.env.TWITCH_WEBHOOK_CALLBACK_PORT || '3000'
+          process.env.TWITCH_WEBHOOK_CALLBACK_PORT || '3000',
+        POWERTOOLS_LOGGER_LOG_EVENT: 'true',
+        POWERTOOLS_LOG_LEVEL: 'DEBUG'
       },
       architecture: ARCHITECTURE
     });

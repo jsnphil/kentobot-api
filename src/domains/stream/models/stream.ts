@@ -231,7 +231,5 @@ export class Stream {
       songId: song.id,
       shuffleWinner
     });
-
-    
   }
 }

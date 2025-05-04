@@ -1,14 +1,11 @@
 import * as cdk from 'aws-cdk-lib';
 
-// TODO Combine these
 import * as apiGateway from 'aws-cdk-lib/aws-apigateway';
 import * as webSocketGateway from 'aws-cdk-lib/aws-apigatewayv2';
-
 import * as lambda from 'aws-cdk-lib/aws-lambda-nodejs';
 import * as logs from 'aws-cdk-lib/aws-logs';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
 import * as sqs from 'aws-cdk-lib/aws-sqs';
-import * as lambdaEventSources from 'aws-cdk-lib/aws-lambda-event-sources';
 import * as ddb from 'aws-cdk-lib/aws-dynamodb';
 import * as iam from 'aws-cdk-lib/aws-iam';
 
@@ -17,16 +14,9 @@ import { createSongRequestParameters } from '../constructs/song-request-paramete
 import { ARCHITECTURE, lambdaEnvironment, NODE_RUNTIME } from '../CDKConstants';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 import path = require('path');
-import {
-  errorResponses,
-  getSongPlaysResponseModel,
-  saveSongPlayResponseModel,
-  saveSongRequestModel,
-  songRequestDetailsModel
-} from '../constructs/api-models';
+
 import { EventBus } from '../constructs/event-bus';
 import { Api } from '../constructs/api';
-import { WSSBroadcastRestEndpoint } from '../constructs/WSSBroadcastLambdaEndpoint';
 
 export interface ApiStackProps extends cdk.StackProps {
   environmentName: string;
@@ -53,18 +43,6 @@ export class ApiStack extends cdk.Stack {
       {
         tableArn: streamDataTableArn,
         tableStreamArn: streamDataTableStreamArn
-      }
-    );
-
-    const songHistoryTableArn = cdk.Fn.importValue(
-      `song-history-table-arn-${props.environmentName}`
-    );
-
-    const songHistoryTable = ddb.Table.fromTableAttributes(
-      this,
-      `song-history-table-${props.environmentName}`,
-      {
-        tableArn: songHistoryTableArn
       }
     );
 
@@ -117,41 +95,6 @@ export class ApiStack extends cdk.Stack {
       }
     });
 
-    // const playedSongEventLambda = new lambda.NodejsFunction(
-    //   this,
-    //   'playedSongEventHandler',
-    //   {
-    //     runtime: NODE_RUNTIME,
-    //     handler: 'handler',
-    //     entry: path.join(
-    //       __dirname,
-    //       '../../src/lambdas/rest-api/',
-    //       'song-request/save-song-data.ts'
-    //     ),
-    //     bundling: {
-    //       minify: false,
-    //       externalModules: ['aws-sdk']
-    //     },
-    //     logRetention: logs.RetentionDays.ONE_WEEK,
-    //     environment: {
-    //       ENVIRONMENT: props.environmentName,
-    //       STREAM_DATA_TABLE: database.tableName
-    //     },
-    //     timeout: cdk.Duration.minutes(1),
-    //     memorySize: 512,
-    //     architecture: ARCHITECTURE
-    //   }
-    // );
-
-    // playedSongEventLambda.addEventSource(
-    //   new lambdaEventSources.SqsEventSource(saveSongQueue, {
-    //     batchSize: 1
-    //   })
-    // );
-
-    // saveSongQueue.grantConsumeMessages(playedSongEventLambda);
-    // database.grantReadWriteData(playedSongEventLambda);
-
     eventBus.addQueueTarget(this, 'save-song-data-target', {
       source: 'kentobot-api',
       eventPattern: {
@@ -159,275 +102,6 @@ export class ApiStack extends cdk.Stack {
       },
       queue: saveSongQueue
     });
-
-    // Save song played endpoint
-    // const saveSongResource = songRequestEndpointResource.addResource('save');
-
-    api.role.attachInlinePolicy(
-      new iam.Policy(this, 'put-events-policy', {
-        statements: [
-          new iam.PolicyStatement({
-            actions: ['events:PutEvents'],
-            effect: iam.Effect.ALLOW,
-            resources: [eventBus.bus.eventBusArn]
-          })
-        ]
-      })
-    );
-
-    const saveSongPlayedIntegration = new apiGateway.AwsIntegration({
-      service: 'events',
-      action: 'PutEvents',
-      options: {
-        credentialsRole: api.role,
-        passthroughBehavior: apiGateway.PassthroughBehavior.WHEN_NO_MATCH,
-        integrationResponses: [
-          {
-            statusCode: '200',
-            responseTemplates: {
-              'application/json': `
-                  #set($context.responseOverride.status = 202)
-                  {
-                  "message": "Song request play received",
-                  "eventId": "$input.path('$.Entries[0].EventId')"
-                  }`
-            },
-            selectionPattern: '2\\d{2}'
-          },
-          ...errorResponses
-        ],
-        requestTemplates: {
-          'application/json': `
-              #set($inputRoot = $input.path('$'))
-              #set($context.requestOverride.header.X-Amz-Target = "AWSEvents.PutEvents")
-              #set($context.requestOverride.header.Content-Type = "application/x-amz-json-1.1")
-              {
-                "Entries": [
-                  {
-                    "DetailType": "song-played",
-                    "Source": "kentobot-api",
-                    "Detail": "{\\"title\\": \\"$inputRoot.title\\", \\"youtubeId\\": \\"$inputRoot.youtubeId\\", \\"length\\": $inputRoot.length, \\"requestedBy\\": \\"$inputRoot.requestedBy\\", \\"played\\": \\"$inputRoot.played\\"}",
-                    "EventBusName": "${eventBus.bus.eventBusName}"
-                  }
-                ]
-              }`
-        }
-      }
-    });
-
-    // saveSongResource.addMethod('POST', saveSongPlayedIntegration, {
-    //   apiKeyRequired: true,
-    //   methodResponses: [
-    //     {
-    //       statusCode: '200',
-    //       responseModels: {
-    //         'application/json': saveSongPlayResponseModel(this, api.apiGateway)
-    //       }
-    //     },
-    //     ...errorResponses
-    //   ],
-    //   requestValidator: new apiGateway.RequestValidator(
-    //     this,
-    //     'body-validator',
-    //     {
-    //       restApi: api.apiGateway,
-    //       requestValidatorName: 'body-validator',
-    //       validateRequestBody: true
-    //     }
-    //   ),
-    //   requestModels: {
-    //     'application/json': saveSongRequestModel(this, api.apiGateway)
-    //   }
-    // });
-
-    // ***********************
-    // Get song details and plays endpoint
-    // ***********************
-    const getSongRequestResource =
-      songRequestEndpointResource.addResource('{songId}');
-
-    const getSongRequestDetailsResource =
-      getSongRequestResource.addResource('details');
-
-    const getSongRequestPlaysResource =
-      getSongRequestResource.addResource('plays');
-
-    api.role.attachInlinePolicy(
-      new iam.Policy(this, `api-dynamodb-policy`, {
-        statements: [
-          new iam.PolicyStatement({
-            actions: ['dynamodb:GetItem', 'dynamodb:Query'],
-            effect: iam.Effect.ALLOW,
-            resources: [streamDataTable.tableArn]
-          })
-        ]
-      })
-    );
-
-    // ***********************
-    // Get song details
-    // ***********************
-    const getSongRequestDetailsIntegration = new apiGateway.AwsIntegration({
-      service: 'dynamodb',
-      action: 'GetItem',
-      options: {
-        credentialsRole: api.role,
-        passthroughBehavior: apiGateway.PassthroughBehavior.WHEN_NO_MATCH,
-        integrationResponses: [
-          {
-            statusCode: '200',
-            responseTemplates: {
-              'application/json': `{
-                #if($input.path('$.Item') && $input.path('$.Item').size() > 0)
-                "items": [{
-                  "youtubeId": "$input.path('$.Item.youtube_id.S')",
-                  "title": "$input.path('$.Item.song_title.S')",
-                  "length": $input.path('$.Item.song_length.N')
-                  }]
-                #else
-                #set($context.responseOverride.status = 404)
-                "code": 404,
-                "message": "Not found",
-                "errors": ["No request found with ID [$method.request.path.songId]."]
-                #end
-              }`
-            },
-            selectionPattern: '2\\d{2}' // Match all 2xx successful responses
-          },
-          // Not Found Response: No Items
-          {
-            statusCode: '404',
-            responseTemplates: {
-              'application/json': `{
-                "code": 404,
-                "message": "Not found",
-                "errors": ["No request found with ID [$method.request.path.songId]."]
-              }`
-            },
-            selectionPattern: '.*"error":.*' // Match when "error" exists in the output
-          },
-          ...errorResponses
-        ],
-        requestTemplates: {
-          'application/json': `{
-            "Key": {
-              "pk": {
-                "S": "yt#$method.request.path.songId"
-              },
-              "sk": {
-                "S": "songInfo"
-              }
-            },
-            "TableName": "${streamDataTable.tableName}"
-          }`
-        }
-      }
-    });
-
-    getSongRequestDetailsResource.addMethod(
-      'GET',
-      getSongRequestDetailsIntegration,
-      {
-        methodResponses: [
-          {
-            statusCode: '200',
-            responseModels: {
-              'application/json': songRequestDetailsModel(this, api.apiGateway)
-            }
-          },
-          ...errorResponses
-        ]
-      }
-    );
-
-    // ***********************
-    // Get song plays endpoint
-    // ***********************
-    const getSongRequestPlaysIntegration = new apiGateway.AwsIntegration({
-      service: 'dynamodb',
-      action: 'Query',
-      options: {
-        credentialsRole: api.role,
-        passthroughBehavior: apiGateway.PassthroughBehavior.WHEN_NO_MATCH,
-        integrationResponses: [
-          {
-            statusCode: '200',
-            responseTemplates: {
-              'application/json': `{
-                #if($input.path('$.Items') && $input.path('$.Items').size() > 0)
-                  #set($inputRoot = $input.path('$'))
-                  "youtubeId": "$method.request.path.songId",
-                  "plays": [
-                    #foreach($item in $inputRoot.Items)
-                    {
-                      "date": "$item.request_date.S",
-                      "requestedBy": "$item.requested_by.S",
-                      "sotnContender": $item.sotn_contender.BOOL,
-                      "sotnWinner": $item.sotn_winner.BOOL,
-                      "sotsWinner": $item.sots_winner.BOOL
-                    }
-                    #if($foreach.hasNext),#end 
-                    #end
-                  ]
-                #else
-                #set($context.responseOverride.status = 404)
-                "code": 404,
-                "message": "Not found",
-                "errors": ["No request found with ID [$method.request.path.songId]."]
-                #end
-              }`
-            },
-            selectionPattern: '2\\d{2}' // Match all 2xx successful responses
-          },
-          // Not Found Response: No Items
-          {
-            statusCode: '404',
-            responseTemplates: {
-              'application/json': `{
-                "code": 404,
-                "message": "Not found",
-                "errors": ["No request found with ID [$method.request.path.songId]."]
-              }`
-            },
-            selectionPattern: '.*"error":.*' // Match when "error" exists in the output
-          },
-          ...errorResponses
-        ],
-        requestTemplates: {
-          'application/json': `{
-            "TableName": "${streamDataTable.tableName}",
-            "KeyConditionExpression": "pk = :pk AND begins_with(sk, :sk)",
-            "ExpressionAttributeValues": {
-              ":pk": {
-                "S": "yt#$method.request.path.songId"
-              },
-              ":sk": {
-                "S": "songPlay"
-              }
-            }
-          }`
-        }
-      }
-    });
-
-    getSongRequestPlaysResource.addMethod(
-      'GET',
-      getSongRequestPlaysIntegration,
-      {
-        methodResponses: [
-          {
-            statusCode: '200',
-            responseModels: {
-              'application/json': getSongPlaysResponseModel(
-                this,
-                api.apiGateway
-              )
-            }
-          },
-          ...errorResponses
-        ]
-      }
-    );
 
     // Get all songs endpoint
     const getAllSongRequestsLambda = new lambda.NodejsFunction(

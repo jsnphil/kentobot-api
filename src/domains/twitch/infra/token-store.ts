@@ -5,7 +5,6 @@ import {
   GetCommand,
   PutCommand
 } from '@aws-sdk/lib-dynamodb';
-import { skip } from 'node:test';
 
 const TABLE_NAME = process.env.TABLE_NAME;
 

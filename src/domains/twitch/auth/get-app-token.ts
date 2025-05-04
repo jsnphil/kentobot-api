@@ -3,6 +3,7 @@ import {
   GetItemCommand,
   PutItemCommand
 } from '@aws-sdk/client-dynamodb';
+import { TwitchTokenResponse } from '../../../types/twitch';
 import fetch from 'node-fetch';
 
 const TWITCH_CLIENT_ID = process.env.TWITCH_CLIENT_ID!;
@@ -83,7 +84,7 @@ class TwitchAPIService {
       throw new Error('Failed to fetch access token from Twitch API');
     }
 
-    const data = await response.json();
+    const data = (await response.json()) as TwitchTokenResponse;
     return {
       token: data.access_token,
       expiresIn: data.expires_in

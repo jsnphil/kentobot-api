@@ -1,16 +1,10 @@
-import { StreamEvent } from '../../../types/event-types';
-import { DomainEvent } from '../../domain-event';
+import { KentobotDomainEvent } from '../../../core/events/domain-event';
+import { SongAddedToQueuePayload } from './event-payload';
 
-export class SongEnteredInShuffleEvent extends DomainEvent {
-  constructor(public readonly songId: string, public readonly user: string) {
-    super(StreamEvent.SONG_ENTERED_IN_SHUFFLE);
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  protected serialize(): Record<string, any> {
-    return {
-      songId: this.songId,
-      user: this.user
-    };
-  }
-}
+// TODO Finish and move to shuffle domain
+export type UserEnteredInShuffleEvent =
+  KentobotDomainEvent<SongAddedToQueuePayload> & {
+    type: 'song-added-to-queue';
+    payload: SongAddedToQueuePayload;
+    version: 1;
+  };

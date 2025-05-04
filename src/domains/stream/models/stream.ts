@@ -1,14 +1,20 @@
-import { EventPublisher } from '../../../common/event-publisher';
-import { StreamEvent } from '../../../types/event-types';
+// import { EventPublisher } from '../../../common/event-publisher';
+// import { StreamEvent } from '../../../types/event-types';
 import { Song } from './song';
 import { SongQueue } from './song-queue';
-import { SongMovedInQueueEvent } from '../events/song-moved-in-queue-event';
-import { SongRemovedFromQueue } from '../events/song-removed-from-queue-event';
+// import { SongMovedInQueueEvent } from '../events/song-moved-in-queue-event';
+// import { SongRemovedFromQueue } from '../events/song-removed-from-queue-event';
 import { BumpType, SongRequestStatus } from '../../../types/song-request';
-import { SongBumpedEvent } from '../events/song-bumped-event';
-import { SongAddedToQueueEvent } from '../events/song-added-to-queue-event';
-import { SongPlayedEvent } from '../events/song-played-event';
+// import { SongBumpedEvent } from '../events/song-bumped-event';
+// import { SongAddedToQueueEvent } from '../events/song-added-to-queue-event';
+// import { SongPlayedEvent } from '../events/song-played-event';
 import { BumpService } from '@services/bump-service';
+import { createDomainEvent } from '@domains/domain-event';
+import { SongAddedToQueueEvent } from '../events/song-added-to-queue-event';
+import { SongRemovedFromQueueEvent } from '../events/song-removed-from-queue-event';
+import { SongMovedInQueueEvent } from '../events/song-moved-in-queue-event';
+import { SongBumpedEvent } from '../events/song-bumped-event';
+import { SongPlayedEvent } from '../events/song-played-event';
 
 export class Stream {
   private streamDate: string;
@@ -72,28 +78,45 @@ export class Stream {
   public async addSongToQueue(song: Song) {
     this.songQueue.addSong(song);
 
-    await EventPublisher.publishEvent(
-      new SongAddedToQueueEvent(song),
-      StreamEvent.SONG_ADDED_TO_QUEUE
-    );
+    // TOOD Move this to the queue subdomain and pickup with an event dispatcher
+
+    const event: SongAddedToQueueEvent = {
+      type: 'song-added-to-queue',
+      payload: {
+        songId: song.id,
+        requestedBy: song.requestedBy,
+        title: song.title,
+        duration: song.duration
+      },
+      version: 1
+    };
   }
 
   public removeSongFromQueue(songId: string) {
     this.songQueue.removeSong(songId);
 
-    EventPublisher.publishEvent(
-      new SongRemovedFromQueue(songId),
-      StreamEvent.SONG_REMOVED_FROM_QUEUE
-    );
+    // TOOD Move this to the queue subdomain and pickup with an event dispatcher
+    const event: SongRemovedFromQueueEvent = {
+      type: 'song-removed-from-queue',
+      payload: {
+        songId
+      },
+      version: 1
+    };
   }
 
   public moveSong(songId: string, newPosition: number) {
     this.songQueue.moveSong(songId, newPosition - 1);
 
-    EventPublisher.publishEvent(
-      new SongMovedInQueueEvent(songId, newPosition),
-      StreamEvent.SONG_MOVED
-    );
+    // TOOD Move this to the queue subdomain and pickup with an event dispatcher
+    const event: SongMovedInQueueEvent = {
+      type: 'song-moved-in-queue',
+      payload: {
+        songId,
+        newPosition
+      },
+      version: 1
+    };
   }
 
   public async bumpSongForUser(
@@ -125,10 +148,15 @@ export class Stream {
 
     this.decrementBumpCount(bumpType);
 
-    EventPublisher.publishEvent(
-      new SongBumpedEvent(songId, bumpPosition),
-      StreamEvent.SONG_BUMPED
-    );
+    // TOOD Move this to the queue subdomain and pickup with an event dispatcher
+    const event: SongBumpedEvent = {
+      type: 'song-bumped',
+      payload: {
+        songId,
+        bumpPosition
+      },
+      version: 1
+    };
   }
 
   bumpAvailable(bumpType: BumpType) {
@@ -174,16 +202,18 @@ export class Stream {
   public savePlayedSong(song: Song) {
     this.songHistory.push(song);
 
-    EventPublisher.publishEvent(
-      new SongPlayedEvent(
-        song.id,
-        song.requestedBy,
-        song.title,
-        song.duration,
-        new Date()
-      ),
-      StreamEvent.SONG_PLAYED
-    );
+    // TOOD Move this to the queue subdomain and pickup with an event dispatcher
+    const event: SongPlayedEvent = {
+      type: 'song-played',
+      payload: {
+        songId: song.id,
+        requestedBy: song.requestedBy,
+        title: song.title,
+        duration: song.duration,
+        playededOn: new Date().toISOString()
+      },
+      version: 1
+    };
   }
 
   public bumpShuffleWinner(shuffleWinner: string) {
@@ -196,9 +226,12 @@ export class Stream {
 
     this.songQueue.moveSong(song.id, 0);
 
-    EventPublisher.publishEvent(
-      new SongBumpedEvent(song.id, 0),
-      StreamEvent.SONG_BUMPED
-    );
+    // TOOD Move this to the queue subdomain and pickup with an event dispatcher
+    const event = createDomainEvent('song-won', 'song-queue', {
+      songId: song.id,
+      shuffleWinner
+    });
+
+    
   }
 }

@@ -1,18 +1,9 @@
-import { DomainEvent } from '../../domain-event';
-import { Song } from '../models/song';
+import { KentobotDomainEvent } from '../../../core/events/domain-event';
+import { SongAddedToQueuePayload } from './event-payload';
 
-export class SongAddedToQueueEvent extends DomainEvent {
-  constructor(public readonly song: Song) {
-    super('song-added-to-queue');
-  }
-
-  protected serialize(): Record<string, any> {
-    return {
-      songId: this.song.id,
-      title: this.song.title,
-      requestedBy: this.song.requestedBy,
-      status: this.song.status,
-      duration: this.song.duration
-    };
-  }
-}
+export type SongAddedToQueueEvent =
+  KentobotDomainEvent<SongAddedToQueuePayload> & {
+    type: 'song-added-to-queue';
+    payload: SongAddedToQueuePayload;
+    version: 1;
+  };

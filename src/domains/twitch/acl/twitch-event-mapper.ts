@@ -1,6 +1,7 @@
 import { KentobotDomainEvent, createDomainEvent } from '@domains/domain-event';
 
 export class TwitchEventMapper {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   static toDomainEvent(body: any): KentobotDomainEvent | null {
     const type = body.subscription?.type;
     const event = body.event;

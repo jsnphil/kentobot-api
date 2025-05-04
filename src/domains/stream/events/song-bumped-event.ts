@@ -1,17 +1,8 @@
-import { DomainEvent } from '../../domain-event';
+import { KentobotDomainEvent } from '../../../core/events/domain-event';
+import { SongBumpedPayload } from './event-payload';
 
-export class SongBumpedEvent extends DomainEvent {
-  constructor(
-    public readonly songId: string,
-    public readonly position: number
-  ) {
-    super('song-moved-in-queue');
-  }
-
-  protected serialize(): Record<string, any> {
-    return {
-      songId: this.songId,
-      position: this.position
-    };
-  }
-}
+export type SongBumpedEvent = KentobotDomainEvent<SongBumpedPayload> & {
+  type: 'song-bumped';
+  payload: SongBumpedPayload;
+  version: 1;
+};

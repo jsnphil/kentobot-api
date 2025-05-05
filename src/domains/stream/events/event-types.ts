@@ -11,27 +11,32 @@ export const StreamEventSource = {
   STREAM: 'stream'
 };
 
+export type StreamEventType =
+  (typeof StreamEventType)[keyof typeof StreamEventType];
+export type StreamEventSource =
+  (typeof StreamEventSource)[keyof typeof StreamEventSource];
+
 export type SongAddedToQueuePayload = {
-  type: StreamEventType.SONG_ADDED_TO_QUEUE;
-  source: 'song-queue';
+  type: typeof StreamEventType.SONG_ADDED_TO_QUEUE;
+  source: typeof StreamEventSource.SONG_QUEUE;
 };
 
 export type SongRemovedFromQueuePayload = {
-  type: 'song-removed-from-queue';
-  source: 'song-queue';
+  type: typeof StreamEventType.SONG_REMOVED_FROM_QUEUE;
+  source: typeof StreamEventSource.SONG_QUEUE;
 };
 
 export type SongMovedInQueuePayload = {
-  type: 'song-moved-in-queue';
-  source: 'song-queue';
+  type: typeof StreamEventType.SONG_MOVED_IN_QUEUE;
+  source: typeof StreamEventSource.SONG_QUEUE;
 };
 
 export type SongBumpedPayload = {
-  type: 'song-bumped';
-  source: 'song-queue';
+  type: typeof StreamEventType.SONG_BUMPED;
+  source: typeof StreamEventSource.SONG_QUEUE;
 };
 
 export type SongPlayedPayload = {
-  type: 'song-played';
-  source: 'song-queue';
+  type: typeof StreamEventType.SONG_PLAYED;
+  source: typeof StreamEventSource.STREAM;
 };

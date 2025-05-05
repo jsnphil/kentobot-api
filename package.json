@@ -46,7 +46,7 @@
     "@aws-sdk/client-apigatewaymanagementapi": "^3.799.0",
     "@aws-sdk/client-dynamodb": "^3.799.0",
     "@aws-sdk/client-eventbridge": "^3.800.0",
-    "@aws-sdk/client-s3": "^3.800.0",
+    "@aws-sdk/client-s3": "^3.802.0",
     "@aws-sdk/client-sqs": "^3.799.0",
     "@aws-sdk/client-ssm": "^3.799.0",
     "@aws-sdk/lib-dynamodb": "^3.799.0",

@@ -5,5 +5,6 @@ export type SongMovedInQueueEvent =
   KentobotDomainEvent<SongMovedInQueuePayload> & {
     type: 'song-moved-in-queue';
     payload: SongMovedInQueuePayload;
+    source: 'song-queue';
     version: 1;
   };

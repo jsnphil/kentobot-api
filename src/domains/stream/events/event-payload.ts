@@ -24,5 +24,5 @@ export type SongPlayedPayload = {
   requestedBy: string;
   title: string;
   duration: number;
-  playededOn: string;
+  playedAt: string;
 };

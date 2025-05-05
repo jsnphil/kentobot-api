@@ -4,5 +4,6 @@ import { SongBumpedPayload } from './event-payload';
 export type SongBumpedEvent = KentobotDomainEvent<SongBumpedPayload> & {
   type: 'song-bumped';
   payload: SongBumpedPayload;
+  source: 'song-queue';
   version: 1;
 };

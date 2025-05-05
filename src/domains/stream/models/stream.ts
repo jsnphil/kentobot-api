@@ -204,16 +204,18 @@ export class Stream {
 
     // TOOD Move this to the queue subdomain and pickup with an event dispatcher
     const event: SongPlayedEvent = {
-      type: 'song-played',
       payload: {
         songId: song.id,
         requestedBy: song.requestedBy,
         title: song.title,
         duration: song.duration,
-        playededOn: new Date().toISOString()
+        playedAt: new Date().toISOString()
       },
+      occurredAt: new Date().toISOString(),
       version: 1
     };
+
+    console.log('Song played event:', event);
   }
 
   public bumpShuffleWinner(shuffleWinner: string) {

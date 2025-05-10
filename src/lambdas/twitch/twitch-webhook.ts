@@ -1,4 +1,5 @@
 import { Logger } from '@aws-lambda-powertools/logger';
+import { TwitchEventNotification } from '@types/twitch';
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { Code } from 'better-status-codes';
 import crypto from 'crypto';
@@ -23,23 +24,6 @@ const HMAC_PREFIX = 'sha256=';
 
 const logger = new Logger({ serviceName: 'twitch-event-webhook' });
 
-// interface TwitchEvent {
-//   subscription: {
-//     id: string;
-//     status: string;
-//     type: string;
-//     version: string;
-//     condition: Record<string, any>;
-//     created_at: string;
-//     transport: {
-//       method: string;
-//       callback: string;
-//     };
-//     cost: number;
-//   };
-//   event: Record<string, any>;
-// }
-
 export const handler = async (
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> => {
@@ -53,7 +37,7 @@ export const handler = async (
       };
     }
 
-    const notification = JSON.parse(event.body!);
+    const notification = JSON.parse(event.body!) as TwitchEventNotification;
 
     if (event.headers[MESSAGE_TYPE] === MESSAGE_TYPE_VERIFICATION) {
       return {
@@ -75,7 +59,16 @@ export const handler = async (
         }
       };
     } else if (event.headers[MESSAGE_TYPE] === MESSAGE_TYPE_NOTIFICATION) {
-      logger.debug('Notification event:', notification);
+      logger.debug(`Notification event: ${JSON.stringify(notification)}`);
+
+      const username = notification.event.user_name;
+      const eventType = notification.subscription.type;
+      const eventId = notification.event.id;
+
+      
+
+
+
 
       return {
         statusCode: Code.NO_CONTENT,

@@ -1,3 +1,5 @@
+import { BumpType } from '../../../types/song-request';
+
 export type SongAddedToQueuePayload = {
   songId: string;
   requestedBy: string;
@@ -17,6 +19,7 @@ export type SongMovedInQueuePayload = {
 export type SongBumpedPayload = {
   songId: string;
   bumpPosition: number;
+  bumpType: BumpType;
 };
 
 export type SongPlayedPayload = {
@@ -24,5 +27,5 @@ export type SongPlayedPayload = {
   requestedBy: string;
   title: string;
   duration: number;
-  playededOn: string;
+  playedAt: string;
 };

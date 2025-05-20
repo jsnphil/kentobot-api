@@ -5,5 +5,6 @@ export type SongRemovedFromQueueEvent =
   KentobotDomainEvent<SongRemovedFromQueuePayload> & {
     type: 'song-removed-from-queue';
     payload: SongRemovedFromQueuePayload;
+    source: 'song-queue';
     version: 1;
   };

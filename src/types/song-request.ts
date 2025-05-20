@@ -1,5 +1,3 @@
-import { VideoListItem } from './youtube';
-
 export enum RequestType {
   Song_Request,
   DJ_Hour
@@ -11,7 +9,8 @@ export enum BumpType {
   Bits = 'bits',
   Sub = 'sub',
   GiftedSub = 'giftedSub',
-  Raid = 'raid'
+  Raid = 'raid',
+  ShuffleWinner = 'shuffleWinner'
 }
 
 export interface SongRequest {
@@ -47,42 +46,6 @@ export interface SongQueueItem {
   isBumped: boolean;
   isShuffled: boolean;
   isShuffleEntered: boolean;
-}
-
-export interface RequestSongBody {
-  readonly youtubeId: string;
-  readonly requestedBy: string;
-  readonly modOverride?: boolean;
-}
-
-export interface SongRequestResult {
-  readonly songInfo?: SongInfo;
-  readonly failedRule?: string;
-  readonly error?: Error;
-}
-
-export interface YouTubeSearchResult {
-  readonly video?: VideoListItem;
-  readonly failedRule?: string;
-  readonly error?: Error;
-}
-
-export interface AddSongToQueueResult {
-  readonly songAdded: boolean;
-  readonly failedRule?: string;
-  readonly error?: Error;
-}
-
-export interface ValidationResult<T> {
-  success: boolean; // Indicates whether the operation was successful
-  data?: T; // The resulting object, if applicable
-  errors?: ValidationError[]; // List of validation or rule errors
-}
-
-export interface ValidationError {
-  code: string; // A machine-readable error code
-  message: string; // A user-friendly error message
-  context?: any; // Optional additional context about the error
 }
 
 export enum YouTubeErrorCode {

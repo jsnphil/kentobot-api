@@ -6,5 +6,6 @@ export type UserEnteredInShuffleEvent =
   KentobotDomainEvent<SongAddedToQueuePayload> & {
     type: 'song-added-to-queue';
     payload: SongAddedToQueuePayload;
+    source: 'shuffle';
     version: 1;
   };

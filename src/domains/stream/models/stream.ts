@@ -9,7 +9,6 @@ import { BumpType, SongRequestStatus } from '../../../types/song-request';
 // import { SongAddedToQueueEvent } from '../events/song-added-to-queue-event';
 // import { SongPlayedEvent } from '../events/song-played-event';
 import { BumpService } from '@services/bump-service';
-import { createDomainEvent } from '@domains/domain-event';
 import { SongAddedToQueueEvent } from '../events/song-added-to-queue-event';
 import { SongRemovedFromQueueEvent } from '../events/song-removed-from-queue-event';
 import { SongMovedInQueueEvent } from '../events/song-moved-in-queue-event';
@@ -82,13 +81,15 @@ export class Stream {
 
     const event: SongAddedToQueueEvent = {
       type: 'song-added-to-queue',
+      source: 'song-queue',
+      occurredAt: new Date().toISOString(),
+      version: 1,
       payload: {
         songId: song.id,
         requestedBy: song.requestedBy,
         title: song.title,
         duration: song.duration
-      },
-      version: 1
+      }
     };
   }
 
@@ -98,6 +99,8 @@ export class Stream {
     // TOOD Move this to the queue subdomain and pickup with an event dispatcher
     const event: SongRemovedFromQueueEvent = {
       type: 'song-removed-from-queue',
+      source: 'song-queue',
+      occurredAt: new Date().toISOString(),
       payload: {
         songId
       },
@@ -111,6 +114,8 @@ export class Stream {
     // TOOD Move this to the queue subdomain and pickup with an event dispatcher
     const event: SongMovedInQueueEvent = {
       type: 'song-moved-in-queue',
+      source: 'song-queue',
+      occurredAt: new Date().toISOString(),
       payload: {
         songId,
         newPosition
@@ -149,11 +154,15 @@ export class Stream {
     this.decrementBumpCount(bumpType);
 
     // TOOD Move this to the queue subdomain and pickup with an event dispatcher
+    // TODO Add a bump type to the payload
     const event: SongBumpedEvent = {
+      source: 'stream',
+      occurredAt: new Date().toISOString(),
       type: 'song-bumped',
       payload: {
         songId,
-        bumpPosition
+        bumpPosition,
+        bumpType
       },
       version: 1
     };
@@ -204,16 +213,20 @@ export class Stream {
 
     // TOOD Move this to the queue subdomain and pickup with an event dispatcher
     const event: SongPlayedEvent = {
-      type: 'song-played',
       payload: {
         songId: song.id,
         requestedBy: song.requestedBy,
         title: song.title,
         duration: song.duration,
-        playededOn: new Date().toISOString()
+        playedAt: new Date().toISOString()
       },
+      source: 'stream',
+      type: 'song-played',
+      occurredAt: new Date().toISOString(),
       version: 1
     };
+
+    console.log('Song played event:', event);
   }
 
   public bumpShuffleWinner(shuffleWinner: string) {
@@ -227,9 +240,16 @@ export class Stream {
     this.songQueue.moveSong(song.id, 0);
 
     // TOOD Move this to the queue subdomain and pickup with an event dispatcher
-    const event = createDomainEvent('song-won', 'song-queue', {
-      songId: song.id,
-      shuffleWinner
-    });
+    const event: SongBumpedEvent = {
+      source: 'stream',
+      occurredAt: new Date().toISOString(),
+      type: 'song-bumped',
+      payload: {
+        songId: song.id,
+        bumpPosition: 0,
+        bumpType: BumpType.ShuffleWinner
+      },
+      version: 1
+    };
   }
 }

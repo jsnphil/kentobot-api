@@ -1,28 +1,28 @@
 import { BumpType } from '../../../types/song-request';
 
-export type SongAddedToQueuePayload = {
+export type SongAddedToQueueEventPayload = {
   songId: string;
   requestedBy: string;
   title: string;
   duration: number;
 };
 
-export type SongRemovedFromQueuePayload = {
+export type SongRemovedFromQueueEventPayload = {
   songId: string;
 };
 
-export type SongMovedInQueuePayload = {
+export type SongMovedInQueueEventPayload = {
   songId: string;
   newPosition: number;
 };
 
-export type SongBumpedPayload = {
+export type SongBumpedEventPayload = {
   songId: string;
   bumpPosition: number;
   bumpType: BumpType;
 };
 
-export type SongPlayedPayload = {
+export type SongPlayedEventPayload = {
   songId: string;
   requestedBy: string;
   title: string;

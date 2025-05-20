@@ -225,8 +225,6 @@ export class Stream {
       occurredAt: new Date().toISOString(),
       version: 1
     };
-
-    console.log('Song played event:', event);
   }
 
   public bumpShuffleWinner(shuffleWinner: string) {

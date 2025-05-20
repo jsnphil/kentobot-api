@@ -30,7 +30,8 @@
       "@command-handlers/*": ["./src/command-handlers/*"],
       "@query-handlers/*": ["./src/query-handlers/*"],
       "@queries/*": ["./src/queries/*"],
-      "@common/*": ["./src/common/*"]
+      "@common/*": ["./src/common/*"],
+      "@core/*": ["./src/core/*"]
     }
   },
   "exclude": ["node_modules", "cdk.out"]

@@ -6,7 +6,7 @@ export interface TwitchTokenResponse {
 export interface TwitchSubscription {
   id: string;
   status: string;
-  type: TwitchEventType;
+  type: string;
   version: string;
   condition: {
     broadcaster_user_id: string;
@@ -31,6 +31,39 @@ export interface TwitchEvent {
   user_name: string;
   tier: string;
   is_gift: boolean;
+  total?: number;
+  cumulative_total?: number;
+  is_anonymous?: boolean;
+  message?: TwitchMessage;
+  cumulative_months?: number;
+  duration_months?: number;
+  streak_months?: number;
+  bits?: number;
+  reward?: ChannelPointsReward;
+  redeemed_at: string;
+  from_broadcaster_user_id?: string;
+  from_broadcaster_user_name?: string;
+  from_broadcaster_user_login?: string;
+  to_broadcaster_user_id?: string;
+  to_broadcaster_user_name?: string;
+  to_broadcaster_user_login?: string;
+  viewers?: number;
+}
+
+export interface TwitchMessage {
+  text: string;
+  emotes: {
+    begin: number;
+    end: number;
+    id: string;
+  }[];
+}
+
+export interface ChannelPointsReward {
+  id: string;
+  title: string;
+  cost: number;
+  prompt: string;
 }
 
 export interface TwitchEventNotification {

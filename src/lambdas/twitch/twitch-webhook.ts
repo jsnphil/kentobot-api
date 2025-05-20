@@ -1,5 +1,5 @@
 import { Logger } from '@aws-lambda-powertools/logger';
-import { TwitchEventNotification } from '@types/twitch';
+import { TwitchEventNotification } from '../../types/twitch';
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { Code } from 'better-status-codes';
 import crypto from 'crypto';
@@ -61,14 +61,11 @@ export const handler = async (
     } else if (event.headers[MESSAGE_TYPE] === MESSAGE_TYPE_NOTIFICATION) {
       logger.debug(`Notification event: ${JSON.stringify(notification)}`);
 
-      const username = notification.event.user_name;
-      const eventType = notification.subscription.type;
-      const eventId = notification.event.id;
-
-      
-
-
-
+      const domainEvent = TwitchEventMapper.toDomainEvent(notification);
+      logger.debug(`Domain event: ${JSON.stringify(domainEvent)}`);
+      if (domainEvent) {
+        await EventPublisher.publishEvent([domainEvent]);
+      }
 
       return {
         statusCode: Code.NO_CONTENT,

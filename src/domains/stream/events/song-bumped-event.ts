@@ -1,5 +1,5 @@
 import { KentobotDomainEvent } from '../../../core/events/domain-event';
-import { SongBumpedPayload } from './event-payload';
+import { SongBumpedEventPayload } from './event-payload';
 
 export type SongBumpedEvent = KentobotDomainEvent<SongBumpedPayload> & {
   type: 'song-bumped';

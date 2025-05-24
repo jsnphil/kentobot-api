@@ -4,9 +4,7 @@ export type UserRedeemedChannelRewardEventPayload = {
   username: string;
   rewardId: string;
   rewardTitle: string;
-  rewardCost: number;
   redeemedAt: string;
-  message?: string;
 };
 
 export type UserRedeemedChannelRewardEvent =

@@ -51,6 +51,7 @@ module.exports = {
     '^@query-handlers/(.*)': '<rootDir>/src/query-handlers/$1',
     '^@queries/(.*)': '<rootDir>/src/queries/$1',
     '^@common/(.*)': '<rootDir>/src/common/$1',
-    '^@core/(.*)': '<rootDir>/src/core/$1'
+    '^@core/(.*)': '<rootDir>/src/core/$1',
+    '^@mocks/(.*)': '<rootDir>/src/mocks/$1'
   }
 };

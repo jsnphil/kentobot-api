@@ -1,5 +1,5 @@
 import { KentobotDomainEvent } from '../../../core/events/domain-event';
-import { SongAddedToQueuePayload } from './event-payload';
+import { SongAddedToQueuePayload } from './event-types';
 
 // TODO Finish and move to shuffle domain
 export type UserEnteredInShuffleEvent =

@@ -1,6 +1,7 @@
 import { KentobotDomainEvent } from '@core/events/domain-event';
 
 export type UserCheeredEventPayload = {
+  userLogin: string;
   username: string;
   bits: number;
 };

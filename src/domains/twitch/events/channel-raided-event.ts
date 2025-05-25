@@ -1,6 +1,7 @@
 import { KentobotDomainEvent } from '@core/events/domain-event';
 
 export type ChannelRaidedEventPayload = {
+  raiderUserLogin: string;
   raiderUsername: string;
   viewerCount: number;
 };

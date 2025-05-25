@@ -1,6 +1,6 @@
 // src/domains/twitch/services/twitch-auth-service.ts
 
-import { TwitchAuthClient } from '../infra/auth-client';
+import { TwitchAuthClient } from '../../../infrastructure/twitch/auth-client';
 import { TwitchTokenStore } from '../infra/token-store';
 
 export class TwitchAuthService {

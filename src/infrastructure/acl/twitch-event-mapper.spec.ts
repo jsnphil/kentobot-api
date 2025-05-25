@@ -22,7 +22,8 @@ describe('TwitchEventMapper', () => {
       version: 1,
       occurredAt: '2019-11-16T10:11:12.634234626Z',
       payload: {
-        username: 'vin',
+        userLogin: 'vin',
+        username: 'Vin',
         isGift: false
       }
     });
@@ -37,7 +38,8 @@ describe('TwitchEventMapper', () => {
       version: 1,
       occurredAt: '2019-11-16T10:11:12.634234626Z',
       payload: {
-        username: 'kaladin',
+        userLogin: 'kaladin',
+        username: 'Kaladin',
         total: 2,
         tier: '1000'
       }
@@ -53,7 +55,8 @@ describe('TwitchEventMapper', () => {
       version: 1,
       occurredAt: '2019-11-16T10:11:12.634234626Z',
       payload: {
-        username: 'dalinar',
+        userLogin: 'dalinar',
+        username: 'Dalinar',
         totalMonths: 15,
         streakMonths: 1,
         durationMonths: 6,
@@ -71,7 +74,8 @@ describe('TwitchEventMapper', () => {
       version: 1,
       occurredAt: '2019-11-16T10:11:12.634234626Z',
       payload: {
-        username: 'shallan',
+        userLogin: 'shallan',
+        username: 'Shallan',
         bits: 1000
       }
     });
@@ -86,7 +90,8 @@ describe('TwitchEventMapper', () => {
       version: 1,
       occurredAt: '2019-11-16T10:11:12.634234626Z',
       payload: {
-        username: 'renarin',
+        userLogin: 'renarin',
+        username: 'Renarin',
         rewardId: '92af127c-7326-4483-a52b-b0da0be61c01',
         rewardTitle: 'Song bump',
         redeemedAt: '2020-07-15T17:16:03.17106713Z'
@@ -130,7 +135,8 @@ describe('TwitchEventMapper', () => {
       version: 1,
       occurredAt: '2019-11-16T10:11:12.634234626Z',
       payload: {
-        raiderUsername: 'kelsier',
+        raiderUserLogin: 'kelsier',
+        raiderUsername: 'Kelsier',
         viewerCount: 9001
       }
     });

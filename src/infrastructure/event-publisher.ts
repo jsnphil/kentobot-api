@@ -4,6 +4,7 @@ import {
   PutEventsCommand,
   PutEventsCommandInput
 } from '@aws-sdk/client-eventbridge';
+import { KentobotDomainEvent } from '@core/events/domain-event';
 
 export class EventPublisher {
   private static eventBridgeClient = new EventBridgeClient({
@@ -12,8 +13,9 @@ export class EventPublisher {
 
   static logger = new Logger({ serviceName: 'event-publisher' });
 
-  public static async publish(events: KentobotDomainEvent[]) {
-    this.logger.debug('Publishing event:', event);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  public static async publish(events: KentobotDomainEvent<any>[]) {
+    this.logger.debug('Publishing event:', JSON.stringify(events));
 
     if (!events || events.length === 0) {
       this.logger.debug('No events to publish');
@@ -24,7 +26,7 @@ export class EventPublisher {
       Entries: events.map((event) => ({
         Source: event.source,
         DetailType: event.type,
-        Detail: JSON.stringify(event.toJSON()),
+        Detail: JSON.stringify(event.payload),
         EventBusName: process.env.EVENT_BUS_NAME
       }))
     };

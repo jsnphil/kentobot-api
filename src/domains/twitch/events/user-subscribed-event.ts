@@ -1,6 +1,7 @@
 import { KentobotDomainEvent } from '@core/events/domain-event';
 
 export type UserSubscribedEventPayload = {
+  userLogin: string;
   username: string;
   isGift: boolean;
 };

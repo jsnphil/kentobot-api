@@ -1,6 +1,7 @@
 import { KentobotDomainEvent } from '@core/events/domain-event';
 
 export type UserResubscriptionEventPayload = {
+  userLogin: string;
   username: string;
   totalMonths: number;
   streakMonths: number;

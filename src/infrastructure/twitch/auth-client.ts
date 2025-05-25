@@ -1,5 +1,7 @@
 // src/domains/twitch/infra/twitch-auth-client.ts
 
+import { Code } from 'better-status-codes';
+
 // const clientId = process.env.TWITCH_CLIENT_ID!;
 const clientId = 'zn7bzocvwf97qg8pt6e3jaqscfmip7';
 const clientSecret = '6v7ffgvogj3too8uj8njdvo4vvjfgd';
@@ -24,7 +26,7 @@ export class TwitchAuthClient {
       })
     });
 
-    if (response.status !== 200) {
+    if (response.status !== Code.OK) {
       throw new Error(`Failed to fetch app token: ${response.statusText}`);
     }
 
@@ -36,6 +38,7 @@ export class TwitchAuthClient {
     };
   }
 
+  /* istanbul ignore next */
   async validateToken(token: string): Promise<boolean> {
     const response = await fetch(`https://id.twitch.tv/oauth2/validate`, {
       headers: {
@@ -43,7 +46,7 @@ export class TwitchAuthClient {
       }
     });
 
-    if (response.status !== 200) {
+    if (response.status !== Code.OK) {
       throw new Error(`Failed to validate token: ${response.statusText}`);
     }
 

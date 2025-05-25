@@ -1,6 +1,7 @@
 import { KentobotDomainEvent } from '@core/events/domain-event';
 
 export type UserRedeemedChannelRewardEventPayload = {
+  userLogin: string;
   username: string;
   rewardId: string;
   rewardTitle: string;

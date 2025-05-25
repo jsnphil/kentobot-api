@@ -25,7 +25,8 @@ export class TwitchEventMapper {
           version: 1,
           occurredAt: twitchSubscription.created_at ?? new Date().toISOString(),
           payload: {
-            username: twitchEvent.user_login,
+            userLogin: twitchEvent.user_login,
+            username: twitchEvent.user_name, // changed
             isGift: twitchEvent.is_gift
           }
         } as UserSubscribedEvent;
@@ -37,7 +38,8 @@ export class TwitchEventMapper {
           version: 1,
           occurredAt: twitchSubscription.created_at ?? new Date().toISOString(),
           payload: {
-            username: twitchEvent.user_login,
+            userLogin: twitchEvent.user_login,
+            username: twitchEvent.user_name, // changed
             total: twitchEvent.total,
             tier: twitchEvent.tier
           }
@@ -50,7 +52,8 @@ export class TwitchEventMapper {
           version: 1,
           occurredAt: twitchSubscription.created_at ?? new Date().toISOString(),
           payload: {
-            username: twitchEvent.user_login,
+            userLogin: twitchEvent.user_login,
+            username: twitchEvent.user_name, // changed
             totalMonths: twitchEvent.cumulative_months,
             streakMonths: twitchEvent.streak_months,
             durationMonths: twitchEvent.duration_months,
@@ -65,7 +68,8 @@ export class TwitchEventMapper {
           version: 1,
           occurredAt: twitchSubscription.created_at ?? new Date().toISOString(),
           payload: {
-            username: twitchEvent.user_login,
+            userLogin: twitchEvent.user_login,
+            username: twitchEvent.user_name, // changed
             bits: twitchEvent.bits
           }
         } as UserCheeredEvent;
@@ -77,7 +81,8 @@ export class TwitchEventMapper {
           version: 1,
           occurredAt: twitchSubscription.created_at ?? new Date().toISOString(),
           payload: {
-            username: twitchEvent.user_login,
+            userLogin: twitchEvent.user_login,
+            username: twitchEvent.user_name, // changed
             rewardId: twitchEvent.reward?.id,
             rewardTitle: twitchEvent.reward?.title,
             redeemedAt: twitchEvent.redeemed_at
@@ -112,7 +117,8 @@ export class TwitchEventMapper {
           version: 1,
           occurredAt: twitchSubscription.created_at ?? new Date().toISOString(),
           payload: {
-            raiderUsername: twitchEvent.from_broadcaster_user_login,
+            raiderUserLogin: twitchEvent.from_broadcaster_user_login,
+            raiderUsername: twitchEvent.from_broadcaster_user_name,
             viewerCount: twitchEvent.viewers
           }
         } as ChannelRaidedEvent;

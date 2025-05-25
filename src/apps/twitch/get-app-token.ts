@@ -1,14 +1,6 @@
 // src/functions/twitch/get-app-token-lambda.ts
 import { Logger } from '@aws-lambda-powertools/logger';
-import { TwitchAuthClient } from '@domains/twitch/infra/auth-client';
-import { TwitchTokenStore } from '@domains/twitch/infra/token-store';
-import { TwitchAuthService } from '@domains/twitch/services/twitch-auth-service';
 import { APIGatewayEvent, APIGatewayProxyHandler } from 'aws-lambda';
-
-const twitchAuthService = new TwitchAuthService(
-  new TwitchTokenStore(),
-  new TwitchAuthClient()
-);
 
 const logger = new Logger({ serviceName: 'get-app-token' });
 
@@ -21,13 +13,13 @@ export const handler: APIGatewayProxyHandler = async (
     logger.info(`Client ID: ${process.env.TWITCH_CLIENT_ID}`);
     logger.info(`Client Secret: ${process.env.TWITCH_CLIENT_SECRET}`);
 
-    const token = await twitchAuthService.getValidAppToken();
+    // const token = await twitchAuthService.getValidAppToken();
 
-    logger.info('Fetched Twitch app token:', token);
+    // logger.info('Fetched Twitch app token:', token);
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ token })
+      body: JSON.stringify({})
     };
   } catch (err) {
     console.error('Failed to fetch Twitch app token', err);

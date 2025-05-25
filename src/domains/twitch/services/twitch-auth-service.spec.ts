@@ -1,4 +1,4 @@
-import { TwitchAuthClient } from '../infra/auth-client';
+import { TwitchAuthClient } from '../../../infrastructure/twitch/auth-client';
 import { AppTokenRecord, TwitchTokenStore } from '../infra/token-store';
 import { TwitchAuthService } from './twitch-auth-service';
 

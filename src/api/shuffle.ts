@@ -1,5 +1,5 @@
 import { APIGatewayEvent } from 'aws-lambda';
-import { apiLambdaWrapper } from '../common/api-lambda-wrapper';
+import { apiLambdaWrapper } from '../infrastructure/lambda/api-lambda-wrapper';
 import { Code } from 'better-status-codes';
 
 import { ToggleShuffleCommand } from '@commands/toggle-shuffle-command';

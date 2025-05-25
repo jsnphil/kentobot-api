@@ -136,5 +136,13 @@ describe('TwitchEventMapper', () => {
     });
   });
 
-  it('should return null for an unknown event type', () => {});
+  it('should return null for an unknown event type', () => {
+    const event = TwitchEventMapper.toDomainEvent({
+      subscription: {
+        type: 'unknown.event.type'
+      }
+    });
+
+    expect(event).toBeNull();
+  });
 });

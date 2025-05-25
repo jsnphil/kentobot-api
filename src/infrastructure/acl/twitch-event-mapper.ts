@@ -16,12 +16,10 @@ export class TwitchEventMapper {
     const twitchSubscription = body.subscription as TwitchSubscription;
     const twitchEvent = body.event as TwitchEvent;
 
-    let domainEvent: KentobotDomainEvent<unknown>;
-
     const type = twitchSubscription.type;
     switch (type) {
       case 'channel.subscribe': {
-        domainEvent = {
+        return {
           type: 'user-subscribed',
           source: 'twitch',
           version: 1,
@@ -31,11 +29,9 @@ export class TwitchEventMapper {
             isGift: twitchEvent.is_gift
           }
         } as UserSubscribedEvent;
-
-        break;
       }
       case 'channel.subscription.gift': {
-        domainEvent = {
+        return {
           type: 'user-gifted-subscription',
           source: 'twitch',
           version: 1,
@@ -46,11 +42,9 @@ export class TwitchEventMapper {
             tier: twitchEvent.tier
           }
         } as UserGiftedSubscriptionEvent;
-
-        break;
       }
       case 'channel.subscription.message': {
-        domainEvent = {
+        return {
           type: 'user-resubscribed',
           source: 'twitch',
           version: 1,
@@ -63,11 +57,9 @@ export class TwitchEventMapper {
             tier: twitchEvent.tier
           }
         } as UserResubscriptionEvent;
-
-        break;
       }
       case 'channel.cheer': {
-        domainEvent = {
+        return {
           type: 'user-cheered',
           source: 'twitch',
           version: 1,
@@ -77,11 +69,9 @@ export class TwitchEventMapper {
             bits: twitchEvent.bits
           }
         } as UserCheeredEvent;
-
-        break;
       }
       case 'channel.channel_points_custom_reward_redemption.add': {
-        domainEvent = {
+        return {
           type: 'user-redeemed-channel-reward',
           source: 'twitch',
           version: 1,
@@ -93,11 +83,9 @@ export class TwitchEventMapper {
             redeemedAt: twitchEvent.redeemed_at
           }
         } as UserRedeemedChannelRewardEvent;
-
-        break;
       }
       case 'stream.online': {
-        domainEvent = {
+        return {
           type: 'stream-online',
           source: 'twitch',
           version: 1,
@@ -107,22 +95,18 @@ export class TwitchEventMapper {
             startedAt: twitchEvent.started_at
           }
         } as StreamOnlineEvent;
-
-        break;
       }
       case 'stream.offline': {
-        domainEvent = {
+        return {
           type: 'stream-offline',
           source: 'twitch',
           occurredAt: twitchSubscription.created_at ?? new Date().toISOString(),
           version: 1,
           payload: {}
         } as StreamOfflineEvent;
-
-        break;
       }
       case 'channel.raid': {
-        domainEvent = {
+        return {
           type: 'channel-raided',
           source: 'twitch',
           version: 1,
@@ -132,16 +116,9 @@ export class TwitchEventMapper {
             viewerCount: twitchEvent.viewers
           }
         } as ChannelRaidedEvent;
-
-        break;
       }
       default:
         return null;
     }
-
-    if (domainEvent) {
-      return domainEvent;
-    }
-    return null;
   }
 }

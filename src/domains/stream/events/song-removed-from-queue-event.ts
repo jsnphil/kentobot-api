@@ -1,10 +1,13 @@
-import { KentobotDomainEvent } from '../../../core/events/domain-event';
-import { SongRemovedFromQueuePayload } from './event-payload';
+import { KentobotDomainEvent } from '@core/events/domain-event';
+
+export type SongRemovedFromQueueEventPayload = {
+  songId: string;
+};
 
 export type SongRemovedFromQueueEvent =
-  KentobotDomainEvent<SongRemovedFromQueuePayload> & {
+  KentobotDomainEvent<SongRemovedFromQueueEventPayload> & {
     type: 'song-removed-from-queue';
-    payload: SongRemovedFromQueuePayload;
+    payload: SongRemovedFromQueueEventPayload;
     source: 'song-queue';
     version: 1;
   };

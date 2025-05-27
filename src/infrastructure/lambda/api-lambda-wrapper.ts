@@ -1,6 +1,8 @@
 import { APIGatewayEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { Code } from 'better-status-codes';
 
+// TODO Remove coverage ignore when the code is integrated
+/* istanbul ignore next */
 export function apiLambdaWrapper<
   T extends (event: APIGatewayEvent) => Promise<APIGatewayProxyResult>
 >(

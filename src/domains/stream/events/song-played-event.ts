@@ -1,7 +1,14 @@
-import { KentobotDomainEvent } from '../../../core/events/domain-event';
-import { SongPlayedEventPayload } from './event-types';
+import { KentobotDomainEvent } from '@core/events/domain-event';
 
-export type SongPlayedEvent = KentobotDomainEvent<SongPlayedPayload> & {
+export type SongPlayedEventPayload = {
+  songId: string;
+  requestedBy: string;
+  title: string;
+  duration: number;
+  playedAt: string;
+};
+
+export type SongPlayedEvent = KentobotDomainEvent<SongPlayedEventPayload> & {
   type: 'song-played';
   source: 'stream';
   version: 1;

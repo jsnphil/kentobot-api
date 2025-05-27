@@ -1,52 +1,55 @@
-import {
-  DynamoDBClient,
-  GetItemCommand,
-  PutItemCommand
-} from '@aws-sdk/client-dynamodb';
-const DYNAMODB_TABLE_NAME = process.env.TABLE_NAME!;
+import { TwitchRepository } from '@repositories/twitch-repository';
+import { TwitchTokenResponse } from '../../types/twitch';
+import { access } from 'fs';
 
 export class TwitchTokenService {
-  private dynamoDBClient: DynamoDBClient;
-  private tokenKey: string;
+  private clientId: string;
+  private clientSecret: string;
 
-  constructor() {
-    this.dynamoDBClient = new DynamoDBClient({});
-    this.tokenKey = 'twitch_app_access_token';
-  }
+  async getToken() {
+    const { accessToken, expiresAt } = await TwitchRepository.getAppToken();
 
-  async getStoredToken(): Promise<{
-    token: string;
-    expiration: number;
-  } | null> {
-    const getItemCommand = new GetItemCommand({
-      TableName: DYNAMODB_TABLE_NAME,
-      Key: {
-        id: { S: this.tokenKey }
-      }
-    });
-
-    const storedTokenResponse = await this.dynamoDBClient.send(getItemCommand);
-
-    if (storedTokenResponse.Item) {
-      return {
-        token: storedTokenResponse.Item.token.S || '',
-        expiration: parseInt(storedTokenResponse.Item.expiration.N || '0', 10)
-      };
+    if (new Date() < new Date(expiresAt)) {
+      return accessToken;
     }
 
-    return null;
+    const newAccessToken = await this.getNewAccessToken();
+    const expiration = new Date(
+      Date.now() + newAccessToken.expiresIn * 1000
+    ).toISOString();
+
+    await TwitchRepository.saveAppToken(newAccessToken.token, expiration);
+    return newAccessToken.token;
   }
 
-  async storeToken(token: string, expiration: number): Promise<void> {
-    const putItemCommand = new PutItemCommand({
-      TableName: DYNAMODB_TABLE_NAME,
-      Item: {
-        id: { S: this.tokenKey },
-        token: { S: token },
-        expiration: { N: expiration.toString() }
-      }
+  async getNewAccessToken(): Promise<{
+    token: string;
+    expiresIn: number;
+    bearerType: string;
+  }> {
+    const url = 'https://id.twitch.tv/oauth2/token';
+    const params = new URLSearchParams({
+      client_id: this.clientId,
+      client_secret: this.clientSecret,
+      grant_type: 'client_credentials'
     });
 
-    await this.dynamoDBClient.send(putItemCommand);
+    const response = await fetch(`${url}?${params}`, {
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      method: 'POST'
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch access token from Twitch API');
+    }
+
+    const data = (await response.json()) as TwitchTokenResponse;
+    return {
+      token: data.access_token,
+      expiresIn: data.expires_in,
+      bearerType: data.token_type
+    };
   }
 }

@@ -58,8 +58,8 @@ export class TwitchRepository {
     }
 
     return {
-      access_token: Item.access_token,
-      expires_at: Item.expires_at
+      accessToken: Item.access_token,
+      expiresAt: Item.expires_at
     };
   }
 }

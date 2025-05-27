@@ -1,9 +1,15 @@
-import { KentobotDomainEvent } from '../../../core/events/domain-event';
-import { SongBumpedEventPayload } from './event-payload';
+import { BumpType } from '../../../types/song-request';
+import { KentobotDomainEvent } from '@core/events/domain-event';
 
-export type SongBumpedEvent = KentobotDomainEvent<SongBumpedPayload> & {
+export type SongBumpedEventPayload = {
+  songId: string;
+  bumpPosition: number;
+  bumpType: BumpType;
+};
+
+export type SongBumpedEvent = KentobotDomainEvent<SongBumpedEventPayload> & {
   type: 'song-bumped';
-  payload: SongBumpedPayload;
+  payload: SongBumpedEventPayload;
   source: 'stream';
   version: 1;
 };

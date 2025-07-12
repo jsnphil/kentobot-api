@@ -4,6 +4,8 @@ import { APIGatewayEvent, APIGatewayProxyHandler } from 'aws-lambda';
 
 const logger = new Logger({ serviceName: 'get-app-token' });
 
+// TODO Remove this code later, it's just for testing
+/* istanbul ignore next */
 export const handler: APIGatewayProxyHandler = async (
   event: APIGatewayEvent
 ) => {

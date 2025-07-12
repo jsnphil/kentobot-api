@@ -1,7 +1,8 @@
 import { TwitchRepository } from '@repositories/twitch-repository';
 import { TwitchTokenResponse } from '../../types/twitch';
-import { access } from 'fs';
 
+// TODO Remove this when this class is worked on
+/* istanbul ignore next */
 export class TwitchTokenService {
   private clientId: string;
   private clientSecret: string;

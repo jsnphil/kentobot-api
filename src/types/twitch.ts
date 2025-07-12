@@ -74,8 +74,8 @@ export interface TwitchEventNotification {
 
 export enum TwitchEventType {
   CHANNEL_SUBSCRIBE = 'channel.subscribe',
-  CHANNEL_SUBSCRIBER_GIFT = 'channel.subscribe.gift',
-  CHANNEL_SUBSCRIBER_MESSAGE = 'channel.subscribe.message',
+  CHANNEL_SUBSCRIPTION_GIFT = 'channel.subscription.gift',
+  CHANNEL_SUBSCRIPTION_MESSAGE = 'channel.subscription.message',
   CHANNEL_CHEER = 'channel.cheer',
   CHANNEL_RAID = 'channel.raid',
   CHANNEL_POINTS_CUSTOM_REWARD_ADD = 'channel.channel_points_custom_reward.add',

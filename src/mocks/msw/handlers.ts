@@ -455,5 +455,14 @@ export const handlers = [
   }),
   http.post('https://dynamodb.us-east-1.amazonaws.com/', ({ request }) => {
     return new HttpResponse(null, { status: 200 });
+  }),
+  http.post('https://id.twitch.tv/oauth2/token', ({ request }) => {
+    const body = request.body;
+
+    return HttpResponse.json({
+      access_token: 'mock-access-token',
+      expires_in: 3600,
+      token_type: 'bearer'
+    });
   })
 ];

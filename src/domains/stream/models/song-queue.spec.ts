@@ -2,7 +2,7 @@ import { SongQueue } from './song-queue';
 import { Song } from './song';
 import { BumpType, SongRequestStatus } from '../../../types/song-request';
 
-jest.mock('../../../common/event-publisher');
+
 
 describe('SongQueue', () => {
   let songQueue: SongQueue;

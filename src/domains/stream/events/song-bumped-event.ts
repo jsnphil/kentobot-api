@@ -1,17 +1,15 @@
-import { DomainEvent } from '../../domain-event';
+import { BumpType } from '../../../types/song-request';
+import { KentobotDomainEvent } from '@core/events/domain-event';
 
-export class SongBumpedEvent extends DomainEvent {
-  constructor(
-    public readonly songId: string,
-    public readonly position: number
-  ) {
-    super('song-moved-in-queue');
-  }
+export type SongBumpedEventPayload = {
+  songId: string;
+  bumpPosition: number;
+  bumpType: BumpType;
+};
 
-  protected serialize(): Record<string, any> {
-    return {
-      songId: this.songId,
-      position: this.position
-    };
-  }
-}
+export type SongBumpedEvent = KentobotDomainEvent<SongBumpedEventPayload> & {
+  type: 'song-bumped';
+  payload: SongBumpedEventPayload;
+  source: 'stream';
+  version: 1;
+};

@@ -2,7 +2,7 @@ import { APIGatewayEvent } from 'aws-lambda';
 import { MoveSongCommandHandler } from '@command-handlers/move-song-command-handler';
 import { MoveSongCommand } from '@commands/move-song-command';
 import { Code } from 'better-status-codes';
-import { apiLambdaWrapper } from '../common/api-lambda-wrapper';
+import { apiLambdaWrapper } from '../infrastructure/lambda/api-lambda-wrapper';
 
 export const handler = async (event: APIGatewayEvent) => {
   const songId = event.pathParameters?.songId;

@@ -4,6 +4,7 @@ import {
   PutEventsCommand,
   PutEventsCommandInput
 } from '@aws-sdk/client-eventbridge';
+import { KentobotDomainEvent } from '@core/events/domain-event';
 
 export class EventPublisher {
   private static eventBridgeClient = new EventBridgeClient({
@@ -13,18 +14,21 @@ export class EventPublisher {
   static logger = new Logger({ serviceName: 'event-publisher' });
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  public static async publishEvent(event: any, eventType: string) {
-    this.logger.debug('Publishing event:', event);
+  public static async publish(events: KentobotDomainEvent<any>[]) {
+    this.logger.debug('Publishing event:', JSON.stringify(events));
+
+    if (!events || events.length === 0) {
+      this.logger.debug('No events to publish');
+      return;
+    }
 
     const params: PutEventsCommandInput = {
-      Entries: [
-        {
-          Source: 'kentobot.streaming.system',
-          DetailType: eventType,
-          Detail: JSON.stringify(event.toJSON()),
-          EventBusName: process.env.EVENT_BUS_NAME
-        }
-      ]
+      Entries: events.map((event) => ({
+        Source: event.source,
+        DetailType: event.type,
+        Detail: JSON.stringify(event.payload),
+        EventBusName: process.env.EVENT_BUS_NAME
+      }))
     };
 
     this.logger.debug(`Event parameters: ${JSON.stringify(params)}`);

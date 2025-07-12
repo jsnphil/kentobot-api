@@ -1,5 +1,5 @@
 import { APIGatewayEvent } from 'aws-lambda';
-import { apiLambdaWrapper } from '@common/api-lambda-wrapper';
+import { apiLambdaWrapper } from '../infrastructure/lambda/api-lambda-wrapper';
 import { SavePlayedSongCommandHandler } from '@command-handlers/save-played-song-command-handler';
 import { SavePlayedSongCommand } from '@commands/save-played-song-command';
 

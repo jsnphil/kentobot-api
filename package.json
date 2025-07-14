@@ -52,7 +52,7 @@
     "@aws-sdk/lib-dynamodb": "^3.826.0",
     "@aws-sdk/util-dynamodb": "^3.788.0",
     "@middy/core": "^6.3.2",
-    "@types/youtube": "^0.1.0",
+    "@types/youtube": "^0.1.2",
     "aws-cdk-lib": "2.192.0",
     "better-status-codes": "^2.1.0",
     "constructs": "^10.4.2",

@@ -121,6 +121,7 @@ export class ApiStack extends cdk.Stack {
         },
         logRetention: logs.RetentionDays.ONE_WEEK,
         environment: {
+          ...lambdaEnvironment,
           STREAM_DATA_TABLE: streamDataTable.tableName
         },
         timeout: cdk.Duration.seconds(30),

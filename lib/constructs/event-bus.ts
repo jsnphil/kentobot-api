@@ -39,7 +39,7 @@ export class EventBus extends Construct {
       eventPattern: {
         account: [cdk.Stack.of(scope).account]
       },
-      retention: cdk.Duration.days(365)
+      retention: cdk.Duration.days(365) // TODO Shorten this
     });
 
     new events.Rule(scope, `kentobot-event-logger-rule`, {

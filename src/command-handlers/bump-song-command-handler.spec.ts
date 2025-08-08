@@ -21,7 +21,7 @@ describe('BumpSongCommandHandler', () => {
     (StreamFactory.createStream as jest.Mock).mockResolvedValue(mockStream);
 
     const command: BumpSongCommand = {
-      requestdBy: 'Kaladin',
+      requestedBy: 'Kaladin',
       bumpType: BumpType.Bean,
       position: 1,
       modOverride: false
@@ -31,7 +31,7 @@ describe('BumpSongCommandHandler', () => {
 
     expect(StreamFactory.createStream).toHaveBeenCalled();
     expect(mockStream.bumpSongForUser).toHaveBeenCalledWith(
-      command.requestdBy,
+      command.requestedBy,
       command.bumpType,
       command.position,
       command.modOverride
@@ -45,7 +45,7 @@ describe('BumpSongCommandHandler', () => {
     );
 
     const command: BumpSongCommand = {
-      requestdBy: 'Kaladin',
+      requestedBy: 'Kaladin',
       bumpType: BumpType.Bean,
       position: 1,
       modOverride: false
@@ -67,7 +67,7 @@ describe('BumpSongCommandHandler', () => {
     (StreamFactory.createStream as jest.Mock).mockResolvedValue(mockStream);
 
     const command: BumpSongCommand = {
-      requestdBy: 'Kaladin',
+      requestedBy: 'Kaladin',
       bumpType: BumpType.Bean,
       position: 1,
       modOverride: false
@@ -75,7 +75,7 @@ describe('BumpSongCommandHandler', () => {
 
     await expect(handler.execute(command)).rejects.toThrow('Bump song failed');
     expect(mockStream.bumpSongForUser).toHaveBeenCalledWith(
-      command.requestdBy,
+      command.requestedBy,
       command.bumpType,
       command.position,
       command.modOverride
@@ -93,7 +93,7 @@ describe('BumpSongCommandHandler', () => {
     );
 
     const command: BumpSongCommand = {
-      requestdBy: 'Kaladin',
+      requestedBy: 'Kaladin',
       bumpType: BumpType.Bean,
       position: 1,
       modOverride: false
@@ -103,7 +103,7 @@ describe('BumpSongCommandHandler', () => {
       'Save stream failed'
     );
     expect(mockStream.bumpSongForUser).toHaveBeenCalledWith(
-      command.requestdBy,
+      command.requestedBy,
       command.bumpType,
       command.position,
       command.modOverride

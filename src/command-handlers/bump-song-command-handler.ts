@@ -10,7 +10,7 @@ export class BumpSongCommandHandler {
     const stream = await StreamFactory.createStream();
 
     await stream.bumpSongForUser(
-      command.requestdBy,
+      command.requestedBy,
       command.bumpType,
       command.position,
       command.modOverride

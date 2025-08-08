@@ -2,6 +2,7 @@ import * as cdk from 'aws-cdk-lib';
 import * as apiGateway from 'aws-cdk-lib/aws-apigateway';
 import * as ddb from 'aws-cdk-lib/aws-dynamodb';
 import * as events from 'aws-cdk-lib/aws-events';
+import * as eventsTargets from 'aws-cdk-lib/aws-events-targets';
 import * as lambda from 'aws-cdk-lib/aws-lambda-nodejs';
 import { Construct } from 'constructs';
 import { ARCHITECTURE, lambdaEnvironment, NODE_RUNTIME } from '../CDKConstants';
@@ -42,7 +43,6 @@ export class EventSubscriptionStack extends cdk.Stack {
       retention: cdk.Duration.days(365) // TODO Shorten this
     });
 
-    
     new events.Rule(this, `kentobot-event-logger-rule-primary`, {
       description: 'Log all events',
       eventPattern: {
@@ -130,6 +130,34 @@ export class EventSubscriptionStack extends cdk.Stack {
         proxy: true,
         allowTestInvoke: true
       })
+    );
+
+    const userSubscribedEventHandler = new lambda.NodejsFunction(
+      this,
+      'UserSubscribedEventHandler',
+      {
+        runtime: NODE_RUNTIME,
+        entry:
+          'src/infrastructure/event-handlers/user-subscribed-event-handler.ts',
+        handler: 'handler',
+        environment: {
+          ...lambdaEnvironment,
+          EVENT_BUS_NAME: bus.eventBusName
+        },
+        architecture: ARCHITECTURE
+      }
+    );
+
+    const userSubscribedEventRule = new events.Rule(this, 'UserSubscribedEventRule', {
+      eventBus: bus,
+      eventPattern: {
+        source: ['twitch'],
+        detailType: ['user-subscribed']
+      }
+    });
+
+    userSubscribedEventRule.addTarget(
+      new eventsTargets.LambdaFunction(userSubscribedEventHandler)
     );
   }
 }

@@ -6,12 +6,10 @@ import { ShuffleRepository } from '@repositories/shuffle-repository';
 import { Shuffle } from '@domains/shuffle/models/shuffle';
 import { mockClient } from 'aws-sdk-client-mock';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { PutCommand } from '@aws-sdk/lib-dynamodb';
+import { GetCommand, PutCommand } from '@aws-sdk/lib-dynamodb';
 import { EnterShuffleCommand } from '@commands/enter-shuffle-command';
-import { EventBridgeClient } from '@aws-sdk/client-eventbridge';
 
 const mockDynamoDB = mockClient(DynamoDBClient);
-const mockEventBus = mockClient(EventBridgeClient);
 
 describe('shuffle-command-handler', () => {
   describe('toggle-shuffle', () => {
@@ -19,6 +17,7 @@ describe('shuffle-command-handler', () => {
       const commandHandler = new ShuffleCommandHandler();
 
       mockDynamoDB.on(PutCommand).resolves({});
+      mockDynamoDB.on(GetCommand).resolves({});
 
       const mockStream = Stream.load({
         id: 'stream1',

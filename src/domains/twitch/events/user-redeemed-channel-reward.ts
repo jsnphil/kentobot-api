@@ -10,7 +10,7 @@ export type UserRedeemedChannelRewardEventPayload = {
 
 export type UserRedeemedChannelRewardEvent =
   KentobotDomainEvent<UserRedeemedChannelRewardEventPayload> & {
-    type: 'user-redeemed-channel-reward';
+    type: 'channel-point-redemption';
     source: 'twitch';
     version: 1;
   };

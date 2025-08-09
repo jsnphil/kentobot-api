@@ -77,7 +77,7 @@ export class Stream {
   public async addSongToQueue(song: Song) {
     this.songQueue.addSong(song);
 
-    // TOOD Move this to the queue subdomain and pickup with an event dispatcher
+    // TODO Move this to the queue subdomain and pickup with an event dispatcher
 
     const event: SongAddedToQueueEvent = {
       type: 'song-added-to-queue',
@@ -96,7 +96,7 @@ export class Stream {
   public removeSongFromQueue(songId: string) {
     this.songQueue.removeSong(songId);
 
-    // TOOD Move this to the queue subdomain and pickup with an event dispatcher
+    // TODO Move this to the queue subdomain and pickup with an event dispatcher
     const event: SongRemovedFromQueueEvent = {
       type: 'song-removed-from-queue',
       source: 'song-queue',
@@ -111,7 +111,7 @@ export class Stream {
   public moveSong(songId: string, newPosition: number) {
     this.songQueue.moveSong(songId, newPosition - 1);
 
-    // TOOD Move this to the queue subdomain and pickup with an event dispatcher
+    // TODO Move this to the queue subdomain and pickup with an event dispatcher
     const event: SongMovedInQueueEvent = {
       type: 'song-moved-in-queue',
       source: 'song-queue',
@@ -153,7 +153,7 @@ export class Stream {
 
     this.decrementBumpCount(bumpType);
 
-    // TOOD Move this to the queue subdomain and pickup with an event dispatcher
+    // TODO Move this to the queue subdomain and pickup with an event dispatcher
     // TODO Add a bump type to the payload
     const event: SongBumpedEvent = {
       source: 'stream',
@@ -211,7 +211,7 @@ export class Stream {
   public savePlayedSong(song: Song) {
     this.songHistory.push(song);
 
-    // TOOD Move this to the queue subdomain and pickup with an event dispatcher
+    // TODO Move this to the queue subdomain and pickup with an event dispatcher
     const event: SongPlayedEvent = {
       payload: {
         songId: song.id,
@@ -237,7 +237,7 @@ export class Stream {
 
     this.songQueue.moveSong(song.id, 0);
 
-    // TOOD Move this to the queue subdomain and pickup with an event dispatcher
+    // TODO Move this to the queue subdomain and pickup with an event dispatcher
     const event: SongBumpedEvent = {
       source: 'stream',
       occurredAt: new Date().toISOString(),

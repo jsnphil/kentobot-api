@@ -1,6 +1,6 @@
 import { TwitchTokenResponse } from '../../types/twitch';
 
-// TODO Remove this when
+// TODO Remove this when this class is worked on
   /* istanbul ignore next */
 export class TwitchAPIService {
   private clientId: string;

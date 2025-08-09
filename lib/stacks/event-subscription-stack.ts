@@ -1,9 +1,11 @@
 import * as cdk from 'aws-cdk-lib';
-import * as lambda from 'aws-cdk-lib/aws-lambda-nodejs';
 import * as apiGateway from 'aws-cdk-lib/aws-apigateway';
-import { Construct } from 'constructs';
-import { ARCHITECTURE, NODE_RUNTIME } from '../CDKConstants';
 import * as ddb from 'aws-cdk-lib/aws-dynamodb';
+import * as events from 'aws-cdk-lib/aws-events';
+import * as eventsTargets from 'aws-cdk-lib/aws-events-targets';
+import * as lambda from 'aws-cdk-lib/aws-lambda-nodejs';
+import { Construct } from 'constructs';
+import { ARCHITECTURE, lambdaEnvironment, NODE_RUNTIME } from '../CDKConstants';
 
 export interface EventSubscriptionStackProps extends cdk.StackProps {
   environmentName: string;
@@ -29,6 +31,26 @@ export class EventSubscriptionStack extends cdk.Stack {
       }
     );
 
+    const bus = new events.EventBus(this, 'kentobot-event-bus', {
+      eventBusName: `Kentobot-EventBus-${props.environmentName}-primary`
+    });
+
+    bus.archive('kentobot-event-archive-primary', {
+      archiveName: `KentobotEventArchive-${props.environmentName}-primary`,
+      eventPattern: {
+        account: [cdk.Stack.of(this).account]
+      },
+      retention: cdk.Duration.days(365) // TODO Shorten this
+    });
+
+    new events.Rule(this, `kentobot-event-logger-rule-primary`, {
+      description: 'Log all events',
+      eventPattern: {
+        region: ['us-east-1']
+      },
+      eventBus: bus
+    });
+
     const twitchWebHookApi = new apiGateway.RestApi(this, `TwitchWebHookApi`, {
       restApiName: `TwitchWebHookApi-${props.environmentName}`,
       description: `Twitch WebHook API for ${props.environmentName}`,
@@ -43,19 +65,21 @@ export class EventSubscriptionStack extends cdk.Stack {
 
     const twitchWebHook = new lambda.NodejsFunction(this, 'TwitchWebHook', {
       runtime: NODE_RUNTIME,
-      entry: 'src/lambdas/twitch/twitch-webhook.ts',
+      entry: 'src/apps/twitch/twitch-webhook.ts',
       handler: 'handler',
       environment: {
+        ...lambdaEnvironment,
         TWITCH_SECRET: 'secret-key',
         TWITCH_WEBHOOK_CALLBACK_URL:
           process.env.TWITCH_WEBHOOK_CALLBACK_URL || '',
         TWITCH_WEBHOOK_CALLBACK_PORT:
           process.env.TWITCH_WEBHOOK_CALLBACK_PORT || '3000',
-        POWERTOOLS_LOGGER_LOG_EVENT: 'true',
-        POWERTOOLS_LOG_LEVEL: 'DEBUG'
+        EVENT_BUS_NAME: bus.eventBusName
       },
       architecture: ARCHITECTURE
     });
+
+    bus.grantPutEventsTo(twitchWebHook);
 
     twitchResource.addResource('events').addMethod(
       'POST',
@@ -87,7 +111,7 @@ export class EventSubscriptionStack extends cdk.Stack {
 
     const appTokenLambda = new lambda.NodejsFunction(this, 'TwitchAppToken', {
       runtime: NODE_RUNTIME,
-      entry: 'src/api/twitch/get-app-token.ts',
+      entry: 'src/apps/twitch/get-app-token.ts',
       handler: 'handler',
       environment: {
         // TWITCH_CLIENT_ID: twitchClientId.stringValue,
@@ -106,6 +130,106 @@ export class EventSubscriptionStack extends cdk.Stack {
         proxy: true,
         allowTestInvoke: true
       })
+    );
+
+    const twitchSubscriptionEventHandler = new lambda.NodejsFunction(
+      this,
+      'TwitchSubscriptionEventHandler',
+      {
+        runtime: NODE_RUNTIME,
+        entry:
+          'src/infrastructure/event-handlers/subscription-event-handler.ts',
+        handler: 'handler',
+        environment: {
+          ...lambdaEnvironment,
+          EVENT_BUS_NAME: bus.eventBusName
+        },
+        architecture: ARCHITECTURE
+      }
+    );
+
+    const twitchSubscriptionEventRule = new events.Rule(
+      this,
+      'TwitchSubscriptionEventRule',
+      {
+        eventBus: bus,
+        eventPattern: {
+          source: ['twitch'],
+          detailType: [
+            'user-subscribed',
+            'user-gifted-subscription',
+            'user-resubscribed'
+          ]
+        }
+      }
+    );
+
+    twitchSubscriptionEventRule.addTarget(
+      new eventsTargets.LambdaFunction(twitchSubscriptionEventHandler)
+    );
+
+    const twitchChannelRaidedEventHandler = new lambda.NodejsFunction(
+      this,
+      'TwitchChannelRaidedEventHandler',
+      {
+        runtime: NODE_RUNTIME,
+        entry:
+          'src/infrastructure/event-handlers/channel-raided-event-handler.ts',
+        handler: 'handler',
+        environment: {
+          ...lambdaEnvironment,
+          EVENT_BUS_NAME: bus.eventBusName
+        },
+        architecture: ARCHITECTURE
+      }
+    );
+
+    const twitchChannelRaidedEventRule = new events.Rule(
+      this,
+      'TwitchChannelRaidedEventRule',
+      {
+        eventBus: bus,
+        eventPattern: {
+          source: ['twitch'],
+          detailType: ['channel-raided']
+        }
+      }
+    );
+
+    twitchChannelRaidedEventRule.addTarget(
+      new eventsTargets.LambdaFunction(twitchChannelRaidedEventHandler)
+    );
+
+    const twitchChannelPointRedemptionEventHandler = new lambda.NodejsFunction(
+      this,
+      'TwitchChannelPointRedemptionEventHandler',
+      {
+        runtime: NODE_RUNTIME,
+        entry:
+          'src/infrastructure/event-handlers/channel-points-redeemed-event-handler.ts',
+        handler: 'handler',
+        environment: {
+          ...lambdaEnvironment,
+          EVENT_BUS_NAME: bus.eventBusName
+        },
+        architecture: ARCHITECTURE
+      }
+    );
+
+    const twitchChannelPointRedemptionEventRule = new events.Rule(
+      this,
+      'TwitchChannelPointRedemptionEventRule',
+      {
+        eventBus: bus,
+        eventPattern: {
+          source: ['twitch'],
+          detailType: ['channel-point-redemption']
+        }
+      }
+    );
+
+    twitchChannelPointRedemptionEventRule.addTarget(
+      new eventsTargets.LambdaFunction(twitchChannelPointRedemptionEventHandler)
     );
   }
 }

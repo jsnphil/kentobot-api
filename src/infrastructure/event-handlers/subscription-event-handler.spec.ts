@@ -94,7 +94,7 @@ describe('Subscription Event Handler', () => {
     });
   });
 
-  it('should should execute a sub bump for a user-resubscribed event', async () => {
+  it('should execute a sub bump for a user-resubscribed event', async () => {
     const event: UserResubscriptionEvent = {
       type: 'user-resubscribed',
       source: 'twitch',

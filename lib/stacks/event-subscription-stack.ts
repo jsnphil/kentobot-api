@@ -132,13 +132,13 @@ export class EventSubscriptionStack extends cdk.Stack {
       })
     );
 
-    const userSubscribedEventHandler = new lambda.NodejsFunction(
+    const twitchSubscriptionEventHandler = new lambda.NodejsFunction(
       this,
-      'UserSubscribedEventHandler',
+      'TwitchSubscriptionEventHandler',
       {
         runtime: NODE_RUNTIME,
         entry:
-          'src/infrastructure/event-handlers/user-subscribed-event-handler.ts',
+          'src/infrastructure/event-handlers/subscription-event-handler.ts',
         handler: 'handler',
         environment: {
           ...lambdaEnvironment,
@@ -148,16 +148,88 @@ export class EventSubscriptionStack extends cdk.Stack {
       }
     );
 
-    const userSubscribedEventRule = new events.Rule(this, 'UserSubscribedEventRule', {
-      eventBus: bus,
-      eventPattern: {
-        source: ['twitch'],
-        detailType: ['user-subscribed']
+    const twitchSubscriptionEventRule = new events.Rule(
+      this,
+      'TwitchSubscriptionEventRule',
+      {
+        eventBus: bus,
+        eventPattern: {
+          source: ['twitch'],
+          detailType: [
+            'user-subscribed',
+            'user-gifted-subscription',
+            'user-resubscribed'
+          ]
+        }
       }
-    });
+    );
 
-    userSubscribedEventRule.addTarget(
-      new eventsTargets.LambdaFunction(userSubscribedEventHandler)
+    twitchSubscriptionEventRule.addTarget(
+      new eventsTargets.LambdaFunction(twitchSubscriptionEventHandler)
+    );
+
+    const twitchChannelRaidedEventHandler = new lambda.NodejsFunction(
+      this,
+      'TwitchChannelRaidedEventHandler',
+      {
+        runtime: NODE_RUNTIME,
+        entry:
+          'src/infrastructure/event-handlers/channel-raided-event-handler.ts',
+        handler: 'handler',
+        environment: {
+          ...lambdaEnvironment,
+          EVENT_BUS_NAME: bus.eventBusName
+        },
+        architecture: ARCHITECTURE
+      }
+    );
+
+    const twitchChannelRaidedEventRule = new events.Rule(
+      this,
+      'TwitchChannelRaidedEventRule',
+      {
+        eventBus: bus,
+        eventPattern: {
+          source: ['twitch'],
+          detailType: ['channel-raided']
+        }
+      }
+    );
+
+    twitchChannelRaidedEventRule.addTarget(
+      new eventsTargets.LambdaFunction(twitchChannelRaidedEventHandler)
+    );
+
+    const twitchChannelPointRedemptionEventHandler = new lambda.NodejsFunction(
+      this,
+      'TwitchChannelPointRedemptionEventHandler',
+      {
+        runtime: NODE_RUNTIME,
+        entry:
+          'src/infrastructure/event-handlers/channel-points-redeemed-event-handler.ts',
+        handler: 'handler',
+        environment: {
+          ...lambdaEnvironment,
+          EVENT_BUS_NAME: bus.eventBusName
+        },
+        architecture: ARCHITECTURE
+      }
+    );
+
+    const twitchChannelPointRedemptionEventRule = new events.Rule(
+      this,
+      'TwitchChannelPointRedemptionEventRule',
+      {
+        eventBus: bus,
+        eventPattern: {
+          source: ['twitch'],
+          detailType: ['channel-point-redemption']
+        }
+      }
+    );
+
+    twitchChannelPointRedemptionEventRule.addTarget(
+      new eventsTargets.LambdaFunction(twitchChannelPointRedemptionEventHandler)
     );
   }
 }

@@ -4,7 +4,7 @@ import {
 } from '@aws-sdk/client-eventbridge';
 import { KentobotDomainEvent } from '@core/events/domain-event';
 import { mockClient } from 'aws-sdk-client-mock';
-import { EventPublisher } from './event-publisher';
+import { EventPublisher } from './event-publisher.old';
 
 const mockEventBridgeClient = mockClient(EventBridgeClient);
 

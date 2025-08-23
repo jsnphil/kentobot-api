@@ -1,41 +1,37 @@
+/* eslint-disable no-console */
 import { Logger } from '@aws-lambda-powertools/logger';
-import {
-  EventBridgeClient,
-  PutEventsCommand,
-  PutEventsCommandInput
-} from '@aws-sdk/client-eventbridge';
-import { KentobotDomainEvent } from '@core/events/domain-event';
+import { AttributeValue } from '@aws-sdk/client-dynamodb';
+import { EventBridgeClient } from '@aws-sdk/client-eventbridge';
+import { unmarshall } from '@aws-sdk/util-dynamodb';
+import { Attribute } from 'aws-cdk-lib/aws-dynamodb';
+import { DynamoDBStreamEvent, DynamoDBStreamHandler } from 'aws-lambda';
 
-export class EventPublisher {
-  private static eventBridgeClient = new EventBridgeClient({
-    region: process.env.AWS_REGION
-  });
+const logger = new Logger({ serviceName: 'event-publisher' });
 
-  static logger = new Logger({ serviceName: 'event-publisher' });
+const eventBridgeClient = new EventBridgeClient({
+  region: process.env.AWS_REGION
+});
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  public static async publish(events: KentobotDomainEvent<any>[]) {
-    this.logger.debug('Publishing event:', JSON.stringify(events));
+export const handler: DynamoDBStreamHandler = async (
+  event: DynamoDBStreamEvent
+) => {
+  logger.logEventIfEnabled(event);
 
-    if (!events || events.length === 0) {
-      this.logger.debug('No events to publish');
-      return;
+  for (const record of event.Records) {
+    const image = record.dynamodb?.NewImage;
+
+    if (image) {
+      const event = unmarshall(image as Record<string, AttributeValue>);
+
+      // Publish the event to EventBridge
     }
 
-    const params: PutEventsCommandInput = {
-      Entries: events.map((event) => ({
-        Source: event.source,
-        DetailType: event.type,
-        Detail: JSON.stringify(event.payload),
-        EventBusName: process.env.EVENT_BUS_NAME
-      }))
-    };
-
-    this.logger.debug(`Event parameters: ${JSON.stringify(params)}`);
-    const data = await this.eventBridgeClient.send(
-      new PutEventsCommand(params)
-    );
-
-    this.logger.debug(`Event published: ${JSON.stringify(data)}`);
+    // // Handle new item inserted
+    // const newItem = record.dynamodb?.NewImage;
+    // // Handle item modified
+    // const updatedItem = record.dynamodb?.NewImage;
+    // // Handle item removed
+    // const removedItem = record.dynamodb?.OldImage;
+    // console.log('Item removed:', removedItem);
   }
-}
+};

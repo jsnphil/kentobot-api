@@ -4,7 +4,7 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { Code } from 'better-status-codes';
 import crypto from 'crypto';
 import { TwitchEventMapper } from '../../infrastructure/acl/twitch-event-mapper';
-import { EventPublisher } from '../../infrastructure/event-publisher';
+import { EventPublisher } from '../../infrastructure/event-publisher.old';
 
 const TWITCH_SECRET = process.env.TWITCH_SECRET || '';
 

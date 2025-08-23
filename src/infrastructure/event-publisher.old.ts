@@ -7,8 +7,6 @@ import {
 import { KentobotDomainEvent } from '@core/events/domain-event';
 
 export class EventPublisher {
-
-
   static logger = new Logger({ serviceName: 'event-publisher' });
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

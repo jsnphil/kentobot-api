@@ -1,9 +1,10 @@
 // Base type
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export type KentobotDomainEvent<TPayload> = {
-    type: string;
-    occurredAt: string;
-    source: string;
-    version: number;
-    payload: TPayload;
-  };
-  
+  id: string;
+  type: string;
+  occurredAt: string;
+  source: string;
+  version: number;
+  payload: TPayload;
+};

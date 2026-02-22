@@ -2,20 +2,18 @@ import * as cdk from 'aws-cdk-lib';
 
 import * as apiGateway from 'aws-cdk-lib/aws-apigateway';
 import * as webSocketGateway from 'aws-cdk-lib/aws-apigatewayv2';
+import * as ddb from 'aws-cdk-lib/aws-dynamodb';
+import * as iam from 'aws-cdk-lib/aws-iam';
 import * as lambda from 'aws-cdk-lib/aws-lambda-nodejs';
 import * as logs from 'aws-cdk-lib/aws-logs';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
-import * as sqs from 'aws-cdk-lib/aws-sqs';
-import * as ddb from 'aws-cdk-lib/aws-dynamodb';
-import * as iam from 'aws-cdk-lib/aws-iam';
 
 import { Construct } from 'constructs';
-import { createSongRequestParameters } from '../constructs/song-request-parameters';
 import { ARCHITECTURE, lambdaEnvironment, NODE_RUNTIME } from '../CDKConstants';
+import { createSongRequestParameters } from '../constructs/song-request-parameters';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 import path = require('path');
 
-import { EventBus } from '../constructs/event-bus';
 import { Api } from '../constructs/api';
 
 export interface ApiStackProps extends cdk.StackProps {
@@ -63,12 +61,24 @@ export class ApiStack extends cdk.Stack {
         }
       );
 
+    const eventDataTableArn = cdk.Fn.importValue(
+      `event-outbox-table-arn-${props.environmentName}`
+    );
+
+    const eventDataTable = ddb.Table.fromTableAttributes(
+      this,
+      `event-data-table-${props.environmentName}`,
+      {
+        tableArn: eventDataTableArn
+      }
+    );
+
     // ***********************
     // Setup main resources
     // ***********************
-    const eventBus = new EventBus(this, 'Kentobot-Event-Bus', {
-      environmentName: props.environmentName
-    });
+    // const eventBus = new EventBus(this, 'Kentobot-Event-Bus', {
+    //   environmentName: props.environmentName
+    // });
 
     const api = new Api(this, 'Kentobot-API', props);
     api.createApiKey('kentobot');
@@ -83,25 +93,6 @@ export class ApiStack extends cdk.Stack {
     // ***********************
     // Save song data resource
     // ***********************
-    const saveSongQueue = new sqs.Queue(this, 'save-song-data', {
-      queueName: `${props.environmentName}-save-song-data`,
-      visibilityTimeout: cdk.Duration.seconds(300),
-      retentionPeriod: cdk.Duration.days(14),
-      deadLetterQueue: {
-        maxReceiveCount: 3,
-        queue: new sqs.Queue(this, 'save-song-data-dlq', {
-          queueName: `${props.environmentName}-save-song-data-dlq`
-        })
-      }
-    });
-
-    eventBus.addQueueTarget(this, 'save-song-data-target', {
-      source: 'kentobot-api',
-      eventPattern: {
-        detailType: ['song-played']
-      },
-      queue: saveSongQueue
-    });
 
     // Get all songs endpoint
     const getAllSongRequestsLambda = new lambda.NodejsFunction(
@@ -166,13 +157,15 @@ export class ApiStack extends cdk.Stack {
       environment: {
         ...lambdaEnvironment,
         ENVIRONMENT: props.environmentName,
-        STREAM_DATA_TABLE: streamDataTable.tableName
+        STREAM_DATA_TABLE: streamDataTable.tableName,
+        EVENT_DATA_TABLE: eventDataTable.tableName
       },
       timeout: cdk.Duration.minutes(1),
       memorySize: 512,
       architecture: ARCHITECTURE
     });
 
+    eventDataTable.grantReadWriteData(startStreamLambda);
     streamDataTable.grantReadWriteData(startStreamLambda);
 
     streamEndpointResource.addMethod(
@@ -232,7 +225,7 @@ export class ApiStack extends cdk.Stack {
         STREAM_DATA_TABLE: streamDataTable.tableName,
         WEBSOCKET_API_ID: webSocketApi.apiId,
         WEB_SOCKET_STAGE: webSocketApiStage,
-        EVENT_BUS_NAME: eventBus.bus.eventBusName
+        EVENT_DATA_TABLE: eventDataTable.tableName
       },
       timeout: cdk.Duration.minutes(1),
       memorySize: 512,
@@ -246,7 +239,7 @@ export class ApiStack extends cdk.Stack {
     youtubeApiKeyParameter.grantRead(songRequestLambda);
     maxSongRequestsPerUser.grantRead(songRequestLambda);
     streamDataTable.grantReadWriteData(songRequestLambda);
-    eventBus.bus.grantPutEventsTo(songRequestLambda);
+    eventDataTable.grantReadWriteData(songRequestLambda);
 
     const requestSongEndpoint = queueEndpoint.addResource('request-song');
     requestSongEndpoint.addMethod(
@@ -275,8 +268,7 @@ export class ApiStack extends cdk.Stack {
           ENVIRONMENT: props.environmentName,
           STREAM_DATA_TABLE: streamDataTable.tableName,
           WEBSOCKET_API_ID: webSocketApi.apiId,
-          WEB_SOCKET_STAGE: webSocketApiStage,
-          EVENT_BUS_NAME: eventBus.bus.eventBusName
+          WEB_SOCKET_STAGE: webSocketApiStage
         },
         timeout: cdk.Duration.minutes(1),
         memorySize: 512,
@@ -285,7 +277,6 @@ export class ApiStack extends cdk.Stack {
     );
 
     streamDataTable.grantReadWriteData(removeRequestLambda);
-    eventBus.bus.grantPutEventsTo(removeRequestLambda);
 
     const removeRequestResource = queueEndpoint
       .addResource('remove-request')
@@ -319,8 +310,7 @@ export class ApiStack extends cdk.Stack {
       environment: {
         ...lambdaEnvironment,
         ENVIRONMENT: props.environmentName,
-        STREAM_DATA_TABLE: streamDataTable.tableName,
-        EVENT_BUS_NAME: eventBus.bus.eventBusName
+        STREAM_DATA_TABLE: streamDataTable.tableName
       },
       timeout: cdk.Duration.minutes(1),
       memorySize: 512,
@@ -385,8 +375,7 @@ export class ApiStack extends cdk.Stack {
       environment: {
         ...lambdaEnvironment,
         ENVIRONMENT: props.environmentName,
-        STREAM_DATA_TABLE: streamDataTable.tableName,
-        EVENT_BUS_NAME: eventBus.bus.eventBusName
+        STREAM_DATA_TABLE: streamDataTable.tableName
       },
       timeout: cdk.Duration.minutes(1),
       memorySize: 512,
@@ -426,8 +415,6 @@ export class ApiStack extends cdk.Stack {
       }
     );
 
-    eventBus.bus.grantPutEventsTo(shuffleLambda);
-
     /*  End of stream-based endpoints*/
 
     const streamEventHandler = new lambda.NodejsFunction(
@@ -454,19 +441,6 @@ export class ApiStack extends cdk.Stack {
         }
       }
     );
-
-    eventBus.addLambdaTarget(this, 'stream-event-event-rule', {
-      source: 'kentobot.streaming.system',
-      eventPattern: {
-        detailType: [
-          'song-added-to-queue',
-          'song-removed-from-queue',
-          'song-moved-in-queue',
-          'song-bumped-in-queue'
-        ]
-      },
-      lambda: streamEventHandler
-    });
 
     streamDataTable.grantReadData(streamEventHandler);
 

@@ -9,11 +9,15 @@ import { BumpType, SongRequestStatus } from '../../../types/song-request';
 // import { SongAddedToQueueEvent } from '../events/song-added-to-queue-event';
 // import { SongPlayedEvent } from '../events/song-played-event';
 import { BumpService } from '@services/bump-service';
-import { SongAddedToQueueEvent } from '../events/song-added-to-queue-event';
+import {
+  SongAddedToQueueEvent,
+  SongAddedToQueueEventPayload
+} from '../events/song-added-to-queue-event';
 import { SongRemovedFromQueueEvent } from '../events/song-removed-from-queue-event';
 import { SongMovedInQueueEvent } from '../events/song-moved-in-queue-event';
 import { SongBumpedEvent } from '../events/song-bumped-event';
 import { SongPlayedEvent } from '../events/song-played-event';
+import { KentobotDomainEvent } from '@core/events/domain-event';
 
 export class Stream {
   private streamDate: string;
@@ -23,6 +27,9 @@ export class Stream {
   private songHistory: Song[]; // List of songs that have been played in the stream
 
   private bumpService;
+
+  private uncommittedEvents: KentobotDomainEvent<SongAddedToQueueEventPayload>[] =
+    [];
 
   private constructor(streamDate: string, songQueue: SongQueue) {
     this.streamDate = streamDate;
@@ -80,6 +87,7 @@ export class Stream {
     // TODO Move this to the queue subdomain and pickup with an event dispatcher
 
     const event: SongAddedToQueueEvent = {
+      id: crypto.randomUUID(),
       type: 'song-added-to-queue',
       source: 'song-queue',
       occurredAt: new Date().toISOString(),
@@ -91,6 +99,8 @@ export class Stream {
         duration: song.duration
       }
     };
+
+    this.uncommittedEvents.push(event);
   }
 
   public removeSongFromQueue(songId: string) {
@@ -98,6 +108,7 @@ export class Stream {
 
     // TODO Move this to the queue subdomain and pickup with an event dispatcher
     const event: SongRemovedFromQueueEvent = {
+      id: crypto.randomUUID(),
       type: 'song-removed-from-queue',
       source: 'song-queue',
       occurredAt: new Date().toISOString(),
@@ -113,6 +124,7 @@ export class Stream {
 
     // TODO Move this to the queue subdomain and pickup with an event dispatcher
     const event: SongMovedInQueueEvent = {
+      id: crypto.randomUUID(),
       type: 'song-moved-in-queue',
       source: 'song-queue',
       occurredAt: new Date().toISOString(),
@@ -156,6 +168,7 @@ export class Stream {
     // TODO Move this to the queue subdomain and pickup with an event dispatcher
     // TODO Add a bump type to the payload
     const event: SongBumpedEvent = {
+      id: crypto.randomUUID(),
       source: 'stream',
       occurredAt: new Date().toISOString(),
       type: 'song-bumped',
@@ -213,6 +226,7 @@ export class Stream {
 
     // TODO Move this to the queue subdomain and pickup with an event dispatcher
     const event: SongPlayedEvent = {
+      id: crypto.randomUUID(),
       payload: {
         songId: song.id,
         requestedBy: song.requestedBy,
@@ -239,6 +253,7 @@ export class Stream {
 
     // TODO Move this to the queue subdomain and pickup with an event dispatcher
     const event: SongBumpedEvent = {
+      id: crypto.randomUUID(),
       source: 'stream',
       occurredAt: new Date().toISOString(),
       type: 'song-bumped',
@@ -249,5 +264,9 @@ export class Stream {
       },
       version: 1
     };
+  }
+
+  public getUncommittedEvents(): KentobotDomainEvent<SongAddedToQueueEventPayload>[] {
+    return this.uncommittedEvents;
   }
 }

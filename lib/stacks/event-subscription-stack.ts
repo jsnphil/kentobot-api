@@ -261,6 +261,12 @@ export class EventSubscriptionStack extends cdk.Stack {
 
     const eventStream = eventTable.tableStreamArn;
 
+    new cdk.CfnOutput(this, `EventOutboxTableArnExport`, {
+      value: eventTable.tableArn,
+      description: 'The name of the event outbox table',
+      exportName: `event-outbox-table-arn-${props.environmentName}`
+    });
+
     const eventPublisherLambda = new nodeLambda.NodejsFunction(
       this,
       'PublishEvents',

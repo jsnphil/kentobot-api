@@ -6,6 +6,7 @@ import {
   PutEventsCommand
 } from '@aws-sdk/client-eventbridge';
 import { mockClient } from 'aws-sdk-client-mock';
+import { vi, describe, expect, it, beforeEach } from 'vitest';
 
 const mockEventBridgeClient = mockClient(EventBridgeClient);
 
@@ -122,16 +123,14 @@ describe('Stream', () => {
 
   describe('bumpSongForUser', () => {
     beforeEach(() => {
-      jest.resetAllMocks();
+      vi.resetAllMocks();
     });
 
     it('should bump a song for a user with bean bump', async () => {
       const streamDate = '2023-10-01';
       const stream = Stream.create(streamDate);
 
-      jest
-        .spyOn(stream['bumpService'], 'isUserEligible')
-        .mockResolvedValue(true);
+      vi.spyOn(stream['bumpService'], 'isUserEligible').mockResolvedValue(true);
 
       const songs = [
         Song.load('1', 'Vin', 'Song 1', SongRequestStatus.QUEUED, 300),
@@ -170,9 +169,7 @@ describe('Stream', () => {
       const streamDate = '2023-10-01';
       const stream = Stream.create(streamDate);
 
-      jest
-        .spyOn(stream['bumpService'], 'isUserEligible')
-        .mockResolvedValue(false);
+      vi.spyOn(stream['bumpService'], 'isUserEligible').mockResolvedValue(false);
 
       await expect(
         stream.bumpSongForUser('user1', BumpType.Bean, undefined, false)
@@ -183,9 +180,7 @@ describe('Stream', () => {
       const streamDate = '2023-10-01';
       const stream = Stream.create(streamDate);
 
-      jest
-        .spyOn(stream['bumpService'], 'isUserEligible')
-        .mockResolvedValue(true);
+      vi.spyOn(stream['bumpService'], 'isUserEligible').mockResolvedValue(true);
 
       const songs = [
         Song.load('1', 'Vin', 'Song 1', SongRequestStatus.QUEUED, 300),

@@ -2,6 +2,7 @@ import { DynamoDBClient, GetItemCommand } from '@aws-sdk/client-dynamodb';
 import { mockClient } from 'aws-sdk-client-mock';
 import { TwitchRepository } from './twitch-repository';
 import { DynamoDBDocumentClient, GetCommand } from '@aws-sdk/lib-dynamodb';
+import { vi, describe, expect, it } from 'vitest';
 
 const mockDynamoDBClient = mockClient(DynamoDBDocumentClient);
 

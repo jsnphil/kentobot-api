@@ -2,25 +2,28 @@ import { handler } from './save-played-request';
 import { APIGatewayEvent, APIGatewayProxyEvent } from 'aws-lambda';
 import { SavePlayedSongCommandHandler } from '@command-handlers/save-played-song-command-handler';
 import { SavePlayedSongCommand } from '@commands/save-played-song-command';
+import { vi, describe, expect, it, beforeAll, afterEach } from 'vitest';
 
-jest.mock('@command-handlers/save-played-song-command-handler');
+vi.mock('@command-handlers/save-played-song-command-handler');
 
 const createEvent = (body: any): APIGatewayProxyEvent =>
   ({
     body: JSON.stringify(body)
-  } as unknown as APIGatewayProxyEvent);
+  }) as unknown as APIGatewayProxyEvent;
 
 describe('save-played-request handler', () => {
-  const mockExecute = jest.fn();
-  beforeAll(() => {
-    (SavePlayedSongCommandHandler as jest.Mock).mockImplementation(() => ({
-      execute: mockExecute
-    }));
-  });
+  // const mockExecute = vi.fn();
+  // beforeAll(() => {
+  //   vi.mocked(SavePlayedSongCommandHandler).mockImplementation(function () {
+  //     return {
+  //       execute: mockExecute
+  //     } as any;
+  //   });
+  // });
 
-  afterEach(() => {
-    jest.clearAllMocks();
-  });
+  // afterEach(() => {
+  //   vi.clearAllMocks();
+  // });
 
   it('should return 201 when the song is saved successfully', async () => {
     const event = createEvent({
@@ -30,7 +33,7 @@ describe('save-played-request handler', () => {
       duration: 300
     });
 
-    const mockCommandHander = jest
+    const mockCommandHander = vi
       .spyOn(SavePlayedSongCommandHandler.prototype, 'execute')
       .mockResolvedValue({} as never);
 
@@ -52,7 +55,7 @@ describe('save-played-request handler', () => {
       }
     } as any;
 
-    const mockCommandHander = jest.spyOn(
+    const mockCommandHander = vi.spyOn(
       SavePlayedSongCommandHandler.prototype,
       'execute'
     );
@@ -61,7 +64,6 @@ describe('save-played-request handler', () => {
 
     expect(mockCommandHander).not.toHaveBeenCalled();
     expect(response.statusCode).toBe(400);
-    expect(mockExecute).not.toHaveBeenCalled();
   });
 
   // it('should return 500 when an error occurs during execution', async () => {
@@ -72,7 +74,7 @@ describe('save-played-request handler', () => {
   //     duration: 300
   //   });
 
-  //   const mockCommandHander = jest
+  //   const mockCommandHander = vi
   //     .spyOn(SavePlayedSongCommandHandler.prototype, 'execute')
   //     .mockRejectedValue(new Error('Internal Server Error'));
 

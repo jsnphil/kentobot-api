@@ -7,13 +7,14 @@ import { mockClient } from 'aws-sdk-client-mock';
 import { WebSocketService } from './web-socket-service';
 import { WebSocketConnectionsRepository } from '@repositories/websocket-connections-repository';
 import { connect } from 'http2';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockApiGatewayClient = mockClient(ApiGatewayManagementApiClient);
 let service: WebSocketService;
 
 describe('web-socket-service', () => {
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     service = new WebSocketService();
   });
 
@@ -25,7 +26,7 @@ describe('web-socket-service', () => {
 
       mockApiGatewayClient.on(PostToConnectionCommand).resolves({});
 
-      const loggerSpy = jest.spyOn(Logger.prototype, 'debug');
+      const loggerSpy = vi.spyOn(Logger.prototype, 'debug');
 
       // Act
       await service.sendToConnection(connectionId, message);
@@ -39,7 +40,7 @@ describe('web-socket-service', () => {
       const connectionId = '123';
       const message = 'Hello, world!';
 
-      const loggerSpy = jest.spyOn(Logger.prototype, 'warn');
+      const loggerSpy = vi.spyOn(Logger.prototype, 'warn');
 
       mockApiGatewayClient
         .on(PostToConnectionCommand)
@@ -62,13 +63,14 @@ describe('web-socket-service', () => {
         { connectionId: '789', connectedAt: '2021-10-01T00:00:00Z' }
       ];
 
-      jest
-        .spyOn(WebSocketConnectionsRepository.prototype, 'getAllConnections')
-        .mockResolvedValue(connections);
-      const loggerSpy = jest.spyOn(Logger.prototype, 'debug');
-      const sendToConnectionSpy = jest.spyOn(service, 'sendToConnection');
+      vi.spyOn(
+        WebSocketConnectionsRepository.prototype,
+        'getAllConnections'
+      ).mockResolvedValue(connections);
+      const loggerSpy = vi.spyOn(Logger.prototype, 'debug');
+      const sendToConnectionSpy = vi.spyOn(service, 'sendToConnection');
 
-      jest.spyOn(service, 'sendToConnection').mockResolvedValue();
+      vi.spyOn(service, 'sendToConnection').mockResolvedValue();
 
       // Act
       await service.broadcast('Hello, world!');

@@ -1,22 +1,24 @@
 import { APIGatewayEvent } from 'aws-lambda';
 import { handler } from './remove-song';
 import { RemoveSongCommandHandler } from '@command-handlers/remove-song-command-handler';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-jest.mock('@command-handlers/remove-song-command-handler');
+vi.mock('@command-handlers/remove-song-command-handler');
 
 describe('remove-song handler', () => {
-  let mockRemoveSongCommandHandler: jest.Mocked<RemoveSongCommandHandler>;
+  let mockExecute: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
-    mockRemoveSongCommandHandler =
-      new RemoveSongCommandHandler() as jest.Mocked<RemoveSongCommandHandler>;
-    (RemoveSongCommandHandler as jest.Mock).mockImplementation(
-      () => mockRemoveSongCommandHandler
-    );
+    mockExecute = vi.fn();
+    vi.mocked(RemoveSongCommandHandler).mockImplementation(function () {
+      return {
+        execute: mockExecute
+      } as any;
+    });
   });
 
   afterEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
   });
 
   it('should return 400 if songId is not provided', async () => {
@@ -52,7 +54,7 @@ describe('remove-song handler', () => {
       pathParameters: { songId: '123' }
     } as any;
 
-    mockRemoveSongCommandHandler.execute.mockImplementation(() => {
+    mockExecute.mockImplementation(() => {
       throw new Error('Test error');
     });
 

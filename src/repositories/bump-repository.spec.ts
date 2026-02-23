@@ -6,20 +6,21 @@ import {
 import { Logger } from '@aws-lambda-powertools/logger';
 import { BumpRepository } from './bump-repository';
 import { mockClient } from 'aws-sdk-client-mock';
+import { vi, describe, expect, it } from 'vitest';
 
-jest.mock('@aws-lambda-powertools/logger');
+vi.mock('@aws-lambda-powertools/logger');
 
 const mockDynamoDB = mockClient(DynamoDBClient);
 
 describe('BumpRepository', () => {
-  const mockLogger = Logger as jest.MockedClass<typeof Logger>;
+  const mockLogger = Logger as vi.MockedClass<typeof Logger>;
 
   beforeEach(() => {
-    mockLogger.prototype.error = jest.fn();
+    mockLogger.prototype.error = vi.fn();
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('updateUserBumpEligibility', () => {

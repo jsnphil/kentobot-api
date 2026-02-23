@@ -11,13 +11,14 @@ import {
 } from '@aws-sdk/client-apigatewaymanagementapi';
 import { mockClient } from 'aws-sdk-client-mock';
 import { WebSocketService } from '../../services/web-socket-service';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockDynamoDBClient = mockClient(DynamoDBClient);
 const mockApiGatewayClient = mockClient(ApiGatewayManagementApiClient);
 
 describe('message-handler', () => {
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
   });
 
   describe('handleRoute', () => {
@@ -29,7 +30,7 @@ describe('message-handler', () => {
 
       mockDynamoDBClient.on(PutItemCommand).resolves({});
 
-      const saveConnection = jest.spyOn(
+      const saveConnection = vi.spyOn(
         WebSocketConnectionsRepository.prototype,
         'saveConnection'
       );
@@ -49,7 +50,7 @@ describe('message-handler', () => {
 
       mockDynamoDBClient.on(DeleteItemCommand).resolves({});
 
-      const deleteConnection = jest.spyOn(
+      const deleteConnection = vi.spyOn(
         WebSocketConnectionsRepository.prototype,
         'deleteConnection'
       );
@@ -70,7 +71,7 @@ describe('message-handler', () => {
 
       mockApiGatewayClient.on(PostToConnectionCommand).resolves({});
 
-      const sendToConnection = jest.spyOn(
+      const sendToConnection = vi.spyOn(
         WebSocketService.prototype,
         'sendToConnection'
       );

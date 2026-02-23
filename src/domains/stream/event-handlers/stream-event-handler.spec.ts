@@ -2,27 +2,35 @@ import { WebSocketService } from '@services/web-socket-service';
 import { Logger } from '@aws-lambda-powertools/logger';
 import { handler } from './stream-event-handler';
 import { StreamEvent } from '../../../types/event-types';
+import { vi, describe, expect, it, beforeEach, afterEach } from 'vitest';
 
-jest.mock('@services/web-socket-service');
-jest.mock('@aws-lambda-powertools/logger');
+vi.mock('@services/web-socket-service');
+vi.mock('@aws-lambda-powertools/logger');
 
 describe('stream-event-handler', () => {
-  let webSocketServiceMock: jest.Mocked<WebSocketService>;
-  let loggerMock: jest.Mocked<Logger>;
+  let webSocketServiceMock;
+  let loggerMock;
 
   beforeEach(() => {
-    webSocketServiceMock =
-      new WebSocketService() as jest.Mocked<WebSocketService>;
-    loggerMock = new Logger({
-      serviceName: 'add-song-to-queue-event-handler'
-    }) as jest.Mocked<Logger>;
+    webSocketServiceMock = {
+      broadcast: vi.fn()
+    };
+    loggerMock = {
+      debug: vi.fn(),
+      error: vi.fn(),
+      info: vi.fn()
+    };
 
-    (WebSocketService as jest.Mock).mockReturnValue(webSocketServiceMock);
-    (Logger as unknown as jest.Mock).mockReturnValue(loggerMock);
+    vi.mocked(WebSocketService).mockImplementation(function () {
+      return webSocketServiceMock as any;
+    });
+    vi.mocked(Logger).mockImplementation(function () {
+      return loggerMock as any;
+    });
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('should broadcast a song-added message when detailType is song-added-to-queue', async () => {
@@ -50,7 +58,7 @@ describe('stream-event-handler', () => {
       }
     });
 
-    const broadcastSpy = jest
+    const broadcastSpy = vi
       .spyOn(WebSocketService.prototype, 'broadcast')
       .mockImplementation(() => Promise.resolve());
 
@@ -73,7 +81,7 @@ describe('stream-event-handler', () => {
       }
     });
 
-    const broadcastSpy = jest
+    const broadcastSpy = vi
       .spyOn(WebSocketService.prototype, 'broadcast')
       .mockImplementation(() => Promise.resolve());
 
@@ -98,7 +106,7 @@ describe('stream-event-handler', () => {
       }
     });
 
-    const broadcastSpy = jest
+    const broadcastSpy = vi
       .spyOn(WebSocketService.prototype, 'broadcast')
       .mockImplementation(() => Promise.resolve());
 
@@ -123,7 +131,7 @@ describe('stream-event-handler', () => {
       }
     });
 
-    const broadcastSpy = jest
+    const broadcastSpy = vi
       .spyOn(WebSocketService.prototype, 'broadcast')
       .mockImplementation(() => Promise.resolve());
 

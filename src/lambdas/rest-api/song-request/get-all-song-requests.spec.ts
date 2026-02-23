@@ -2,18 +2,17 @@ import { APIGatewayEvent, Context } from 'aws-lambda';
 import { SongRepository } from '../../../repositories/song-repository';
 import { Logger } from '@aws-lambda-powertools/logger';
 import { handler } from './get-all-song-requests';
+import { vi, describe, expect, it, beforeEach } from 'vitest';
 
-jest.mock('../../../repositories/song-repository');
-jest.mock('@aws-lambda-powertools/logger');
+vi.mock('../../../repositories/song-repository');
+vi.mock('@aws-lambda-powertools/logger');
 
-const mockSongRepository = SongRepository as jest.MockedClass<
-  typeof SongRepository
->;
-const mockLogger = Logger as jest.MockedClass<typeof Logger>;
+const mockSongRepository = SongRepository as any;
+const mockLogger = Logger as any;
 
 describe('get-all-song-requests handler', () => {
   beforeEach(() => {
-    jest.clearAllMocks;
+    vi.clearAllMocks();
   });
 
   it('should return 200 with a list of songs', async () => {
@@ -22,9 +21,9 @@ describe('get-all-song-requests handler', () => {
       { title: 'Song 2', youtubeId: 'yt2', length: 200 }
     ];
 
-    jest
-      .spyOn(SongRepository.prototype, 'getAllSongs')
-      .mockResolvedValue(mockSongs);
+    vi.spyOn(SongRepository.prototype, 'getAllSongs').mockResolvedValue(
+      mockSongs
+    );
 
     const event: APIGatewayEvent = {} as any;
     const result = await handler(event);
@@ -37,9 +36,9 @@ describe('get-all-song-requests handler', () => {
   });
 
   it('should return 500 if there is an error', async () => {
-    jest
-      .spyOn(SongRepository.prototype, 'getAllSongs')
-      .mockRejectedValue('Something went wrong');
+    vi.spyOn(SongRepository.prototype, 'getAllSongs').mockRejectedValue(
+      'Something went wrong'
+    );
 
     const event: APIGatewayEvent = {} as any;
     const result = await handler(event);

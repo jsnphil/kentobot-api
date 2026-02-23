@@ -1,23 +1,24 @@
 import { APIGatewayEvent } from 'aws-lambda';
 import { handler } from './request-song';
 import { RequestSongCommandHandler } from '@command-handlers/request-song-command-handler';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-jest.mock('@command-handlers/request-song-command-handler');
+vi.mock('@command-handlers/request-song-command-handler');
 
 describe('request-song handler', () => {
-  let mockExecute: jest.Mock;
+  let mockExecute: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
-    mockExecute = jest.fn();
-    (RequestSongCommandHandler as jest.Mock).mockImplementation(() => {
+    mockExecute = vi.fn();
+    vi.mocked(RequestSongCommandHandler).mockImplementation(function () {
       return {
         execute: mockExecute
-      };
+      } as any;
     });
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('should return 200 and song details when request is successful', async () => {

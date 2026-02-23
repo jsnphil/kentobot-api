@@ -7,6 +7,7 @@ import {
 import { WebSocketConnectionsRepository } from './websocket-connections-repository';
 import { mockClient } from 'aws-sdk-client-mock';
 import { Logger } from '@aws-lambda-powertools/logger';
+import { vi, describe, expect, it } from 'vitest';
 
 describe('WebsocketConnectionsRepository', () => {
   const mockDynamoDBClient = mockClient(DynamoDBClient);
@@ -14,7 +15,7 @@ describe('WebsocketConnectionsRepository', () => {
   let repository: WebSocketConnectionsRepository;
   beforeEach(() => {
     repository = new WebSocketConnectionsRepository();
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('saveConnection', () => {
@@ -26,7 +27,7 @@ describe('WebsocketConnectionsRepository', () => {
         }
       });
 
-      const loggerSpy = jest.spyOn(Logger.prototype, 'debug');
+      const loggerSpy = vi.spyOn(Logger.prototype, 'debug');
 
       // Act
       await repository.saveConnection('connectionId');
@@ -57,7 +58,7 @@ describe('WebsocketConnectionsRepository', () => {
           httpStatusCode: 200
         }
       });
-      const loggerSpy = jest.spyOn(Logger.prototype, 'debug');
+      const loggerSpy = vi.spyOn(Logger.prototype, 'debug');
 
       // Act
       await repository.deleteConnection('connectionId');

@@ -2,26 +2,22 @@ import { APIGatewayProxyEvent } from 'aws-lambda';
 import { handler } from './bump-request';
 import { BumpSongCommandHandler } from '@command-handlers/bump-song-command-handler';
 import { Code } from 'better-status-codes';
+import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { vi, Mock } from 'vitest';
 
-jest.mock('@command-handlers/bump-song-command-handler');
+vi.mock('@command-handlers/bump-song-command-handler');
 
 describe('bumpSong', () => {
-  const mockExecute = jest.fn();
-
-  beforeAll(() => {
-    (BumpSongCommandHandler as jest.Mock).mockImplementation(() => ({
-      execute: mockExecute
-    }));
-  });
+  let bumpSongCommandHandler: BumpSongCommandHandler;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    bumpSongCommandHandler = new BumpSongCommandHandler();
   });
 
   const createEvent = (body: any): APIGatewayProxyEvent =>
     ({
       body: JSON.stringify(body)
-    } as unknown as APIGatewayProxyEvent);
+    }) as unknown as APIGatewayProxyEvent;
 
   it('should return 400 if user is not provided', async () => {
     const event = createEvent({
@@ -43,7 +39,11 @@ describe('bumpSong', () => {
       bumpType: 'bean',
       modOverride: false
     });
-    mockExecute.mockResolvedValue({} as never);
+    mockExecute.mockResolvedValue({});
+
+    vi.mocked(BumpSongCommandHandler).mockImplementation(() => ({
+      execute: mockExecute
+    }));
 
     const result = await handler(event);
 

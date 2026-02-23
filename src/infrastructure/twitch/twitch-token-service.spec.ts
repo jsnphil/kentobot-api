@@ -1,11 +1,12 @@
 import { TwitchTokenService } from './twitch-token-service';
 import { TwitchRepository } from '@repositories/twitch-repository';
+import { vi, describe, expect, it, beforeEach } from 'vitest';
 
 describe('TwitchTokenService', () => {
   let service: TwitchTokenService;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     service = new TwitchTokenService();
     // @ts-ignore
     service.clientId = 'test-client-id';
@@ -18,13 +19,13 @@ describe('TwitchTokenService', () => {
       const mockToken = 'access-token';
       const future = Date.now() + 3600000; // 1 hour in the future
 
-      const getAppTokenSpy = jest.spyOn(TwitchRepository, 'getAppToken');
+      const getAppTokenSpy = vi.spyOn(TwitchRepository, 'getAppToken');
       getAppTokenSpy.mockResolvedValue({
         accessToken: mockToken,
         expiresAt: new Date(future).toISOString()
       });
 
-      const saveAppTokenSpy = jest.spyOn(TwitchRepository, 'saveAppToken');
+      const saveAppTokenSpy = vi.spyOn(TwitchRepository, 'saveAppToken');
 
       const token = await service.getToken();
       expect(saveAppTokenSpy).not.toHaveBeenCalled();
@@ -37,19 +38,19 @@ describe('TwitchTokenService', () => {
       const expired = Date.now() - 10000;
       const future = Date.now() + 3600000; // 1 hour in the future
 
-      const getAppTokenSpy = jest.spyOn(TwitchRepository, 'getAppToken');
+      const getAppTokenSpy = vi.spyOn(TwitchRepository, 'getAppToken');
       getAppTokenSpy.mockResolvedValue({
         accessToken: 'cached-token',
         expiresAt: new Date(expired).toISOString()
       });
 
-      jest.spyOn(service, 'getNewAccessToken').mockResolvedValue({
+      vi.spyOn(service, 'getNewAccessToken').mockResolvedValue({
         token: 'new-access-token',
         expiresIn: 3600,
         bearerType: 'bearer'
       });
 
-      const saveAppTokenSpy = jest.spyOn(TwitchRepository, 'saveAppToken');
+      const saveAppTokenSpy = vi.spyOn(TwitchRepository, 'saveAppToken');
 
       const token = await service.getToken();
       expect(token).toBe('new-access-token');
@@ -73,7 +74,7 @@ describe('TwitchTokenService', () => {
 
     it('should throw error if fetch fails', async () => {
       // Mock global fetch to throw an error
-      global.fetch = jest
+      global.fetch = vi
         .fn()
         .mockRejectedValue(
           new Error('Failed to fetch access token from Twitch API')
@@ -86,10 +87,10 @@ describe('TwitchTokenService', () => {
 
     it('should throw error if response is not ok', async () => {
       // Mock global fetch to return a non-ok response
-      global.fetch = jest.fn().mockResolvedValue({
+      global.fetch = vi.fn().mockResolvedValue({
         ok: false,
         status: 400,
-        json: jest.fn().mockResolvedValue({ error: 'Bad Request' })
+        json: vi.fn().mockResolvedValue({ error: 'Bad Request' })
       });
 
       await expect(service.getNewAccessToken()).rejects.toThrow(

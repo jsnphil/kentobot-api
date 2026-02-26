@@ -7,16 +7,13 @@ import { BumpSongCommandHandler } from '@command-handlers/bump-song-command-hand
 import { BumpSongCommand } from '@commands/bump-song-command';
 import { BumpType } from '../../types/song-request';
 import { Logger } from '@aws-lambda-powertools/logger';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@domains/stream/factories/stream-factory');
 vi.mock('@repositories/stream-repository');
 
 describe('Subscription Event Handler', () => {
   let bumpSongCommandHandlerSpy: any;
-    Promise<void>,
-    [command: BumpSongCommand],
-    any
-  >;
 
   beforeEach(() => {
     vi.resetAllMocks();
@@ -138,6 +135,8 @@ describe('Subscription Event Handler', () => {
 
     await handler(event);
 
-    expect(loggerSpy).toHaveBeenCalledWith('Unknown subscription event type, exiting...');
+    expect(loggerSpy).toHaveBeenCalledWith(
+      'Unknown subscription event type, exiting...'
+    );
   });
 });

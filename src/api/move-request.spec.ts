@@ -13,7 +13,7 @@ describe('move-request handler', () => {
     vi.mocked(MoveSongCommandHandler).mockImplementation(function () {
       return {
         execute: mockExecute
-      } as any;
+      };
     });
   });
 

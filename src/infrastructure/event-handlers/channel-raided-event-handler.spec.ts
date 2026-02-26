@@ -4,16 +4,14 @@ import { StreamFactory } from '@domains/stream/factories/stream-factory';
 import { ChannelRaidedEvent } from '@domains/twitch/events/channel-raided-event';
 import { handler } from './channel-raided-event-handler';
 import { BumpType } from '../../types/song-request';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { any } from 'zod';
 
 vi.mock('@domains/stream/factories/stream-factory');
 vi.mock('@repositories/stream-repository');
 
 describe('Channel raided event handler', () => {
   let bumpSongCommandHandlerSpy: any;
-    Promise<void>,
-    [command: BumpSongCommand],
-    any
-  >;
 
   beforeEach(() => {
     vi.resetAllMocks();

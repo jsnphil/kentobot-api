@@ -16,6 +16,10 @@ export class BumpSongCommandHandler {
       command.modOverride
     );
 
+    console.log(
+      `Bumped song at position ${command.position} for user ${command.requestedBy} with bump type ${command.bumpType} and mod override ${command.modOverride}`
+    );
+
     await StreamRepository.saveStream(stream);
 
     // return { songId: command.songId };

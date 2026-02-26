@@ -3,7 +3,7 @@ import { BumpSongCommand } from '@commands/bump-song-command';
 import { StreamFactory } from '@domains/stream/factories/stream-factory';
 import { StreamRepository } from '@repositories/stream-repository';
 import { BumpType } from '../types/song-request';
-import { vi, describe, expect, it, beforeEach } from 'vitest';
+import { vi, describe, expect, it, beforeEach, afterEach } from 'vitest';
 
 vi.mock('@domains/stream/factories/stream-factory');
 vi.mock('@repositories/stream-repository');
@@ -13,6 +13,10 @@ describe('BumpSongCommandHandler', () => {
 
   beforeEach(() => {
     handler = new BumpSongCommandHandler();
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
   });
 
   it('should bump a song successfully', async () => {

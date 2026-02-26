@@ -5,16 +5,13 @@ import { StreamFactory } from '@domains/stream/factories/stream-factory';
 import { UserRedeemedChannelRewardEvent } from '@domains/twitch/events/user-redeemed-channel-reward';
 import { BumpType } from '../../types/song-request';
 import { handler } from './channel-points-redeemed-event-handler';
+import { beforeEach, describe, vi } from 'vitest';
 
 vi.mock('@domains/stream/factories/stream-factory');
 vi.mock('@repositories/stream-repository');
 
 describe('Channel Points Redeemed Event Handler', () => {
   let bumpSongCommandHandlerSpy: any;
-    Promise<void>,
-    [command: BumpSongCommand],
-    any
-  >;
 
   beforeEach(() => {
     vi.resetAllMocks();

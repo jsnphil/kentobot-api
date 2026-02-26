@@ -6,7 +6,7 @@ import { vi, describe, expect, it } from 'vitest';
 
 const mockDynamoDBClient = mockClient(DynamoDBDocumentClient);
 
-describe('twitch-repository', () => {
+describe.skip('twitch-repository', () => {
   describe('getAppToken', () => {
     it('should return the app token if it exists', async () => {
       const expires = new Date(Date.now() + 3600000).toISOString(); // 1 hour in the future

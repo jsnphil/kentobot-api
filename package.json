@@ -15,30 +15,31 @@
     "test:infra:watch": "vitest --config vitest.config.infra.ts",
     "test:infra:coverage": "vitest run --coverage --config vitest.config.infra.ts",
     "cdk": "cdk",
-    "deploy-dev": "cdk deploy Dev/* --require-approval never",
-    "destroy-dev": "cdk destroy Dev/*",
-    "lint": "eslint . --ext .ts",
-    "lint:ci": "eslint . --ext .ts --max-warnings 0"
+    "deploy:dev": "cdk deploy Dev/* --require-approval never",
+    "destroy:dev": "cdk destroy Dev/*",
+    "check": "biome check",
+    "format": "biome format --write",
+    "fix": "biome check --apply"
   },
   "devDependencies": {
     "@eslint/js": "^9.22.0",
     "@types/aws-lambda": "^8.10.147",
     "@types/node": "24.2.1",
     "@types/supertest": "^6.0.3",
+    "@vitest/coverage-v8": "^4.0.8",
     "aws-cdk": "2.1023.0",
     "aws-sdk-client-mock": "^4.1.0",
     "aws-sdk-mock": "^6.2.1",
+    "biome": "^0.3.3",
     "cross-env": "^7.0.3",
     "esbuild": "^0.25.6",
-    "eslint": "^9.25.0",
     "globals": "^16.0.0",
     "msw": "^2.7.5",
     "supertest": "^7.1.3",
     "ts-node": "^10.9.2",
     "typescript": "~5.9.2",
     "typescript-eslint": "^8.32.1",
-    "vitest": "^4.0.8",
-    "@vitest/coverage-v8": "^4.0.8"
+    "vitest": "^4.0.8"
   },
   "dependencies": {
     "@aws-lambda-powertools/logger": "^2.24.1",

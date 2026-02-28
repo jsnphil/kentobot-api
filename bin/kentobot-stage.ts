@@ -2,34 +2,38 @@ import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { DataStack } from '../lib/stacks/data-stack';
 import { ApiStack } from '../lib/stacks/api-stack';
-import { DataMigrationStack } from '../lib/stacks/data-migration-stack';
+// import { DataMigrationStack } from '../lib/stacks/data-migration-stack';
 import { WebSocketStack } from '../lib/stacks/web-socket-stack';
-import { EventSubscriptionStack } from '../lib/stacks/event-subscription-stack';
+// import { EventSubscriptionStack } from '../lib/stacks/event-subscription-stack';
 
 export interface KentobotProps extends cdk.StageProps {
   readonly environmentName: string;
 }
 
-export class KentobotStage extends cdk.Stage {
+export class KentobotCoreStage extends cdk.Stage {
   constructor(scope: Construct, id: string, props: KentobotProps) {
     super(scope, id, props);
 
     // Add both stacks to the stage
-    const dataStack = new DataStack(this, 'DatabaseStack', props);
-    const apiStack = new ApiStack(this, 'ApiStack', props);
-    const eventSubscriptionStack = new EventSubscriptionStack(
-      this,
-      'EventSubscriptionStack',
-      props
-    );
-    // const dataMigrationStack = new DataMigrationStack(this, 'DataMigrationStack', props);
+    const dataStack = new DataStack(this, 'KentobotCoreDatabaseStack', props);
+    const apiStack = new ApiStack(this, 'KentobotCoreApiStack', props);
+    // const eventSubscriptionStack = new EventSubscriptionStack(
+    //   this,
+    //   'KentobotCoreEventSubscriptionStack',
+    //   props
+    // );
+    // const dataMigrationStack = new DataMigrationStack(this, 'KentobotCoreDataMigrationStack', props);
     // const dataMigration = new DataMigrationStack(
     //   this,
-    //   'DataMigrationStack',
+    //   'KentobotCoreDataMigrationStack',
     //   props
     // );
 
-    const webSocketStack = new WebSocketStack(this, 'WebSocketStack', props);
+    const webSocketStack = new WebSocketStack(
+      this,
+      'KentobotCoreWebSocketStack',
+      props
+    );
 
     apiStack.addDependency(dataStack);
     // dataMigration.addDependency(dataStack);

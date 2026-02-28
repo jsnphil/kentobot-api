@@ -1,0 +1,19 @@
+meta {
+  name: Get song play history
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/song-requests/:youtubeId/plays
+  body: none
+  auth: none
+}
+
+params:path {
+  youtubeId: 
+}
+
+headers {
+  X-API-Key: {{apiKey}}
+}

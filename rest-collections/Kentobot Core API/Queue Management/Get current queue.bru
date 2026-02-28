@@ -1,0 +1,19 @@
+meta {
+  name: Get current queue
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/streams/:streamId/queue
+  body: none
+  auth: none
+}
+
+params:path {
+  streamId: 
+}
+
+headers {
+  X-API-Key: {{apiKey}}
+}

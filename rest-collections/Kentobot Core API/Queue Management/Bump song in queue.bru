@@ -1,0 +1,29 @@
+meta {
+  name: Bump song in queue
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/streams/:streamId/queue/bump-request/:songId
+  body: json
+  auth: none
+}
+
+params:path {
+  streamId: 
+  songId: 
+}
+
+headers {
+  X-API-Key: {{apiKey}}
+}
+
+body:json {
+  {
+    "user": "",
+    "position": "",
+    "bumpType": "",
+    "modOverride": ""
+  }
+}

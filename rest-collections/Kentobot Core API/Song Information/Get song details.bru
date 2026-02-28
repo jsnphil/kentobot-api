@@ -1,0 +1,19 @@
+meta {
+  name: Get song details
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/song-requests/:youtubeId/details
+  body: none
+  auth: none
+}
+
+params:path {
+  youtubeId: 
+}
+
+headers {
+  X-API-Key: {{apiKey}}
+}

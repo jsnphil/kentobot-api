@@ -21,7 +21,9 @@ export default defineConfig({
         'bin/',
         '**/*.test.ts',
         '**/*.spec.ts',
-        'src/commands/**'
+        'src/commands/**',
+        'src/mocks/**',
+        'src/types/**'
       ],
       thresholds: {
         branches: 70,

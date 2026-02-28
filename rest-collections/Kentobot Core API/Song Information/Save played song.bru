@@ -1,0 +1,24 @@
+meta {
+  name: Save played song
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/song-requests/save
+  body: json
+  auth: none
+}
+
+headers {
+  X-API-Key: {{apiKey}}
+}
+
+body:json {
+  {
+    "songId": "",
+    "title": "",
+    "requestedBy": "",
+    "duration": ""
+  }
+}

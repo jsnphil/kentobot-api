@@ -29,7 +29,12 @@ export default defineConfig({
         branches: 70,
         statements: 70,
         functions: 70,
-        perFile: true
+        perFile: true,
+        '**/domains/**': {
+          branches: 95,
+          statements: 95,
+          functions: 95
+        }
       },
       clean: true
     }

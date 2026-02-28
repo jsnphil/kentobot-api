@@ -4,11 +4,12 @@ import { StreamRepository } from '@repositories/stream-repository';
 import { Song } from '@domains/stream/models/song';
 import { Stream } from '@domains/stream/models/stream';
 import { generateStreamDate } from '@utils/utilities';
+import { vi, describe, beforeEach, it, expect } from 'vitest';
 
-jest.mock('@repositories/stream-repository');
-jest.mock('@domains/stream/models/song');
-jest.mock('@domains/stream/models/stream');
-jest.mock('@utils/utilities');
+vi.mock('@repositories/stream-repository');
+vi.mock('@domains/stream/models/song');
+vi.mock('@domains/stream/models/stream');
+vi.mock('@utils/utilities');
 
 describe('RequestSongCommandHandler', () => {
   let handler: RequestSongCommandHandler;
@@ -18,8 +19,8 @@ describe('RequestSongCommandHandler', () => {
   });
 
   it('should throw an error if the stream is not found', async () => {
-    (generateStreamDate as jest.Mock).mockReturnValue('2023-01-01');
-    (StreamRepository.loadStream as jest.Mock).mockResolvedValue(null);
+    (generateStreamDate as any).mockReturnValue('2023-01-01');
+    (StreamRepository.loadStream as any).mockResolvedValue(null);
 
     const command = new RequestSongCommand('Syl', 'song123');
 
@@ -29,16 +30,14 @@ describe('RequestSongCommandHandler', () => {
   it('should add a song to the stream queue and save the stream', async () => {
     const mockStreamData = { id: 'stream123' };
     const mockStream = {
-      addSongToQueue: jest.fn()
+      addSongToQueue: vi.fn()
     };
     const mockSong = { id: 'song123', requestedBy: 'user123' };
 
-    (generateStreamDate as jest.Mock).mockReturnValue('2023-01-01');
-    (StreamRepository.loadStream as jest.Mock).mockResolvedValue(
-      mockStreamData
-    );
-    (Stream.load as jest.Mock).mockReturnValue(mockStream);
-    (Song.create as jest.Mock).mockResolvedValue(mockSong);
+    (generateStreamDate as any).mockReturnValue('2023-01-01');
+    (StreamRepository.loadStream as any).mockResolvedValue(mockStreamData);
+    (Stream.load as any).mockReturnValue(mockStream);
+    (Song.create as any).mockResolvedValue(mockSong);
 
     const command = new RequestSongCommand('song123', 'Dalinar');
 

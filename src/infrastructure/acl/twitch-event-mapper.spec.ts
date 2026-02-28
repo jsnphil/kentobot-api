@@ -10,6 +10,7 @@ import {
 } from '../../mocks/twitch-mocks';
 import { TwitchEventMapper } from './twitch-event-mapper';
 import type { UserSubscribedEvent } from '../../domains/twitch/events/user-subscribed-event';
+import { vi, describe, expect, it } from 'vitest';
 
 describe('TwitchEventMapper', () => {
   it('should create a user-subscribed event', () => {

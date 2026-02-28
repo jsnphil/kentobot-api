@@ -7,26 +7,23 @@ import { BumpSongCommandHandler } from '@command-handlers/bump-song-command-hand
 import { BumpSongCommand } from '@commands/bump-song-command';
 import { BumpType } from '../../types/song-request';
 import { Logger } from '@aws-lambda-powertools/logger';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-jest.mock('@domains/stream/factories/stream-factory');
-jest.mock('@repositories/stream-repository');
+vi.mock('@domains/stream/factories/stream-factory');
+vi.mock('@repositories/stream-repository');
 
 describe('Subscription Event Handler', () => {
-  let bumpSongCommandHandlerSpy: jest.SpyInstance<
-    Promise<void>,
-    [command: BumpSongCommand],
-    any
-  >;
+  let bumpSongCommandHandlerSpy: any;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
 
     const mockStream = {
-      bumpSongForUser: jest.fn().mockResolvedValue(undefined)
+      bumpSongForUser: vi.fn().mockResolvedValue(undefined)
     };
-    (StreamFactory.createStream as jest.Mock).mockResolvedValue(mockStream);
+    (StreamFactory.createStream as any).mockResolvedValue(mockStream);
 
-    bumpSongCommandHandlerSpy = jest.spyOn(
+    bumpSongCommandHandlerSpy = vi.spyOn(
       BumpSongCommandHandler.prototype,
       'execute'
     );
@@ -119,7 +116,7 @@ describe('Subscription Event Handler', () => {
   });
 
   it('should log an error when an unknown event is received', async () => {
-    const loggerSpy = jest.spyOn(Logger.prototype, 'error');
+    const loggerSpy = vi.spyOn(Logger.prototype, 'error');
 
     const event: any = {
       type: 'unknown-event',
@@ -138,6 +135,8 @@ describe('Subscription Event Handler', () => {
 
     await handler(event);
 
-    expect(loggerSpy).toHaveBeenCalledWith('Unknown subscription event type, exiting...');
+    expect(loggerSpy).toHaveBeenCalledWith(
+      'Unknown subscription event type, exiting...'
+    );
   });
 });

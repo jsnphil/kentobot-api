@@ -1,0 +1,25 @@
+meta {
+  name: Toggle shuffle state
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/streams/:streamId/queue/shuffle/toggle
+  body: json
+  auth: none
+}
+
+params:path {
+  streamId: 
+}
+
+headers {
+  X-API-Key: {{apiKey}}
+}
+
+body:json {
+  {
+    "status": ""
+  }
+}

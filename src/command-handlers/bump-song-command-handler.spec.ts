@@ -3,9 +3,10 @@ import { BumpSongCommand } from '@commands/bump-song-command';
 import { StreamFactory } from '@domains/stream/factories/stream-factory';
 import { StreamRepository } from '@repositories/stream-repository';
 import { BumpType } from '../types/song-request';
+import { vi, describe, expect, it, beforeEach, afterEach } from 'vitest';
 
-jest.mock('@domains/stream/factories/stream-factory');
-jest.mock('@repositories/stream-repository');
+vi.mock('@domains/stream/factories/stream-factory');
+vi.mock('@repositories/stream-repository');
 
 describe('BumpSongCommandHandler', () => {
   let handler: BumpSongCommandHandler;
@@ -14,11 +15,15 @@ describe('BumpSongCommandHandler', () => {
     handler = new BumpSongCommandHandler();
   });
 
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
   it('should bump a song successfully', async () => {
     const mockStream = {
-      bumpSongForUser: jest.fn().mockResolvedValue(undefined)
+      bumpSongForUser: vi.fn().mockResolvedValue(undefined)
     };
-    (StreamFactory.createStream as jest.Mock).mockResolvedValue(mockStream);
+    (StreamFactory.createStream as any).mockResolvedValue(mockStream);
 
     const command: BumpSongCommand = {
       requestedBy: 'Kaladin',
@@ -40,7 +45,7 @@ describe('BumpSongCommandHandler', () => {
   });
 
   it('should throw an error if StreamFactory fails', async () => {
-    (StreamFactory.createStream as jest.Mock).mockRejectedValue(
+    (StreamFactory.createStream as any).mockRejectedValue(
       new Error('Stream creation failed')
     );
 
@@ -60,11 +65,9 @@ describe('BumpSongCommandHandler', () => {
 
   it('should throw an error if bumpSongForUser fails', async () => {
     const mockStream = {
-      bumpSongForUser: jest
-        .fn()
-        .mockRejectedValue(new Error('Bump song failed'))
+      bumpSongForUser: vi.fn().mockRejectedValue(new Error('Bump song failed'))
     };
-    (StreamFactory.createStream as jest.Mock).mockResolvedValue(mockStream);
+    (StreamFactory.createStream as any).mockResolvedValue(mockStream);
 
     const command: BumpSongCommand = {
       requestedBy: 'Kaladin',
@@ -85,10 +88,10 @@ describe('BumpSongCommandHandler', () => {
 
   it('should throw an error if StreamRepository.saveStream fails', async () => {
     const mockStream = {
-      bumpSongForUser: jest.fn().mockResolvedValue(undefined)
+      bumpSongForUser: vi.fn().mockResolvedValue(undefined)
     };
-    (StreamFactory.createStream as jest.Mock).mockResolvedValue(mockStream);
-    (StreamRepository.saveStream as jest.Mock).mockRejectedValue(
+    (StreamFactory.createStream as any).mockResolvedValue(mockStream);
+    (StreamRepository.saveStream as any).mockRejectedValue(
       new Error('Save stream failed')
     );
 

@@ -1,0 +1,19 @@
+meta {
+  name: Select shuffle winner
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/streams/:streamId/queue/shuffle/select-winner
+  body: none
+  auth: none
+}
+
+params:path {
+  streamId: 
+}
+
+headers {
+  X-API-Key: {{apiKey}}
+}

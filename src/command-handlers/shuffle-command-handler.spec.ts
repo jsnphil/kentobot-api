@@ -8,6 +8,7 @@ import { mockClient } from 'aws-sdk-client-mock';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { GetCommand, PutCommand } from '@aws-sdk/lib-dynamodb';
 import { EnterShuffleCommand } from '@commands/enter-shuffle-command';
+import { vi, describe, expect, it } from 'vitest';
 
 const mockDynamoDB = mockClient(DynamoDBClient);
 
@@ -26,12 +27,10 @@ describe('shuffle-command-handler', () => {
       });
       const mockShuffle = Shuffle.create('stream1', new Date());
 
-      jest.spyOn(StreamFactory, 'createStream').mockResolvedValue(mockStream);
-      jest
-        .spyOn(ShuffleRepository, 'getShuffle')
-        .mockResolvedValue(mockShuffle);
+      vi.spyOn(StreamFactory, 'createStream').mockResolvedValue(mockStream);
+      vi.spyOn(ShuffleRepository, 'getShuffle').mockResolvedValue(mockShuffle);
 
-      const saveShuffleSpy = jest.spyOn(ShuffleRepository, 'save');
+      const saveShuffleSpy = vi.spyOn(ShuffleRepository, 'save');
 
       const toggleShuffleCommand = new ToggleShuffleCommand('open');
 
@@ -54,12 +53,10 @@ describe('shuffle-command-handler', () => {
       const mockShuffle = Shuffle.create('stream1', new Date());
       mockShuffle.start(); // Start the shuffle first
 
-      jest.spyOn(StreamFactory, 'createStream').mockResolvedValue(mockStream);
-      jest
-        .spyOn(ShuffleRepository, 'getShuffle')
-        .mockResolvedValue(mockShuffle);
+      vi.spyOn(StreamFactory, 'createStream').mockResolvedValue(mockStream);
+      vi.spyOn(ShuffleRepository, 'getShuffle').mockResolvedValue(mockShuffle);
 
-      const saveShuffleSpy = jest.spyOn(ShuffleRepository, 'save');
+      const saveShuffleSpy = vi.spyOn(ShuffleRepository, 'save');
 
       expect(mockShuffle.isOpen).toBe(true); // Ensure it's open before closing
 
@@ -90,10 +87,10 @@ describe('shuffle-command-handler', () => {
       });
       const shuffle = Shuffle.create('stream1', new Date());
 
-      jest.spyOn(StreamFactory, 'createStream').mockResolvedValue(mockStream);
-      jest.spyOn(ShuffleRepository, 'getShuffle').mockResolvedValue(shuffle);
+      vi.spyOn(StreamFactory, 'createStream').mockResolvedValue(mockStream);
+      vi.spyOn(ShuffleRepository, 'getShuffle').mockResolvedValue(shuffle);
 
-      const saveShuffleSpy = jest.spyOn(ShuffleRepository, 'save');
+      const saveShuffleSpy = vi.spyOn(ShuffleRepository, 'save');
 
       const command = new EnterShuffleCommand('Vin');
 
@@ -121,10 +118,10 @@ describe('shuffle-command-handler', () => {
       });
       const shuffle = Shuffle.create('stream1', new Date());
 
-      jest.spyOn(StreamFactory, 'createStream').mockResolvedValue(mockStream);
-      jest.spyOn(ShuffleRepository, 'getShuffle').mockResolvedValue(shuffle);
+      vi.spyOn(StreamFactory, 'createStream').mockResolvedValue(mockStream);
+      vi.spyOn(ShuffleRepository, 'getShuffle').mockResolvedValue(shuffle);
 
-      const saveShuffleSpy = jest.spyOn(ShuffleRepository, 'save');
+      const saveShuffleSpy = vi.spyOn(ShuffleRepository, 'save');
 
       const command = new EnterShuffleCommand('Adolin');
 
@@ -163,10 +160,10 @@ describe('shuffle-command-handler', () => {
         ])
       );
 
-      jest.spyOn(StreamFactory, 'createStream').mockResolvedValue(mockStream);
-      jest.spyOn(ShuffleRepository, 'getShuffle').mockResolvedValue(shuffle);
+      vi.spyOn(StreamFactory, 'createStream').mockResolvedValue(mockStream);
+      vi.spyOn(ShuffleRepository, 'getShuffle').mockResolvedValue(shuffle);
 
-      const saveShuffleSpy = jest.spyOn(ShuffleRepository, 'save');
+      const saveShuffleSpy = vi.spyOn(ShuffleRepository, 'save');
 
       const command = new EnterShuffleCommand('Vin');
 
@@ -194,10 +191,10 @@ describe('shuffle-command-handler', () => {
       });
       const shuffle = Shuffle.create('stream1', new Date());
 
-      jest.spyOn(StreamFactory, 'createStream').mockResolvedValue(mockStream);
-      jest.spyOn(ShuffleRepository, 'getShuffle').mockResolvedValue(shuffle);
+      vi.spyOn(StreamFactory, 'createStream').mockResolvedValue(mockStream);
+      vi.spyOn(ShuffleRepository, 'getShuffle').mockResolvedValue(shuffle);
 
-      const saveShuffleSpy = jest.spyOn(ShuffleRepository, 'save');
+      const saveShuffleSpy = vi.spyOn(ShuffleRepository, 'save');
 
       const command = new EnterShuffleCommand('Vin');
 

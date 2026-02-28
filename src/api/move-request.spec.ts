@@ -1,20 +1,24 @@
 import { handler } from './move-request';
 import { APIGatewayEvent } from 'aws-lambda';
-import { jest } from '@jest/globals';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MoveSongCommandHandler } from '@command-handlers/move-song-command-handler';
 
-jest.mock('@command-handlers/move-song-command-handler');
+vi.mock('@command-handlers/move-song-command-handler');
 
 describe('move-request handler', () => {
-  let mockExecute: jest.Mock;
+  let mockExecute: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
-    mockExecute = jest.fn();
-    (MoveSongCommandHandler as jest.Mock).mockImplementation(() => {
+    mockExecute = vi.fn();
+    vi.mocked(MoveSongCommandHandler).mockImplementation(function () {
       return {
         execute: mockExecute
       };
     });
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
   });
 
   it('should return 400 if songId is missing', async () => {
@@ -51,7 +55,7 @@ describe('move-request handler', () => {
       body: JSON.stringify({ position: 1 })
     } as any;
 
-    mockExecute.mockResolvedValue({} as never);
+    mockExecute.mockResolvedValue({});
 
     const result = await handler(event);
 

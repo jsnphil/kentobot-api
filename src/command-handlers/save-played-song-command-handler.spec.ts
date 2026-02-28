@@ -4,22 +4,23 @@ import { StreamFactory } from '@domains/stream/factories/stream-factory';
 import { StreamRepository } from '@repositories/stream-repository';
 import { Song } from '@domains/stream/models/song';
 import { SongRequestStatus } from '../types/song-request';
+import { vi, describe, beforeEach, it, expect } from 'vitest';
 
-jest.mock('@domains/stream/factories/stream-factory');
-jest.mock('@repositories/stream-repository');
-jest.mock('@domains/stream/models/song');
+vi.mock('@domains/stream/factories/stream-factory');
+vi.mock('@repositories/stream-repository');
+vi.mock('@domains/stream/models/song');
 
 describe('SavePlayedSongCommandHandler', () => {
   let commandHandler: SavePlayedSongCommandHandler;
 
   beforeEach(() => {
     commandHandler = new SavePlayedSongCommandHandler();
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('should save a played song successfully', async () => {
     const mockStream = {
-      savePlayedSong: jest.fn()
+      savePlayedSong: vi.fn()
     };
     const mockCommand = new SavePlayedSongCommand(
       'songId123',
@@ -28,8 +29,8 @@ describe('SavePlayedSongCommandHandler', () => {
       300
     );
 
-    (StreamFactory.createStream as jest.Mock).mockResolvedValue(mockStream);
-    (Song.load as jest.Mock).mockReturnValue({
+    (StreamFactory.createStream as any).mockResolvedValue(mockStream);
+    (Song.load as any).mockReturnValue({
       id: 'songId123',
       requestedBy: 'Kaladin',
       title: 'Song title',
@@ -59,7 +60,7 @@ describe('SavePlayedSongCommandHandler', () => {
       300
     );
 
-    (StreamFactory.createStream as jest.Mock).mockRejectedValue(
+    (StreamFactory.createStream as any).mockRejectedValue(
       new Error('Stream creation failed')
     );
 
@@ -74,7 +75,7 @@ describe('SavePlayedSongCommandHandler', () => {
 
   it('should throw an error if saving the stream fails', async () => {
     const mockStream = {
-      savePlayedSong: jest.fn()
+      savePlayedSong: vi.fn()
     };
     const mockCommand = new SavePlayedSongCommand(
       'songId123',
@@ -83,15 +84,15 @@ describe('SavePlayedSongCommandHandler', () => {
       300
     );
 
-    (StreamFactory.createStream as jest.Mock).mockResolvedValue(mockStream);
-    (Song.load as jest.Mock).mockReturnValue({
+    (StreamFactory.createStream as any).mockResolvedValue(mockStream);
+    (Song.load as any).mockReturnValue({
       id: 'songId123',
       requestedBy: 'Shallan',
       title: 'Song title',
       status: SongRequestStatus.PLAYED,
       duration: 300
     });
-    (StreamRepository.saveStream as jest.Mock).mockRejectedValue(
+    (StreamRepository.saveStream as any).mockRejectedValue(
       new Error('Failed to save stream')
     );
 

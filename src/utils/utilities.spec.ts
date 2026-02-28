@@ -4,6 +4,7 @@ import {
   padTimeDigits,
   secondsToMinutes
 } from './utilities';
+import { vi, describe, expect, it } from 'vitest';
 
 describe('utilities', () => {
   describe('createNewErrorResponse', () => {

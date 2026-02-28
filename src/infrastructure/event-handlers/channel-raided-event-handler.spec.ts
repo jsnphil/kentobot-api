@@ -4,26 +4,24 @@ import { StreamFactory } from '@domains/stream/factories/stream-factory';
 import { ChannelRaidedEvent } from '@domains/twitch/events/channel-raided-event';
 import { handler } from './channel-raided-event-handler';
 import { BumpType } from '../../types/song-request';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { any } from 'zod';
 
-jest.mock('@domains/stream/factories/stream-factory');
-jest.mock('@repositories/stream-repository');
+vi.mock('@domains/stream/factories/stream-factory');
+vi.mock('@repositories/stream-repository');
 
 describe('Channel raided event handler', () => {
-  let bumpSongCommandHandlerSpy: jest.SpyInstance<
-    Promise<void>,
-    [command: BumpSongCommand],
-    any
-  >;
+  let bumpSongCommandHandlerSpy: any;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
 
     const mockStream = {
-      bumpSongForUser: jest.fn().mockResolvedValue(undefined)
+      bumpSongForUser: vi.fn().mockResolvedValue(undefined)
     };
-    (StreamFactory.createStream as jest.Mock).mockResolvedValue(mockStream);
+    (StreamFactory.createStream as any).mockResolvedValue(mockStream);
 
-    bumpSongCommandHandlerSpy = jest.spyOn(
+    bumpSongCommandHandlerSpy = vi.spyOn(
       BumpSongCommandHandler.prototype,
       'execute'
     );

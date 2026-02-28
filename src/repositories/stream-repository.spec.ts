@@ -7,16 +7,17 @@ import {
   PutItemCommand
 } from '@aws-sdk/client-dynamodb';
 import { mockClient } from 'aws-sdk-client-mock';
+import { vi } from 'vitest';
 
-jest.mock('@aws-lambda-powertools/logger');
+vi.mock('@aws-lambda-powertools/logger');
 
 const mockDynamoDB = mockClient(DynamoDBClient);
 
 describe('StreamRepository', () => {
-  const mockLogger = Logger as jest.MockedClass<typeof Logger>;
+  const mockLogger = Logger as any;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     process.env.AWS_REGION = 'us-east-1';
     process.env.STREAM_DATA_TABLE = 'StreamDataTable';
   });
@@ -55,7 +56,7 @@ describe('StreamRepository', () => {
   describe('saveStream', () => {
     // it('should save a stream successfully', async () => {
     //   const mockStream = {
-    //     getStreamDate: jest.fn().mockReturnValue('2023-01-01')
+    //     getStreamDate: vi.fn().mockReturnValue('2023-01-01')
     //   };
 
     //   mockDynamoDB.on(PutItemCommand).resolves({});
@@ -67,7 +68,7 @@ describe('StreamRepository', () => {
       mockDynamoDB.on(PutItemCommand).rejects(new Error('Some error'));
 
       const mockStream = {
-        getStreamDate: jest.fn().mockReturnValue('2023-01-01')
+        getStreamDate: vi.fn().mockReturnValue('2023-01-01')
       };
 
       await expect(

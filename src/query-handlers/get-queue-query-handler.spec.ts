@@ -4,10 +4,11 @@ import { GetQueueRequest } from '@queries/get-queue-request';
 import { SongRequestStatus } from '../types/song-request';
 import { StreamFactory } from '@domains/stream/factories/stream-factory';
 import { GetQueueRequestHandler } from './get-queue-query-handler';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-jest.mock('@repositories/stream-repository');
-jest.mock('../domains/stream/models/stream');
-jest.mock('@utils/utilities');
+vi.mock('@repositories/stream-repository');
+vi.mock('../domains/stream/models/stream');
+vi.mock('@utils/utilities');
 
 describe('GetQueryRequestHandler', () => {
   let getQueueRequestHandler: GetQueueRequestHandler;
@@ -19,7 +20,7 @@ describe('GetQueryRequestHandler', () => {
   it('should return the song queue when the stream exists', async () => {
     const mockStreamDate = '2023-10-01';
     const mockSongQueue = {
-      getSongs: jest.fn().mockReturnValue([
+      getSongs: vi.fn().mockReturnValue([
         {
           id: '1',
           title: 'Song 1',
@@ -37,10 +38,10 @@ describe('GetQueryRequestHandler', () => {
       ])
     };
 
-    const streamFactoryMock = jest
+    const streamFactoryMock = vi
       .spyOn(StreamFactory, 'createStream')
       .mockResolvedValue({
-        getSongQueue: jest.fn().mockReturnValue(mockSongQueue)
+        getSongQueue: vi.fn().mockReturnValue(mockSongQueue)
       } as unknown as Stream);
 
     const songQueue = await getQueueRequestHandler.execute(
@@ -84,9 +85,9 @@ describe('GetQueryRequestHandler', () => {
   //     }
   //   };
 
-  //   const streamFactoryMock = jest.spyOn(StreamFactory, 'createStream');
+  //   const streamFactoryMock = vi.spyOn(StreamFactory, 'createStream');
 
-  //   // (Stream.load as jest.Mock).mockReturnValue(mockStream);
+  //   // (Stream.load as any).mockReturnValue(mockStream);
 
   //   const songQueue = await getQueueRequestHandler.execute(
   //     new GetQueueRequest('2023-10-01')
@@ -99,7 +100,9 @@ describe('GetQueryRequestHandler', () => {
   it('should throw an error if the stream does not exist', async () => {
     const event = { pathParameters: { streamDate: '2023-10-01' } };
 
-    (StreamRepository.loadStream as jest.Mock).mockResolvedValue(null);
+    vi.spyOn(StreamFactory, 'createStream').mockRejectedValue(
+      new Error('Stream not found')
+    );
 
     await expect(
       getQueueRequestHandler.execute(new GetQueueRequest('2023-10-01'))

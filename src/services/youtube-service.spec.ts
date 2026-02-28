@@ -1,6 +1,7 @@
 import { mockClient } from 'aws-sdk-client-mock';
 import { YouTubeService } from './youtube-service';
 import { GetParameterCommand, SSMClient } from '@aws-sdk/client-ssm';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 describe('YouTubeService', () => {
   const ssmMock = mockClient(SSMClient);

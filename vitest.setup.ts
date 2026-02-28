@@ -1,3 +1,4 @@
+import { beforeAll, afterEach, afterAll } from 'vitest';
 import { server } from './src/mocks/msw/server';
 
 beforeAll(() => {

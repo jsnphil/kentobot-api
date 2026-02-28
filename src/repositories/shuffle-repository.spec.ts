@@ -1,6 +1,7 @@
 import { DynamoDBDocumentClient, GetCommand } from '@aws-sdk/lib-dynamodb';
 import { ShuffleRepository } from './shuffle-repository';
 import { mockClient } from 'aws-sdk-client-mock';
+import { vi, describe, expect, it } from 'vitest';
 
 const mockDynamoDB = mockClient(DynamoDBDocumentClient);
 

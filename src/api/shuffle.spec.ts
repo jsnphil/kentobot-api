@@ -4,21 +4,23 @@ import { APIGatewayEvent } from 'aws-lambda';
 import { Code } from 'better-status-codes';
 import { ShuffleCommandHandler } from '@command-handlers/shuffle-command-handler';
 import { SelectWinnerCommand } from '@commands/shuffle/select-winner-command';
-
-jest.mock('@command-handlers/shuffle-command-handler');
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+vi.mock('@command-handlers/shuffle-command-handler');
 
 describe('Shuffle API Handler', () => {
-  let mockExecute: jest.Mock;
+  let mockExecute: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
-    mockExecute = jest.fn();
-    (ShuffleCommandHandler as jest.Mock).mockImplementation(() => ({
-      execute: mockExecute
-    }));
+    mockExecute = vi.fn();
+    vi.mocked(ShuffleCommandHandler).mockImplementation(function () {
+      return {
+        execute: mockExecute
+      } as any;
+    });
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('POST /select-winner', () => {

@@ -1,0 +1,675 @@
+openapi: 3.0.3
+info:
+  title: Kentobot Core API
+  description: |
+    Kentobot Core API for managing song requests, queue operations, and stream management.
+    This API supports stream-based song queue management with features like bumping, moving,
+    shuffles, and real-time WebSocket communication.
+  version: 1.0.0
+  contact:
+    name: Kentobot Core API Support
+
+servers:
+  - url: https://{apiId}.execute-api.us-east-1.amazonaws.com/{stage}
+    description: AWS API Gateway endpoint
+    variables:
+      apiId:
+        default: gd8t5yna0k
+        description: API Gateway ID
+      stage:
+        default: dev
+        description: Deployment stage
+        enum:
+          - dev
+          - prod
+
+security:
+  - ApiKeyAuth: []
+
+paths:
+  # Stream Management
+  /streams:
+    post:
+      tags:
+        - Stream Management
+      summary: Start a new stream
+      description: Creates a new stream for the current date
+      security:
+        - ApiKeyAuth: []
+      responses:
+        '201':
+          description: Stream created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Stream started successfully"
+        '409':
+          description: Stream already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # Queue Management
+  /streams/{streamId}/queue:
+    get:
+      tags:
+        - Queue Management
+      summary: Get current queue
+      description: Retrieves the current song queue for a stream
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: streamId
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "current"
+          description: Stream identifier (use "current" for active stream)
+      responses:
+        '200':
+          description: Queue retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  queue:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/QueuedSong'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /streams/{streamId}/queue/request-song:
+    post:
+      tags:
+        - Queue Management
+      summary: Request a song
+      description: Add a song to the queue
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: streamId
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "current"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SongRequest'
+      responses:
+        '200':
+          description: Song requested successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Song requested successfully"
+                  song:
+                    $ref: '#/components/schemas/RequestedSong'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /streams/{streamId}/queue/remove-request/{songId}:
+    delete:
+      tags:
+        - Queue Management
+      summary: Remove song from queue
+      description: Removes a specific song from the queue
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: streamId
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "current"
+        - name: songId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The ID of the song to remove
+      responses:
+        '200':
+          description: Song removed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Song removed from queue successfully"
+                  songId:
+                    type: string
+        '400':
+          description: songId is required
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /streams/{streamId}/queue/move-request/{songId}:
+    patch:
+      tags:
+        - Queue Management
+      summary: Move song position in queue
+      description: Changes the position of a song in the queue
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: streamId
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "current"
+        - name: songId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The ID of the song to move
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - position
+              properties:
+                position:
+                  type: integer
+                  minimum: 1
+                  description: New position in queue
+                  example: 2
+      responses:
+        '200':
+          description: Song moved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                example: {}
+        '400':
+          description: songId and position are required
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /streams/{streamId}/queue/bump-request/{songId}:
+    post:
+      tags:
+        - Queue Management
+      summary: Bump song in queue
+      description: Moves a song higher in the queue based on bump type
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: streamId
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "current"
+        - name: songId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The ID of the song to bump
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BumpRequest'
+      responses:
+        '200':
+          description: Song bumped successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                example: {}
+        '400':
+          description: User is required
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # Shuffle Management
+  /streams/{streamId}/queue/shuffle/toggle:
+    post:
+      tags:
+        - Shuffle Management
+      summary: Toggle shuffle state
+      description: Opens or closes the shuffle for entries
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: streamId
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "current"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - status
+              properties:
+                status:
+                  type: string
+                  enum: [open, close]
+                  example: "open"
+      responses:
+        '200':
+          description: Shuffle toggled successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                example: {}
+        '400':
+          description: Invalid status
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /streams/{streamId}/queue/shuffle/enter:
+    post:
+      tags:
+        - Shuffle Management
+      summary: Enter shuffle
+      description: Adds a user to the current shuffle
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: streamId
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "current"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - user
+              properties:
+                user:
+                  type: string
+                  example: "Dalinar"
+      responses:
+        '200':
+          description: User entered shuffle successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                example: {}
+        '400':
+          description: Missing user
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /streams/{streamId}/queue/shuffle/select-winner:
+    post:
+      tags:
+        - Shuffle Management
+      summary: Select shuffle winner
+      description: Randomly selects a winner from the shuffle entries
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: streamId
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "current"
+      responses:
+        '200':
+          description: Winner selected successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  winner:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        example: "user123"
+                      name:
+                        type: string
+                        example: "John Doe"
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # Song Requests
+  /song-requests:
+    get:
+      tags:
+        - Song Information
+      summary: Get all songs
+      description: Retrieves all songs that have been requested
+      security: []
+      responses:
+        '200':
+          description: Songs retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: integer
+                    example: 150
+                  songs:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SongInfo'
+
+  /song-requests/save:
+    post:
+      tags:
+        - Song Information
+      summary: Save played song
+      description: Records that a song was played during the stream
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SavePlayedSongRequest'
+      responses:
+        '201':
+          description: Song play saved successfully
+        '400':
+          description: Missing required fields
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /song-requests/{youtubeId}/details:
+    get:
+      tags:
+        - Song Information
+      summary: Get song details
+      description: Retrieves detailed information about a specific song
+      security: []
+      parameters:
+        - name: youtubeId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: YouTube video ID
+          example: "SOFCQ2bfmHw"
+      responses:
+        '200':
+          description: Song details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SongDetails'
+
+  /song-requests/{youtubeId}/plays:
+    get:
+      tags:
+        - Song Information
+      summary: Get song play history
+      description: Retrieves play history for a specific song
+      security: []
+      parameters:
+        - name: youtubeId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: YouTube video ID
+          example: "SOFCQ2bfmHw"
+      responses:
+        '200':
+          description: Song play history retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  youtubeId:
+                    type: string
+                  plays:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SongPlay'
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+
+  schemas:
+    SongRequest:
+      type: object
+      required:
+        - youtubeId
+        - requestedBy
+      properties:
+        youtubeId:
+          type: string
+          description: YouTube video ID
+          example: "GmS3ieOOL-4"
+        requestedBy:
+          type: string
+          description: Username of the requester
+          example: "TEST_USER_TEST_USER"
+        modOverride:
+          type: boolean
+          description: Whether mod override is applied
+          default: false
+
+    RequestedSong:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "123"
+        title:
+          type: string
+          example: "Test Song"
+        requestedBy:
+          type: string
+          example: "User1"
+        duration:
+          type: integer
+          description: Song duration in seconds
+          example: 300
+        status:
+          type: string
+          example: "requested"
+
+    QueuedSong:
+      type: object
+      properties:
+        songId:
+          type: string
+        title:
+          type: string
+        requestedBy:
+          type: string
+        duration:
+          type: integer
+          description: Duration in seconds
+        position:
+          type: integer
+          description: Position in queue
+        status:
+          type: string
+          enum: [queued, playing, played]
+
+    BumpRequest:
+      type: object
+      required:
+        - user
+      properties:
+        user:
+          type: string
+          description: Username requesting the bump
+          example: "user2"
+        position:
+          type: integer
+          description: Target position in queue
+          example: 2
+        bumpType:
+          type: string
+          enum: [bean, channelPoints, bits, sub, giftedSub, raid]
+          example: "bean"
+        modOverride:
+          type: boolean
+          default: false
+
+    SavePlayedSongRequest:
+      type: object
+      required:
+        - songId
+        - title
+        - requestedBy
+        - duration
+      properties:
+        songId:
+          type: string
+          example: "youtube-id"
+        title:
+          type: string
+          example: "Another new song"
+        requestedBy:
+          type: string
+          example: "jsnphil2"
+        duration:
+          type: integer
+          description: Duration in seconds
+          example: 154
+
+    SongInfo:
+      type: object
+      properties:
+        youtubeId:
+          type: string
+        title:
+          type: string
+        length:
+          type: integer
+          description: Duration in seconds
+        playCount:
+          type: integer
+          description: Number of times played
+
+    SongDetails:
+      type: object
+      properties:
+        youtubeId:
+          type: string
+        title:
+          type: string
+        duration:
+          type: integer
+        isLive:
+          type: boolean
+        isPublic:
+          type: boolean
+        availableInUS:
+          type: boolean
+        isEmbeddable:
+          type: boolean
+
+    SongPlay:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date-time
+        requestedBy:
+          type: string
+        sotnContender:
+          type: boolean
+          description: Song of the Night contender
+        sotnWinner:
+          type: boolean
+          description: Song of the Night winner
+        sotsWinner:
+          type: boolean
+          description: Song of the Stream winner
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              example: "STREAM_ALREADY_EXISTS"
+            message:
+              type: string
+              example: "Stream already exists"
+
+  responses:
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    example: "SystemError"
+                  message:
+                    type: string
+                    example: "An error occurred while processing the request"
+
+tags:
+  - name: Stream Management
+    description: Operations for managing streams
+  - name: Queue Management
+    description: Operations for managing the song queue
+  - name: Shuffle Management
+    description: Operations for managing shuffles
+  - name: Song Information
+    description: Operations for retrieving song data and history

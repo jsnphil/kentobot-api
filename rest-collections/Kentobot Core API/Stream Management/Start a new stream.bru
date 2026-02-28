@@ -1,0 +1,15 @@
+meta {
+  name: Start a new stream
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/streams
+  body: none
+  auth: none
+}
+
+headers {
+  X-API-Key: {{apiKey}}
+}

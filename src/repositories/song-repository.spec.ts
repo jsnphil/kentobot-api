@@ -1,6 +1,7 @@
 import { mockClient } from 'aws-sdk-client-mock';
 import { SongRepository } from './song-repository';
 import { SongInfo, SongPlay } from '../types/song-request';
+import { vi, describe, expect, it } from 'vitest';
 
 import {
   DynamoDBClient,
@@ -12,7 +13,7 @@ import {
 
 import { Logger } from '@aws-lambda-powertools/logger';
 
-jest.mock('@aws-lambda-powertools/logger');
+vi.mock('@aws-lambda-powertools/logger');
 
 const mockDynamoDBClient = mockClient(DynamoDBClient);
 
@@ -24,7 +25,7 @@ describe('Song Repository', () => {
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('Song Exists', () => {
@@ -93,7 +94,7 @@ describe('Song Repository', () => {
       });
 
       mockDynamoDBClient.on(TransactWriteItemsCommand).rejects(exception);
-      const loggerSpy = jest.spyOn(Logger.prototype, 'warn');
+      const loggerSpy = vi.spyOn(Logger.prototype, 'warn');
 
       await songRepository.saveNewSongPlay('123', songPlay);
 

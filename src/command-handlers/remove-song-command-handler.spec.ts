@@ -1,9 +1,10 @@
 import { RemoveSongCommandHandler } from './remove-song-command-handler';
 import { StreamRepository } from '@repositories/stream-repository';
 import { Stream } from '@domains/stream/models/stream';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-jest.mock('@repositories/stream-repository');
-jest.mock('@domains/stream/models/stream');
+vi.mock('@repositories/stream-repository');
+vi.mock('@domains/stream/models/stream');
 
 describe('RemoveSongCommandHandler', () => {
   let removeSongCommandHandler: RemoveSongCommandHandler;
@@ -12,17 +13,19 @@ describe('RemoveSongCommandHandler', () => {
     removeSongCommandHandler = new RemoveSongCommandHandler();
   });
 
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
   it('should remove a song from the queue successfully', async () => {
     const mockStreamData = { id: 'stream1', songs: ['song1', 'song2'] };
     const mockStream = {
-      removeSongFromQueue: jest.fn()
+      removeSongFromQueue: vi.fn()
     };
 
-    (StreamRepository.loadStream as jest.Mock).mockResolvedValue(
-      mockStreamData
-    );
-    (Stream.load as jest.Mock).mockReturnValue(mockStream);
-    (StreamRepository.saveStream as jest.Mock).mockResolvedValue(undefined);
+    (StreamRepository.loadStream as any).mockResolvedValue(mockStreamData);
+    (Stream.load as any).mockReturnValue(mockStream);
+    (StreamRepository.saveStream as any).mockResolvedValue(undefined);
 
     const result = await removeSongCommandHandler.execute({ songId: 'song1' });
 
@@ -34,7 +37,7 @@ describe('RemoveSongCommandHandler', () => {
   });
 
   it('should throw an error if the stream is not found', async () => {
-    (StreamRepository.loadStream as jest.Mock).mockResolvedValue(null);
+    (StreamRepository.loadStream as any).mockResolvedValue(null);
 
     await expect(
       removeSongCommandHandler.execute({ songId: 'song1' })
@@ -48,15 +51,13 @@ describe('RemoveSongCommandHandler', () => {
   it('should throw an error if removing a song fails', async () => {
     const mockStreamData = { id: 'stream1', songs: ['song1', 'song2'] };
     const mockStream = {
-      removeSongFromQueue: jest
+      removeSongFromQueue: vi
         .fn()
         .mockRejectedValue(new Error('Removal failed'))
     };
 
-    (StreamRepository.loadStream as jest.Mock).mockResolvedValue(
-      mockStreamData
-    );
-    (Stream.load as jest.Mock).mockReturnValue(mockStream);
+    (StreamRepository.loadStream as any).mockResolvedValue(mockStreamData);
+    (Stream.load as any).mockReturnValue(mockStream);
 
     await expect(
       removeSongCommandHandler.execute({ songId: 'song1' })

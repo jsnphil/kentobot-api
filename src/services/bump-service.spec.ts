@@ -1,6 +1,7 @@
 import { BumpRepository } from '@repositories/bump-repository';
 import { BumpType } from '../types/song-request';
 import { BumpService } from './bump-service';
+import { vi, describe, expect, it } from 'vitest';
 
 describe('BumpService', () => {
   describe('isUserEligible', () => {
@@ -12,7 +13,7 @@ describe('BumpService', () => {
       const expDate = new Date();
       const bumpExpiration = expDate.setDate(new Date().getDate() + 7);
 
-      const getUserBumpEligibilitySpy = jest
+      const getUserBumpEligibilitySpy = vi
         .spyOn(BumpRepository, 'getUserBumpEligibility')
         .mockResolvedValue({
           user,
@@ -35,7 +36,7 @@ describe('BumpService', () => {
       const expDate = new Date();
       const bumpExpiration = expDate.setDate(new Date().getDate() - 5);
 
-      const getUserBumpEligibilitySpy = jest
+      const getUserBumpEligibilitySpy = vi
         .spyOn(BumpRepository, 'getUserBumpEligibility')
         .mockResolvedValue({
           user,
@@ -58,7 +59,7 @@ describe('BumpService', () => {
       const expDate = new Date();
       const bumpExpiration = expDate.setDate(new Date().getDate() - 5);
 
-      const getUserBumpEligibilitySpy = jest
+      const getUserBumpEligibilitySpy = vi
         .spyOn(BumpRepository, 'getUserBumpEligibility')
         .mockResolvedValue(undefined);
 
@@ -81,7 +82,7 @@ describe('BumpService', () => {
       const expiration = new Date(timestamp);
       expiration.setDate(new Date().getDate() + 7);
 
-      const updateUserBumpEligibilitySpy = jest
+      const updateUserBumpEligibilitySpy = vi
         .spyOn(BumpRepository, 'updateUserBumpEligibility')
         .mockResolvedValue(undefined);
 
@@ -100,9 +101,9 @@ describe('BumpService', () => {
       const user = 'user';
       const error = new Error('Failed to update eligibility');
 
-      jest
-        .spyOn(BumpRepository, 'updateUserBumpEligibility')
-        .mockRejectedValue(error);
+      vi.spyOn(BumpRepository, 'updateUserBumpEligibility').mockRejectedValue(
+        error
+      );
 
       const bumpService = new BumpService();
       // Act & Assert

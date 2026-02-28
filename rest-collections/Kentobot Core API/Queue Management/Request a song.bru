@@ -1,0 +1,27 @@
+meta {
+  name: Request a song
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/streams/:streamId/queue/request-song
+  body: json
+  auth: none
+}
+
+params:path {
+  streamId: 
+}
+
+headers {
+  X-API-Key: {{apiKey}}
+}
+
+body:json {
+  {
+    "youtubeId": "",
+    "requestedBy": "",
+    "modOverride": ""
+  }
+}

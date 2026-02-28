@@ -4,12 +4,12 @@ import { SongRequest } from '../../../types/song-request';
 import { Logger } from '@aws-lambda-powertools/logger';
 import { saveSongData } from './played-song-event-handler';
 
-jest.mock('@repositories/song-repository');
-jest.mock('@aws-lambda-powertools/logger');
+vi.mock('@repositories/song-repository');
+vi.mock('@aws-lambda-powertools/logger');
 
 describe('saveSongData', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('should save new song play if song exists', async () => {
@@ -21,9 +21,9 @@ describe('saveSongData', () => {
       requestedBy: 'User1'
     };
 
-    jest.spyOn(SongRepository.prototype, 'songExists').mockResolvedValue(true);
+    vi.spyOn(SongRepository.prototype, 'songExists').mockResolvedValue(true);
 
-    const loggerSpy = jest.spyOn(Logger.prototype, 'info');
+    const loggerSpy = vi.spyOn(Logger.prototype, 'info');
 
     await saveSongData(playedSong);
 
@@ -39,9 +39,9 @@ describe('saveSongData', () => {
       requestedBy: 'User1'
     };
 
-    jest.spyOn(SongRepository.prototype, 'songExists').mockResolvedValue(false);
+    vi.spyOn(SongRepository.prototype, 'songExists').mockResolvedValue(false);
 
-    const loggerSpy = jest.spyOn(Logger.prototype, 'info');
+    const loggerSpy = vi.spyOn(Logger.prototype, 'info');
 
     await saveSongData(playedSong);
 

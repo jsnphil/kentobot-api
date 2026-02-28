@@ -1,0 +1,26 @@
+meta {
+  name: Move song position in queue
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{baseUrl}}/streams/:streamId/queue/move-request/:songId
+  body: json
+  auth: none
+}
+
+params:path {
+  streamId: current
+  songId: fc8f5KOSK0k
+}
+
+headers {
+  X-API-Key: {{apiKey}}
+}
+
+body:json {
+  {
+    "position": "1"
+  }
+}

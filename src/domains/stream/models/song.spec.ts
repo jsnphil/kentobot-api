@@ -3,8 +3,8 @@ import { YouTubeService } from '@services/youtube-service';
 import { SongValidator } from '../validators/song-validator';
 import { SongRequestStatus } from '../../../types/song-request';
 
-jest.mock('@services/youtube-service');
-jest.mock('../validators/song-validator');
+vi.mock('@services/youtube-service');
+vi.mock('../validators/song-validator');
 
 describe('Song', () => {
   const mockYouTubeVideo = {
@@ -14,12 +14,12 @@ describe('Song', () => {
   };
 
   beforeEach(() => {
-    (YouTubeService.getVideo as jest.Mock).mockResolvedValue(mockYouTubeVideo);
-    (SongValidator.validate as jest.Mock).mockImplementation(() => true);
+    (YouTubeService.getVideo as any).mockResolvedValue(mockYouTubeVideo);
+    (SongValidator.validate as any).mockImplementation(() => true);
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('should create a Song instance with valid data', async () => {
@@ -33,7 +33,7 @@ describe('Song', () => {
   });
 
   it('should throw an error if YouTubeService.getVideo fails', async () => {
-    (YouTubeService.getVideo as jest.Mock).mockRejectedValue(
+    (YouTubeService.getVideo as any).mockRejectedValue(
       new Error('Video not found')
     );
 
@@ -43,7 +43,7 @@ describe('Song', () => {
   });
 
   it('should throw an error if SongValidator.validate fails', async () => {
-    (SongValidator.validate as jest.Mock).mockImplementation(() => {
+    (SongValidator.validate as any).mockImplementation(() => {
       throw new Error('Invalid video data');
     });
 

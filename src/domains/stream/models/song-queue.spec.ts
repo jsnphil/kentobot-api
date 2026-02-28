@@ -1,8 +1,8 @@
 import { SongQueue } from './song-queue';
 import { Song } from './song';
 import { BumpType, SongRequestStatus } from '../../../types/song-request';
-
-
+import { describe, expect, it } from 'vitest';
+import { vi } from 'vitest';
 
 describe('SongQueue', () => {
   let songQueue: SongQueue;
@@ -36,7 +36,7 @@ describe('SongQueue', () => {
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('addSong', () => {

@@ -2,10 +2,11 @@ import { StreamFactory } from './stream-factory';
 import { StreamRepository } from '@repositories/stream-repository';
 import { Stream } from '../models/stream';
 import { generateStreamDate } from '@utils/utilities';
+import { vi, describe, expect, it, Mock } from 'vitest';
 
-jest.mock('@repositories/stream-repository');
-jest.mock('../models/stream');
-jest.mock('@utils/utilities');
+vi.mock('@repositories/stream-repository');
+vi.mock('../models/stream');
+vi.mock('@utils/utilities');
 
 describe('StreamFactory', () => {
   describe('createStream', () => {
@@ -14,11 +15,9 @@ describe('StreamFactory', () => {
       const mockStreamData = { id: 1, name: 'Test Stream' };
       const mockStream = { id: 1, name: 'Test Stream' };
 
-      (generateStreamDate as jest.Mock).mockReturnValue(mockStreamDate);
-      (StreamRepository.loadStream as jest.Mock).mockResolvedValue(
-        mockStreamData
-      );
-      (Stream.load as jest.Mock).mockReturnValue(mockStream);
+      (generateStreamDate as Mock).mockReturnValue(mockStreamDate);
+      (StreamRepository.loadStream as Mock).mockResolvedValue(mockStreamData);
+      (Stream.load as Mock).mockReturnValue(mockStream);
 
       const result = await StreamFactory.createStream();
 
@@ -31,8 +30,9 @@ describe('StreamFactory', () => {
     it('should throw an error if stream data is not found', async () => {
       const mockStreamDate = '2023-10-01';
 
-      (generateStreamDate as jest.Mock).mockReturnValue(mockStreamDate);
-      (StreamRepository.loadStream as jest.Mock).mockResolvedValue(null);
+      (generateStreamDate as Mock).mockReturnValue(mockStreamDate);
+      (StreamRepository.loadStream as Mock).mockResolvedValue(null);
+      (Stream.load as Mock).mockClear(); // Clear previous calls
 
       await expect(StreamFactory.createStream()).rejects.toThrow(
         'Stream not found'

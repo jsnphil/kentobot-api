@@ -1,0 +1,25 @@
+meta {
+  name: Enter shuffle
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/streams/:streamId/queue/shuffle/enter
+  body: json
+  auth: none
+}
+
+params:path {
+  streamId: 
+}
+
+headers {
+  X-API-Key: {{apiKey}}
+}
+
+body:json {
+  {
+    "user": ""
+  }
+}
